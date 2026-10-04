@@ -130,7 +130,7 @@
     var bx=h("form","background:#fff;color:#2b3a33;max-width:420px;width:100%;padding:22px;border-top:8px solid #5a7567;font:15px/1.8 'Noto Kufi Arabic',Tahoma,sans-serif");
     bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","دخول المدير");
     bx.appendChild(h("h2","margin:0 0 10px;font-size:1.2rem;color:#5a7567","دخول المدير"));
-    var usr=h("input","width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border:1px solid #5a7567;font:inherit;direction:ltr"); usr.type="text"; usr.placeholder="اسم المستخدم"; usr.autocomplete="username"; usr.setAttribute("aria-label","اسم المستخدم"); usr.value="admin";
+    var usr=h("input","width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border:1px solid #5a7567;font:inherit;direction:ltr"); usr.type="text"; usr.placeholder="اسم المستخدم"; usr.autocomplete="username"; usr.setAttribute("aria-label","اسم المستخدم");
     bx.appendChild(usr);
     var inp=h("input","width:100%;box-sizing:border-box;padding:10px;border:1px solid #5a7567;font:inherit;direction:ltr"); inp.type="password"; inp.placeholder="كلمة المرور"; inp.autocomplete="current-password"; inp.setAttribute("aria-label","كلمة المرور");
     var st=h("p","min-height:1.6em;margin:8px 0;color:#C8102E;font-size:.9rem"); st.setAttribute("role","status");

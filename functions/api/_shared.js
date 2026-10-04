@@ -18,26 +18,40 @@ export function timingEq(a, b) {
   let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
-export async function passwordOk(env, given, user) {
-  if (!env.ADMIN_PASSWORD || typeof given !== "string") return false;
-  const wantUser = env.ADMIN_USERNAME || "admin";
-  const userOk = timingEq(await hmac("cmp", String(user || "").trim().toLowerCase()), await hmac("cmp", wantUser.trim().toLowerCase()));
-  const passOk = timingEq(await hmac("cmp", given), await hmac("cmp", env.ADMIN_PASSWORD));
-  return userOk && passOk;
+/* Accounts: ADMIN_USERS = "salam:pass1, ali:pass2" (split on the first ":" so passwords may contain ":"; no commas in passwords).
+   Fallback: ADMIN_USERNAME (default "admin") + ADMIN_PASSWORD. */
+export function accounts(env) {
+  const m = new Map();
+  String(env.ADMIN_USERS || "").split(",").forEach(x => {
+    const k = x.indexOf(":"); if (k < 1) return;
+    const u = x.slice(0, k).trim().toLowerCase(), p = x.slice(k + 1).trim(); if (u && p) m.set(u, p);
+  });
+  if (env.ADMIN_PASSWORD) m.set((env.ADMIN_USERNAME || "admin").trim().toLowerCase(), env.ADMIN_PASSWORD);
+  return m;
 }
-function sessionKey(env) { return (env.ADMIN_USERNAME || "admin") + "|" + env.ADMIN_PASSWORD + "|" + (env.SESSION_SECRET || ""); }
-export async function sessionCookie(env) {
-  const exp = Date.now() + 30 * 864e5;
-  const sig = await hmac(sessionKey(env), "admin." + exp);
-  return `nabda_admin=${exp}.${sig}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict`;
+export async function checkLogin(env, user, given) {
+  const acc = accounts(env); if (!acc.size || typeof given !== "string") return null;
+  const u = String(user || "").trim().toLowerCase();
+  const want = acc.get(u) ?? "\u0000no-such-user";
+  const ok = timingEq(await hmac("cmp", given), await hmac("cmp", want)) && acc.has(u);
+  return ok ? u : null;
+}
+function sessionKey(env, u, pw) { return u + "|" + pw + "|" + (env.SESSION_SECRET || ""); }
+export async function sessionCookie(env, u) {
+  const exp = Date.now() + 30 * 864e5, uu = b64url(enc.encode(u));
+  const sig = await hmac(sessionKey(env, u, accounts(env).get(u)), "admin." + uu + "." + exp);
+  return `nabda_admin=${uu}.${exp}.${sig}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict`;
 }
 export function clearCookie() { return "nabda_admin=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict"; }
-export async function isAdmin(request, env) {
-  if (!env.ADMIN_PASSWORD) return false;
-  const m = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)nabda_admin=(\d+)\.([\w-]+)/);
-  if (!m || Number(m[1]) < Date.now()) return false;
-  return timingEq(await hmac(sessionKey(env), "admin." + m[1]), m[2]);
+/* returns the username when the session is valid, else null */
+export async function adminUser(request, env) {
+  const m = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)nabda_admin=([\w-]+)\.(\d+)\.([\w-]+)/);
+  if (!m || Number(m[2]) < Date.now()) return null;
+  let u; try { u = new TextDecoder().decode(Uint8Array.from(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0))); } catch (e) { return null; }
+  const pw = accounts(env).get(u); if (!pw) return null;
+  return timingEq(await hmac(sessionKey(env, u, pw), "admin." + m[1] + "." + m[2]), m[3]) ? u : null;
 }
+export async function isAdmin(request, env) { return !!(await adminUser(request, env)); }
 export function sameOrigin(request) {
   const o = request.headers.get("Origin"); if (!o) return true;
   try { return new URL(o).host === new URL(request.url).host; } catch (e) { return false; }
@@ -74,14 +88,14 @@ export function validOps(ops) {
     typeof o.id === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(o.id) &&
     (o.t === "del" || (o.d && typeof o.d === "object" && !Array.isArray(o.d))));
 }
-export async function commitOps(env, ops) {
+export async function commitOps(env, ops, who) {
   const c = cfg(env);
   for (let attempt = 0; attempt < 3; attempt++) {
     const [root, sha] = await Promise.all([fetchData(env), fetchSha(env)]);
     ops.forEach(o => applyOp(root, o));
     const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${c.path}`, {
       method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Update site content", content: b64(JSON.stringify(root)), sha, branch: c.branch })
+      body: JSON.stringify({ message: "Update site content" + (who ? " (by " + who.replace(/[^\w.-]/g, "") + ")" : ""), content: b64(JSON.stringify(root)), sha, branch: c.branch })
     });
     if (r.ok) return true;
     if (r.status !== 409 && r.status !== 422) throw new Error("github-put-" + r.status);

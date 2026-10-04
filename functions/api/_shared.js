@@ -18,11 +18,14 @@ export function timingEq(a, b) {
   let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
-export async function passwordOk(env, given) {
+export async function passwordOk(env, given, user) {
   if (!env.ADMIN_PASSWORD || typeof given !== "string") return false;
-  return timingEq(await hmac("cmp", given), await hmac("cmp", env.ADMIN_PASSWORD));
+  const wantUser = env.ADMIN_USERNAME || "admin";
+  const userOk = timingEq(await hmac("cmp", String(user || "").trim().toLowerCase()), await hmac("cmp", wantUser.trim().toLowerCase()));
+  const passOk = timingEq(await hmac("cmp", given), await hmac("cmp", env.ADMIN_PASSWORD));
+  return userOk && passOk;
 }
-function sessionKey(env) { return env.ADMIN_PASSWORD + "|" + (env.SESSION_SECRET || ""); }
+function sessionKey(env) { return (env.ADMIN_USERNAME || "admin") + "|" + env.ADMIN_PASSWORD + "|" + (env.SESSION_SECRET || ""); }
 export async function sessionCookie(env) {
   const exp = Date.now() + 30 * 864e5;
   const sig = await hmac(sessionKey(env), "admin." + exp);

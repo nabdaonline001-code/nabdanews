@@ -4,6 +4,11 @@
    (Cloudflare Pages Functions); each change is sent to /api/save, which commits data/site.json to GitHub
    (the site redeploys itself within about a minute). */
 (function(){
+  /* hide the built-in sample content until the real data has loaded (avoids a flash of old stories on refresh) */
+  var de=document.documentElement; de.classList.add("nd-load");
+  var ndSt=document.createElement("style"); ndSt.textContent=".nd-load main,.nd-load .tick,.nd-load .side{visibility:hidden}"; (document.head||de).appendChild(ndSt);
+  function ndDone(){ de.classList.remove("nd-load"); }
+  setTimeout(ndDone,4000);
   var CFG=Object.assign({repo:"nabdaonline001-code/nabdanews",branch:"main",path:"data/site.json",email:"",web3formsKey:""},window.NABDA_CONFIG||{});
   var admin=false, owner=false;
   var store={}, listeners=[], ready=null, queue=[], timer=null, waiters=[];
@@ -51,6 +56,7 @@
       admin=!!(m&&m.admin); owner=!!(m&&m.owner);
       return admin?api("data").catch(function(){ return loadPublic(); }):loadPublic();
     }).then(function(j){ ingest(j); return true; }).catch(function(){ return false; });
+    ready.then(function(){ setTimeout(ndDone,450); });
     return ready;
   }
   function fire(){ listeners.slice().forEach(function(l){ l(); }); }

@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <script src="config.js?v=4"></script>
-<script src="shim.js?v=6"></script>
+<script src="shim.js?v=7"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NABDA | نبضة — أخبار محلية ودولية ورياضة واقتصاد</title>
@@ -791,10 +791,27 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     a.appendChild(document.createTextNode(it.text||""));
     return a;
   }
+  /* ticker = manual items (last 60 min) + automatic channel headlines from /api/ticker */
+  var AUTO=[], AUTOWIN=60, lastSig=null;
+  function normTx(s){ return String(s||"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
+  function liveItems(){
+    var now=Date.now(), seen={};
+    var man=items.filter(function(i){ return i.order>1e12 && now-i.order<=3600000; });
+    man.forEach(function(i){ seen[normTx(i.text)]=1; });
+    var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)]; })
+      .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });
+    return man.concat(au).sort(function(x,y){ return y.order-x.order; });
+  }
+  function loadAuto(){
+    fetch("/api/ticker",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ if(j&&Array.isArray(j.items)){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; renderTicker(); } }).catch(function(){});
+  }
   function renderTicker(){
     var trk=document.querySelector(".trk"); if(!trk) return;
     trk.textContent="";
-    var shown=items.filter(function(i){ return filt==="all"||i.cat===filt; });
+    var shown=liveItems().filter(function(i){ return filt==="all"||i.cat===filt; });
+    var sig=filt+"|"+shown.map(function(i){ return i.id+":"+i.text; }).join("|");
+    if(sig===lastSig) return; lastSig=sig;
     if(!shown.length){
       var g=document.createElement("div"); g.className="grp";
       var sp=document.createElement("span"); sp.textContent=filt==="all"?"لا توجد أخبار عاجلة حالياً":"لا توجد أخبار عاجلة في هذا القسم"; g.appendChild(sp);
@@ -895,6 +912,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     });
     brk.appendChild(fr);
   }
+  loadAuto(); setInterval(loadAuto,300000); setInterval(renderTicker,60000);
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){return i.text;});
     renderTicker(); renderRows();

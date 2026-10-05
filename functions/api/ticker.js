@@ -9,9 +9,8 @@ export const SOURCES = [
   { id: "jadeed", urls: ["https://www.aljadeed.tv/Rss/latest-news/ar"] },
   { id: "lbci", urls: ["https://www.lbcgroup.tv/Rss/latest-news/ar"] },
   { id: "annahar", urls: ["https://www.annahar.com/rss"], skipLink: /\/(articles|opinion|opinions|lifestyle|style|entertainment|people|fun|tech|technology|health|culture|cinema|tv|stars|fashion|food|travel|cars|science|women|society|blogs)\//i },
-  { id: "mtv", urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
-  { id: "mayadeen", urls: ["https://www.almayadeen.net/rss", bing("almayadeen.net"), gnews("almayadeen.net")] },
-  { id: "hadath", urls: [bing("alhadath.net"), "https://www.alarabiya.net/feed/rss2/ar/last-page.xml"] },
+  { id: "mtv", html: { url: "https://www.mtv.com.lb/", parse: (h, now) => parseMtv(h, now) }, urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
+  { id: "hadath", html: { url: "https://www.alhadath.net/", parse: (h, now) => parseHadath(h, now) }, urls: ["https://www.alarabiya.net/feed/rss2/ar/last-page.xml", bing("alhadath.net")] },
   { id: "nbn", urls: [bing("nbn.com.lb"), gnews("nbn.com.lb")] }
 ];
 
@@ -43,7 +42,7 @@ export function parseFeed(xml) {
 
 /* ---------- house rules ---------- */
 const MEDIA = /بالفيديو|بالصور|بالصورة|(?<!\p{L})صورة(?!\p{L})|(?<!\p{L})فيديو(?!\p{L})|شاهد|شاهدوا|إليكم|تفاصيل|تابعوا|\(صور|لقطات|بالأرقام/u;
-const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق|سرعة المشي|ترتبط بانخفاض|ترتبط بارتفاع|دراسة جديدة|حادثي سير|حادث سير|جرحى في حادث|شكراً لكل معلم|شكرا لكل معلم|يوم المعلم/;
+const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق|التحكم المروري|سرعة المشي|ترتبط بانخفاض|ترتبط بارتفاع|دراسة جديدة|حادثي سير|حادث سير|جرحى في حادث|شكراً لكل معلم|شكرا لكل معلم|يوم المعلم/;
 const MINOR = /بالجرم المشهود|سرقة|سارق|سطو|مشاجرة|إشكال|حادث سير|حادث سيارة|ضبطت قوى الأمن|ضبط مخدرات|ضبط كمية|توقيف شخص|توقيف مطلوب|نصائح|فوائد|وصفة|حظك|برجك|الطقس|حالة الطقس/;
 const LEB = /لبنان|اللبناني|الجنوب|بنت جبيل|النبطية|مرجعيون|حاصبيا|الضاحية|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|عيتا|كفرشوبا|شبعا|عيترون|الطيبة|الليطاني|صيدا|(?<!\p{L})صور(?!\p{L})/u;
 const ECON = /اقتصاد|الاقتصاد|البورصة|بورصة|الأسهم|الدولار|الليرة|مصرف|المصارف|البنك|بنك|النفط|برنت|الذهب|الفضة|الأسعار|التضخم|الموازنة|الضريبة|صندوق النقد|الصادرات|الواردات|الفائدة|المحروقات|البنزين|المازوت|الودائع|سندات|ناتج محلي|عملة/;
@@ -68,9 +67,49 @@ const words = s => new Set(s.replace(/[\u064B-\u0652\u0640]/g, "").replace(/[^\p
 const similar = (a, b) => { const A = words(a), B = words(b); let i = 0; for (const w of A) if (B.has(w)) i++; return i / Math.min(A.size, B.size || 1) >= 0.6 && Math.min(A.size, B.size) >= 4; };
 const norm = s => s.replace(/[^\p{L}\p{N}]/gu, "");
 
+/* ---------- HTML front pages (sites with no usable RSS) ---------- */
+// MTV: article links are /News/<section>/<id>/<slug> with the headline in div.news-title. Ids grow with time, so the
+// distance from the newest id gives a time estimate (about 4 minutes per id); only the newest ~45 ids are kept.
+export function parseMtv(html, now = Date.now()) {
+  const found = new Map();
+  for (const m of html.matchAll(/<a\b[^>]*href="(\/News\/[^"]*?\/(\d{5,})\/[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const t = m[3].match(/class="news-title"[^>]*>([\s\S]*?)<\/div>/i);
+    if (!t) continue;
+    const title = decode(t[1]);
+    if (!title) continue;
+    let sec = ""; try { sec = decodeURIComponent(decode(m[1]).split("/")[2] || ""); } catch (e) {}
+    if (/^(فن|منوعات|ناس|رياضة)/.test(sec)) continue;
+    found.set(+m[2], { title, link: "https://www.mtv.com.lb" + decode(m[1]), id: +m[2] });
+  }
+  const max = Math.max(0, ...found.keys());
+  return [...found.values()].filter(x => max - x.id <= 45).map(x => ({ title: x.title, link: x.link, ts: now - (max - x.id) * 4 * 60000 - 60000 }));
+}
+// Al Hadath: article links carry the date (/2026/10/05/slug) and the headline in the title attribute. The page has no
+// times, so today's stories are spread over the last hour in page order and yesterday's sit just before midnight.
+export function parseHadath(html, now = Date.now()) {
+  const day = ms => new Date(ms + 3 * 3600000).toISOString().slice(0, 10).replace(/-/g, "/");
+  const today = day(now), yest = day(now - 86400000), midnight = Date.parse(today.replace(/\//g, "-") + "T00:00:00Z") - 3 * 3600000;
+  const out = [], seen = new Set(); let a = 0, b = 0;
+  for (const m of html.matchAll(/<a\b[^>]*?href="((?:\/[a-z]+)?\/(20\d\d\/\d\d\/\d\d)\/[^"]+)"[^>]*?title="([^"]+)"/gi)) {
+    if (/^\/videos\//.test(m[1]) || seen.has(m[1])) continue;
+    seen.add(m[1]);
+    const title = decode(m[3]); if (!title) continue;
+    const d = m[2];
+    if (d === today) out.push({ title, link: "https://www.alhadath.net" + m[1], ts: now - 60000 * (5 + 4 * a++) });
+    else if (d === yest) out.push({ title, link: "https://www.alhadath.net" + m[1], ts: midnight - 60000 * (5 + 4 * b++) });
+  }
+  return out;
+}
+
 /* ---------- fetching ---------- */
 async function fetchFeed(src) {
   let last = "no-url";
+  if (src.html) {
+    try {
+      const r = await fetch(src.html.url, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(5000) });
+      if (r.ok) { const items = src.html.parse(await r.text(), Date.now()); if (items.length) return { items, via: src.html.url }; last = "html-empty"; } else last = "html-http-" + r.status;
+    } catch (e) { last = "html-" + String(e.name || e.message || e); }
+  }
   for (const u of src.urls) {
     try {
       const r = await fetch(u, { headers: BROWSER, signal: AbortSignal.timeout(4000) });

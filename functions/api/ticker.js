@@ -6,6 +6,7 @@ const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("s
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
 export const SOURCES = [
   { id: "jazeera", urls: ["https://www.aljazeera.net/rss"], skipLink: /\/(opinions|lifestyle|blogs|culture|features|health|programs)\// },
+  { id: "jazeera_sport", sport: true, html: { url: "https://www.aljazeera.net/sport", parse: (h, now) => parseJazeeraSport(h, now) }, urls: [] },
   { id: "jadeed", urls: ["https://www.aljadeed.tv/Rss/latest-news/ar"] },
   { id: "lbci", urls: ["https://www.lbcgroup.tv/Rss/latest-news/ar"] },
   { id: "annahar", urls: ["https://www.annahar.com/rss"], skipLink: /\/(articles|opinion|opinions|lifestyle|style|entertainment|people|fun|tech|technology|health|culture|cinema|tv|stars|fashion|food|travel|cars|science|women|society|blogs)\//i },
@@ -64,15 +65,18 @@ const SPORT = /رياضة|فورمولا|جائزة سنغافورة|جائزة 
 /* allow-list: a headline is kept only when it speaks the language of hard news (politics, security, diplomacy,
    economy, sport results). Anything else is dropped even if no deny-list word matches. */
 const NEWS = /نوبل|غارة|غارات|قصف|هجوم|هجمات|استهداف|استهدف|صاروخ|صواريخ|مسيّرة|مسيرة|طائرة|اشتباك|معارك|معركة|حرب|حروب|هدنة|وقف إطلاق|وقف اطلاق|تصعيد|توتر|جيش|الجيش|قوات|عسكري|عسكرية|قاعدة|دفاع|أمن|امني|أمني|أمنية|مقتل|قتلى|شهداء|شهيد|جرحى|إصابة|حصيلة|ضحايا|انفجار|حريق|اغتيال|اعتقال|اختطاف|احتجاجات|مظاهرات|إضراب|حكومة|الحكومة|وزير|وزارة|رئيس|رئاسة|رئيسا|رئيساً|نائب|النواب|البرلمان|برلمان|مجلس|قمة|مفاوضات|محادثات|اتفاق|اتفاقية|معاهدة|وساطة|عقوبات|حصار|سفير|دبلوماسي|دبلوماسية|الخارجية|الأمم المتحدة|مجلس الأمن|الناتو|الاتحاد الأوروبي|البيت الأبيض|البنتاغون|الكرملين|الكنيست|انتخابات|الانتخابات|استفتاء|دستور|قانون|مرسوم|قرار|قرارات|محكمة|القضاء|قاض|تحقيق|لجنة|مؤتمر|بيان|تصريح|يحذر|يحذّر|تحذير|يهدد|تهديد|يدعو|دعا|أعلن|تعلن|يعلن|أكد|تؤكد|يؤكد|نفى|ينفي|رفض|يرفض|وافق|توافق|يوافق|إيران|ايران|إسرائيل|اسرائيل|فلسطين|غزة|الضفة|لبنان|سوريا|سورية|العراق|اليمن|الحوثي|الحوثيين|السعودية|الإمارات|قطر|الكويت|البحرين|عُمان|مصر|الأردن|ليبيا|السودان|تونس|الجزائر|المغرب|تركيا|روسيا|أوكرانيا|الصين|أميركا|أمريكا|الولايات المتحدة|واشنطن|ترامب|ترمب|بايدن|نتنياهو|بريطانيا|فرنسا|ألمانيا|أوروبا|أوروبي|حزب الله|حماس|الفصائل|مضيق|هرمز|البحر الأحمر|نووي|النووي|اليونيفيل|الاحتلال|المقاومة|لاجئ|نازح|نزوح|مساعدات|إغاثة|زلزال|فيضانات|عاصفة|كارثة|تضخم|ارتفاع أسعار|انخفاض|تراجع|صفقة|مليار|مليون دولار|ميزانية|موازنة|ضريبة|رسوم|جمارك|تصدير|استيراد|صادرات|واردات|أرباح|خسائر|إفلاس|استثمار|مصرف|بنك|فائدة|احتياطي|ديون|دين عام|عجز|نمو|ركود|طاقة|الكهرباء|غاز|وقود|محروقات|سندات|أسهم|بورصة/;
-export function clean(t, link) {
+/* a sport headline counts as "breaking" only when it reports a result, a decision or a move, not a feature or opinion */
+const SPORT_HARD = /فوز|يفوز|تفوز|فاز|تغلب|يتغلب|تتغلب|يسحق|تسحق|يهزم|تهزم|هزيمة|خسارة|يخسر|تخسر|تعادل|يتأهل|تتأهل|تأهل|يتوج|تتوج|تتويج|لقب|تعيين|يعين|تعين|إقالة|يقيل|تقيل|استقالة|يستقيل|إنهاء عقد|ينهي عقد|تنهي عقد|تجديد عقد|ينتقل|انتقال|صفقة|يضم|تضم|إصابة|إصابته|يغيب|تغيب|عقوبة|إيقاف|يوقف|توقف|غرامة|يودع|تودع|يتصدر|تتصدر|يعتزل|اعتزال|رسميا|رسميًا|الفيفا|الاتحاد الدولي|الاتحاد الأوروبي|الاتحاد الآسيوي|الاتحاد الأفريقي|قرعة|ترتيب|المتأهلين|مباراة|المباراة|ثنائية|ثلاثية|ركلة/;
+export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
   // "خاص"/"حصري" items and programme titles (نافذة…, مباشر مع…, "A | B") are not breaking news
   if (/^(خاص|حصري)(?!\p{L})/u.test(t) || /^(نافذة|مباشر مع|حلقة|بودكاست)(?!\p{L})/u.test(t) || /\s\|\s/.test(t)) return null;
   t = t.replace(/^عاجل\s*[|:\-–—]?\s*/, "");
+  t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
   if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
   if (t.length < 18 || t.length > 190) return null;
-  if (!(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
+  if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
   // word policy
   t = t.replace(/م[ي]?ل[ي]?ش[ي]?ات/g, "فصائل");
   t = t.replace(/(?:ال)?م[ي]?ل[ي]?ش[ي]?ا(?:وي|وية)?\s*/g, "");
@@ -126,6 +130,25 @@ export function parseMtv(html, now = Date.now()) {
   }
   const max = Math.max(0, ...found.keys());
   return [...found.values()].filter(x => max - x.id <= 45).map(x => ({ title: x.title, link: x.link, ts: now - (max - x.id) * 4 * 60000 - 60000 }));
+}
+// Al Jazeera Sport (الجزيرة الرياضية): article links carry the date (/sport/2026/10/5/slug); the page has no times, so
+// today's stories are spread over the last hour in page order and yesterday's sit just before midnight (as for Al Hadath).
+export function parseJazeeraSport(html, now = Date.now()) {
+  const day = ms => { const d = new Date(ms + 3 * 3600000); return d.getUTCFullYear() + "/" + (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); };
+  const today = day(now), yest = day(now - 86400000);
+  const midnight = Math.floor((now + 3 * 3600000) / 86400000) * 86400000 - 3 * 3600000;
+  const best = new Map();
+  for (const m of html.matchAll(/<a\b[^>]*?href="(?:https?:\/\/www\.aljazeera\.net)?(\/sport\/(\d{4}\/\d{1,2}\/\d{1,2})\/[^"#?]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const title = decode(m[3]).replace(/^["“”]+|["“”]+$/g, "");
+    const cur = best.get(m[1]);
+    if (title.length >= 18 && (!cur || title.length > cur.title.length)) best.set(m[1], { title, date: m[2], link: "https://www.aljazeera.net" + m[1] });
+  }
+  const out = []; let a = 0, b = 0;
+  for (const x of best.values()) {
+    if (x.date === today) out.push({ title: x.title, link: x.link, ts: now - 60000 * (5 + 4 * a++) });
+    else if (x.date === yest) out.push({ title: x.title, link: x.link, ts: midnight - 60000 * (5 + 4 * b++) });
+  }
+  return out;
 }
 // Al Hadath: article links carry the date (/2026/10/05/slug) and the headline in the title attribute. The page has no
 // times, so today's stories are spread over the last hour in page order and yesterday's sit just before midnight.
@@ -214,8 +237,8 @@ export async function build(now = Date.now()) {
       if (s.skipLink && s.skipLink.test(it.link)) continue;
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
-      const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link);
-      if (text) mine.push({ text, ts: it.ts, src: s.id });
+      const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
+      if (text) mine.push({ text, ts: it.ts, src: s.id, sport: !!s.sport });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };
@@ -236,7 +259,7 @@ export async function build(now = Date.now()) {
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, TARGET).map(c => ({ text: c.text, cat: catOf(c.text), ts: c.ts }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 

@@ -360,7 +360,6 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 @keyframes nblink{0%,100%{opacity:1}50%{opacity:.1}}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a::before{animation:none}}
 .ad img{display:block;width:100%;height:auto;max-height:170px;object-fit:cover;margin:0 0 10px}
-.sthumb{display:block;width:100%;height:auto;max-height:190px;object-fit:cover;margin:0 0 8px;background:var(--line)}
 .aprev{display:block;max-width:160px;max-height:100px;object-fit:cover;margin:6px 0}
 .arow input[type=file],.aadd input[type=file]{padding:6px}
 .bar nav{margin-inline-start:28px;margin-inline-end:auto}
@@ -616,7 +615,6 @@ var NEWS=[];
 function newsHref(id){ return "#news/"+encodeURIComponent(id); }
 function storyEl(it,lbl){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
-  if(it.image&&it.section!=="world"&&/^data:image\//.test(it.image)){ var ia=el("a"); ia.href=newsHref(it.id); ia.tabIndex=-1; ia.setAttribute("aria-hidden","true"); var im=el("img","sthumb"); im.src=it.image; im.alt=""; im.loading="lazy"; ia.appendChild(im); d.appendChild(ia); }
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
   h.appendChild(a); d.appendChild(h);
   if(it.summary) d.appendChild(el("p",null,it.summary));

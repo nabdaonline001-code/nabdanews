@@ -681,7 +681,7 @@ function renderHome(){
   var sb=document.getElementById("shortsbox"), sg=document.getElementById("sgrid");
   if(sb&&sg){
     sg.textContent="";
-    var sl=NEWS.filter(function(n){ return n.section==="shorts"; }).sort(function(x,y){ return y.order-x.order; }).slice(0,3);
+    var sl=NEWS.filter(function(n){ return n.section==="shorts"||n.section==="video"; }).sort(function(x,y){ return y.order-x.order; }).slice(0,3);
     sb.hidden=!sl.length&&!window.NEWSADMIN;
     if(!sl.length) sg.appendChild(el("p",null,"لا توجد SHORTS بعد."));
     sl.forEach(function(it){

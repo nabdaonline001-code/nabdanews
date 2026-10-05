@@ -1,5 +1,5 @@
 // TEMPORARY diagnostic: tests which public feed URLs are reachable from Cloudflare. Removed after use.
-const OK = /^https:\/\/(www\.)?(mtv\.com\.lb|nbn\.com\.lb|almayadeen\.net|alhadath\.net|alarabiya\.net|lbci\.com|annahar\.com|nna-leb\.gov\.lb)\//;
+const OK = /^https:\/\/([a-z]+\.)?(mtv\.com\.lb|nbn\.com\.lb|almayadeen\.net|alhadath\.net|alarabiya\.net|lbci\.com|annahar\.com|nna-leb\.gov\.lb)\//;
 const UA = { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", "accept": "application/rss+xml,application/xml,text/xml,text/html;q=0.8,*/*;q=0.5", "accept-language": "ar,en;q=0.8" };
 export async function onRequestGet({ request }) {
   const q = new URL(request.url).searchParams;

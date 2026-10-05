@@ -23,6 +23,7 @@ export function timingEq(a, b) {
    Staff accounts live (salted PBKDF2 hashes only) in private/users.json on GitHub; that path is blocked from the public web. */
 export const USERS_PATH = "private/users.json";
 export const MESSAGES_PATH = "private/messages.json";
+export const STATUS_PATH = "private/status.json"; /* { maintenance: true } hides the site from the public */
 export function accounts(env) {
   const m = new Map();
   String(env.ADMIN_USERS || "").split(",").forEach(x => {
@@ -79,12 +80,12 @@ export async function readJsonFile(env, path, fallback) {
 }
 /* mutate(data) changes data in place and returns null, or returns an error string to abort.
    "[CF-Pages-Skip]" in the commit message stops Cloudflare Pages from rebuilding the site for this commit. */
-export async function changeJsonFile(env, path, fallback, mutate, message) {
+export async function changeJsonFile(env, path, fallback, mutate, message, deploy) {
   const c = cfg(env);
   for (let attempt = 0; attempt < 4; attempt++) {
     const { data, sha } = await readJsonFile(env, path, JSON.parse(JSON.stringify(fallback)));
     const err = mutate(data); if (err) return err;
-    const body = { message: message + " [CF-Pages-Skip]", content: b64(JSON.stringify(data, null, 1)), branch: c.branch };
+    const body = { message: deploy ? message : message + " [CF-Pages-Skip]", content: b64(JSON.stringify(data, null, 1)), branch: c.branch };
     if (sha) body.sha = sha;
     const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${path}`, { method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (r.ok) return null;

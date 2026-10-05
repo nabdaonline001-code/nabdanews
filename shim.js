@@ -207,6 +207,23 @@
     var x=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","خروج"); x.type="button";
     x.onclick=function(){ api("logout","POST",{}).catch(function(){}).then(function(){ location.reload(); }); };
     if(owner){ var u=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","المستخدمون"); u.type="button"; u.onclick=openUsers; b.appendChild(u); }
+    /* maintenance mode: label for everyone logged in, switch for the owner */
+    var mlab=h("span","background:#C8102E;padding:0 8px","الموقع مغلق للجمهور"); mlab.hidden=true; b.insertBefore(mlab,b.children[1]||null);
+    var mb=null, mOn=false;
+    if(owner){ mb=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","…"); mb.type="button"; b.appendChild(mb); }
+    function showM(){ mlab.hidden=!mOn; if(mb) mb.textContent=mOn?"فتح الموقع للجمهور":"إغلاق الموقع للجمهور"; }
+    api("maintenance").then(function(j){ mOn=!!j.maintenance; showM(); }).catch(function(){ if(mb) mb.remove(); });
+    if(mb){ var mArmed=false, mT=null;
+      mb.onclick=function(){
+        var want=!mOn;
+        if(!mArmed){ mArmed=true; mb.textContent=want?"تأكيد الإغلاق؟":"تأكيد الفتح؟"; mT=setTimeout(function(){ mArmed=false; showM(); },5000); return; }
+        clearTimeout(mT); mArmed=false; mb.disabled=true;
+        api("maintenance","POST",{on:want}).then(function(){ mOn=want; showM();
+          toast(want?"سيُغلق الموقع أمام الجمهور خلال دقيقة تقريباً. أنت وفريقك سترونه كالمعتاد بعد الدخول.":"سيُفتح الموقع للجمهور خلال دقيقة تقريباً."); })
+          .catch(function(){ showM(); toast("تعذّر التغيير، حاول مرة أخرى.",true); })
+          .then(function(){ mb.disabled=false; });
+      };
+    }
     b.appendChild(x); document.body.appendChild(b);
   }
   function footerLink(){

@@ -445,6 +445,9 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 .sbtn2{margin-top:14px;border-color:#fff;color:#fff;display:block}
 .soc a:not([href]){opacity:.55;cursor:default}
 #msgform,#msgadm,#adreq,#adcontact{margin-top:22px;padding-top:6px;border-top:1px solid var(--line)}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.mrow a{color:#5a7567}
+#msgadm>button{background:#fff;border:1px solid #5a7567;color:#5a7567;padding:4px 14px;border-radius:0;cursor:pointer;margin:0 0 12px;font:inherit}
 #msgform .f,.about .f,#adreq .f{display:block;margin:0 0 12px}
 #msgform .f span,#adreq .f span{display:block;margin-bottom:4px;color:#5a7567;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.95rem}
 #msgform input,#msgform textarea,#adreq input,#adreq textarea{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1px solid #5a7567;border-radius:0;background:#fff;color:#2b3a33}
@@ -576,13 +579,15 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   <article class="about" lang="ar" dir="rtl">
     <h1>تواصل معنا</h1>
     <p>عندك خبر أو صورة أو ملاحظة؟ راسلنا من النموذج أدناه أو عبر حساباتنا على واتساب وتلغرام وإنستغرام وX في أسفل الصفحة. وللإعلان معنا افتح صفحة «أعلن معنا».</p>
-    <div id="msgform" hidden>
+    <form id="msgform" novalidate>
       <h3>أرسل رسالة</h3>
       <label class="f"><span>الاسم (اختياري)</span><input id="mname" type="text" maxlength="60" autocomplete="name"></label>
-      <label class="f"><span>رسالتك</span><textarea id="mtext" maxlength="1000" style="min-height:120px"></textarea></label>
-      <div class="btns"><button id="msend" type="button">إرسال</button></div>
+      <label class="f"><span>البريد الإلكتروني</span><input id="memail" type="email" maxlength="100" dir="ltr" autocomplete="email" required></label>
+      <label class="f"><span>رسالتك</span><textarea id="mtext" maxlength="2000" style="min-height:140px" required></textarea></label>
+      <label class="hp" aria-hidden="true">Website<input id="mweb" type="text" tabindex="-1" autocomplete="off"></label>
+      <div class="btns"><button id="msend" type="submit">إرسال</button></div>
       <p class="st" id="mst" role="status" aria-live="polite"></p>
-    </div>
+    </form>
     <div id="msgadm" hidden></div>
     <a class="back" href="#home">العودة إلى الصفحة الرئيسية</a>
   </article>
@@ -636,7 +641,7 @@ economy:{t:"اقتصاد",c:"--econ",i:[["المتاجر الصغيرة تسجّ
 ,read:{t:"اقرأ",c:"--local",i:[["لماذا تغيّرت عادات القراءة في المدينة؟","تحقيق يرصد إقبال الشباب على الكتب الرقمية والصوتية."],["مقابلة: مدير المكتبة العامة يتحدث عن خطة التجديد","يشرح خطط الأعوام القادمة وبرامج الأطفال."],["دليلك لفهم الموازنة البلدية في خمس نقاط","شرح مبسّط لأبرز بنود الإنفاق والإيرادات."]]}
 ,culture:{t:"ثقافة",c:"--local",i:[["معرض فني جديد يجمع أعمال شباب المدينة","يستمر المعرض ثلاثة أسابيع بدخول مجاني."],["مهرجان الأفلام القصيرة يعلن برنامج دورته الجديدة","يشمل البرنامج عروضاً وورش عمل للمخرجين الشباب."],["إعادة افتتاح المكتبة العامة بعد ترميمها","تضم المكتبة قاعة جديدة للأطفال."],["أمسية موسيقية تراثية على المسرح البلدي","تقام الأمسية مساء الجمعة المقبل."]]}
 };
-var PG={important:["الأخبار المهمة","ستظهر هنا أهم أخبار اليوم فور نشرها."],radar:["رادار","ستظهر هنا متابعات سريعة لأبرز ما يتداوله الناس."],shorts:["شورتس","ستظهر هنا مقاطع الفيديو القصيرة فور نشرها."],informer:["المُخبر","ستظهر هنا مواد هذا القسم فور نشرها."],special:["خاص","ستظهر هنا المواد الخاصة بالموقع فور نشرها."],security:["أمن وقضاء","ستظهر هنا أخبار الأمن والقضاء فور نشرها."],photos:["تقارير مصوّرة","ستظهر هنا التقارير المصوّرة فور نشرها."],read:["اقرأ","ستظهر هنا المقالات والتقارير المطوّلة فور نشرها."],video:["الفيديو","ستظهر هنا مقاطع الفيديو فور نشرها."],culture:["ثقافة","ستظهر هنا أخبار الثقافة فور نشرها."],world:["دولي","ستظهر هنا الأخبار الدولية فور نشرها."],writers:["كتّابنا","ستظهر هنا مقالات كتّاب الموقع فور نشرها."],ads:["أعلن معنا","للإعلان على الموقع، تواصل معنا عبر البيانات التي ستُضاف هنا."],jobs:["وظائف شاغرة","لا توجد وظائف شاغرة حالياً. ستُنشر الفرص الجديدة في هذه الصفحة."],archive:["الأرشيف","سيجد القارئ هنا أخبار الأيام والشهور السابقة."],contact:["اتصل بنا","بيانات التواصل (البريد الإلكتروني والهاتف والعنوان) ستُضاف هنا."],complaints:["الشكاوى والتصحيحات","إذا لاحظت خطأً في خبر، أرسل لنا ملاحظتك وسنصحّحه بسرعة. ستُضاف طريقة الإرسال هنا."],privacy:["سياسة الخصوصية","ستُكتب هنا سياسة الموقع في جمع بيانات الزوار واستخدامها."],guidelines:["إرشادات التحرير","ستُكتب هنا المعايير التي يلتزم بها فريق التحرير في نشر الأخبار."]};
+var PG={important:["الأخبار المهمة","ستظهر هنا أهم أخبار اليوم فور نشرها."],radar:["رادار","ستظهر هنا متابعات سريعة لأبرز ما يتداوله الناس."],shorts:["شورتس","ستظهر هنا مقاطع الفيديو القصيرة فور نشرها."],informer:["المُخبر","ستظهر هنا مواد هذا القسم فور نشرها."],special:["خاص","ستظهر هنا المواد الخاصة بالموقع فور نشرها."],security:["أمن وقضاء","ستظهر هنا أخبار الأمن والقضاء فور نشرها."],photos:["تقارير مصوّرة","ستظهر هنا التقارير المصوّرة فور نشرها."],read:["اقرأ","ستظهر هنا المقالات والتقارير المطوّلة فور نشرها."],video:["الفيديو","ستظهر هنا مقاطع الفيديو فور نشرها."],culture:["ثقافة","ستظهر هنا أخبار الثقافة فور نشرها."],world:["دولي","ستظهر هنا الأخبار الدولية فور نشرها."],writers:["كتّابنا","ستظهر هنا مقالات كتّاب الموقع فور نشرها."],ads:["أعلن معنا","للإعلان على الموقع، تواصل معنا عبر البيانات التي ستُضاف هنا."],jobs:["وظائف شاغرة","لا توجد وظائف شاغرة حالياً. ستُنشر الفرص الجديدة في هذه الصفحة."],archive:["الأرشيف","سيجد القارئ هنا أخبار الأيام والشهور السابقة."],complaints:["الشكاوى والتصحيحات","إذا لاحظت خطأً في خبر، أرسل لنا ملاحظتك وسنصحّحه بسرعة. ستُضاف طريقة الإرسال هنا."],privacy:["سياسة الخصوصية","ستُكتب هنا سياسة الموقع في جمع بيانات الزوار واستخدامها."],guidelines:["إرشادات التحرير","ستُكتب هنا المعايير التي يلتزم بها فريق التحرير في نشر الأخبار."]};
 var LEAD={title:document.getElementById("leadTa").textContent,body:document.getElementById("leadB").textContent,by:document.getElementById("leadBy").textContent,full:"",image:"",imageAlt:""};
 function applyImg(){
   var w=document.getElementById("leadImgWrap"), im=document.getElementById("leadImg");
@@ -1783,79 +1788,83 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   },function(){});
 })();
 
-(async function(){
-  var form=document.getElementById("msgform"); if(!form) return;
-  var db=null,user=null;
-  try{ if(window.claude&&claude.use){ db=await claude.use("db"); } }catch(e){}
-  if(!db) return;
-  try{ user=await claude.use("user"); }catch(e){}
-  var uid=null, adminOn=false;
-  try{ uid=user?await user.id():null; }catch(e){}
-  try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
-  var nm=document.getElementById("mname"), tx=document.getElementById("mtext"), sb=document.getElementById("msend"), st=document.getElementById("mst");
-  if(uid){
-    form.hidden=false;
-    var ref=db.doc("messages/"+uid);
-    sb.onclick=async function(){
-      var m=tx.value.trim(); if(!m){ st.textContent="اكتب رسالتك أولاً."; tx.focus(); return; }
-      sb.disabled=true; st.textContent="";
-      try{
-        var snap=await ref.get(), d=snap.exists?(snap.data()||{}):{}, list=Array.isArray(d.list)?d.list.slice(-19):[];
-        list.push({t:Date.now(),m:m});
-        await ref.set({name:nm.value.trim()||String(d.name||""),list:list,updated:Date.now()});
-        tx.value=""; st.textContent="تم إرسال رسالتك، شكراً لك.";
-      }catch(e){ st.textContent=(e&&e.code==="invalid_argument")?"الإرسال غير متاح لحسابك حالياً، تواصل معنا عبر حساباتنا أسفل الصفحة.":"تعذّر الإرسال، حاول مرة أخرى."; }
-      sb.disabled=false;
-    };
+(function(){
+  var EMAIL=/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+  function post(body){
+    return fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error||"send"); return j; }); });
   }
+  /* contact form */
+  var form=document.getElementById("msgform");
+  if(form){
+    var nm=document.getElementById("mname"), em=document.getElementById("memail"), tx=document.getElementById("mtext"), hp=document.getElementById("mweb"), sb=document.getElementById("msend"), st=document.getElementById("mst");
+    form.addEventListener("submit",function(ev){
+      ev.preventDefault();
+      var e=em.value.trim(), m=tx.value.trim();
+      if(!e){ st.textContent="اكتب بريدك الإلكتروني لنتمكّن من الرد عليك."; em.focus(); return; }
+      if(!EMAIL.test(e)){ st.textContent="البريد الإلكتروني غير صحيح."; em.focus(); return; }
+      if(!m){ st.textContent="اكتب رسالتك أولاً."; tx.focus(); return; }
+      sb.disabled=true; st.textContent="جارٍ الإرسال…";
+      post({k:"msg",name:nm.value.trim(),email:e,message:m,website:hp.value}).then(function(){
+        tx.value=""; st.textContent="تم إرسال رسالتك، شكراً لك. سنرد عليك على بريدك الإلكتروني.";
+      }).catch(function(){ st.textContent="تعذّر الإرسال، حاول مرة أخرى أو راسلنا عبر حساباتنا أسفل الصفحة."; })
+        .then(function(){ sb.disabled=false; });
+    });
+  }
+  /* advertising request form */
   var rf=document.getElementById("adreq");
-  if(uid && rf){
+  if(rf){
     rf.hidden=false;
     var rs=document.getElementById("rsend"), rst2=document.getElementById("rst");
-    rs.onclick=async function(){
-      var nm2=document.getElementById("rname").value.trim(), ph=document.getElementById("rphone").value.trim(), em=document.getElementById("remail").value.trim(), tt=document.getElementById("rtext").value.trim();
-      if(!ph&&!em){ rst2.textContent="اكتب رقم هاتفك أو بريدك الإلكتروني."; return; }
-      if(em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ rst2.textContent="البريد الإلكتروني غير صحيح."; return; }
+    rs.onclick=function(){
+      var nm2=document.getElementById("rname").value.trim(), ph=document.getElementById("rphone").value.trim(), em2=document.getElementById("remail").value.trim(), tt=document.getElementById("rtext").value.trim();
+      if(!ph&&!em2){ rst2.textContent="اكتب رقم هاتفك أو بريدك الإلكتروني."; return; }
+      if(em2 && !EMAIL.test(em2)){ rst2.textContent="البريد الإلكتروني غير صحيح."; return; }
       if(ph && !/^\+?[0-9 ()-]{6,24}$/.test(ph)){ rst2.textContent="رقم الهاتف غير صحيح."; return; }
-      rs.disabled=true; rst2.textContent="";
-      try{
-        var r2=db.doc("messages/"+uid), sn=await r2.get(), d2=sn.exists?(sn.data()||{}):{}, l2=Array.isArray(d2.list)?d2.list.slice(-19):[];
-        l2.push({t:Date.now(),k:"ad",p:ph,e:em,m:tt});
-        await r2.set({name:nm2||String(d2.name||""),list:l2,updated:Date.now()});
+      rs.disabled=true; rst2.textContent="جارٍ الإرسال…";
+      post({k:"ad",name:nm2,phone:ph,email:em2,message:tt}).then(function(){
         ["rtext","rphone","remail"].forEach(function(i){ document.getElementById(i).value=""; });
         rst2.textContent="تم استلام طلبك، سنتواصل معك قريباً.";
-      }catch(e){ rst2.textContent=(e&&e.code==="invalid_argument")?"الإرسال غير متاح لحسابك حالياً، تواصل معنا مباشرة.":"تعذّر الإرسال، حاول مرة أخرى."; }
-      rs.disabled=false;
+      }).catch(function(){ rst2.textContent="تعذّر الإرسال، حاول مرة أخرى."; })
+        .then(function(){ rs.disabled=false; });
     };
   }
-  if(adminOn){
-    var box=document.getElementById("msgadm"); box.hidden=false;
-    var h=el("h3",null,"رسائل الزوار (تظهر لك فقط)"); var list=el("div","mlist"); box.appendChild(h); box.appendChild(list);
-    db.collection("messages").onSnapshot(function(snap){
-      list.textContent="";
-      var rows=snap.docs.map(function(d){ var x=d.data()||{}; return {id:d.id,name:String(x.name||""),list:Array.isArray(x.list)?x.list:[],updated:Number(x.updated)||0}; }).sort(function(a,b){ return b.updated-a.updated; });
-      h.textContent="رسائل الزوار ("+rows.length+") — تظهر لك فقط";
-      if(!rows.length){ list.appendChild(el("p","empty","لا توجد رسائل بعد.")); return; }
-      rows.forEach(function(r){
-        var c=el("div","mrow"); c.appendChild(el("b",null,r.name||"زائر"));
-        r.list.forEach(function(it){
-          var w=el("div","mmsg"); var dt="";
+  /* owner inbox (shown on the contact page in admin mode) */
+  fetch("/api/me",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.json(); }).then(function(me){
+    if(!me||!me.owner) return;
+    var box=document.getElementById("msgadm"); if(!box) return; box.hidden=false;
+    var h=el("h3",null,"رسائل الزوار — تظهر لك فقط"), rl=el("button","ghost","تحديث"), list=el("div","mlist");
+    rl.type="button"; box.appendChild(h); box.appendChild(rl); box.appendChild(list);
+    function load(){
+      list.textContent=""; list.appendChild(el("p","empty","جارٍ التحميل…"));
+      fetch("/api/messages",{credentials:"same-origin",cache:"no-store"}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+        var rows=Array.isArray(j.list)?j.list:[];
+        list.textContent=""; h.textContent="رسائل الزوار ("+rows.length+") — تظهر لك فقط";
+        if(!rows.length){ list.appendChild(el("p","empty","لا توجد رسائل بعد.")); return; }
+        rows.forEach(function(it){
+          var c=el("div","mrow"); c.appendChild(el("b",null,it.n||"زائر"));
+          var w=el("div","mmsg"), dt="";
           try{ dt=new Date(Number(it.t)).toLocaleString("ar"); }catch(e){}
           w.appendChild(el("small",null,(it.k==="ad"?"طلب إعلان · ":"")+dt));
-          if(it.k==="ad"){ var cl=[]; if(it.p) cl.push("هاتف: "+String(it.p)); if(it.e) cl.push("بريد: "+String(it.e)); w.appendChild(el("p",null,cl.join("  ·  "))); }
+          var cl=el("p");
+          if(it.e){ cl.appendChild(document.createTextNode("بريد: ")); var a=el("a",null,String(it.e)); a.href="mailto:"+encodeURIComponent(String(it.e)).replace(/%40/g,"@"); a.dir="ltr"; cl.appendChild(a); }
+          if(it.p){ if(it.e) cl.appendChild(document.createTextNode("  ·  ")); cl.appendChild(document.createTextNode("هاتف: "+String(it.p))); }
+          if(it.e||it.p) w.appendChild(cl);
           if(it.m) w.appendChild(el("p",null,String(it.m)));
           c.appendChild(w);
+          var del=el("button","ghost","حذف"); del.type="button"; var armed=false,tm=null;
+          del.onclick=function(){
+            if(!armed){ armed=true; del.textContent="تأكيد الحذف"; tm=setTimeout(function(){ armed=false; del.textContent="حذف"; },5000); return; }
+            if(tm) clearTimeout(tm); del.disabled=true;
+            fetch("/api/messages",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({del:it.id})})
+              .then(function(r){ if(!r.ok) throw 0; c.remove(); }).catch(function(){ del.disabled=false; del.textContent="تعذّر الحذف"; });
+          };
+          c.appendChild(del); list.appendChild(c);
         });
-        var del=el("button","ghost","حذف"); del.type="button"; var armed=false,tm=null;
-        del.onclick=async function(){
-          if(!armed){ armed=true; del.textContent="تأكيد الحذف"; tm=setTimeout(function(){ armed=false; del.textContent="حذف"; },5000); return; }
-          if(tm) clearTimeout(tm);
-          try{ await db.doc("messages/"+r.id).delete(); }catch(e){ del.textContent="تعذّر الحذف"; }
-        };
-        c.appendChild(del); list.appendChild(c);
-      });
-    },function(){});
-  }
+      }).catch(function(){ list.textContent=""; list.appendChild(el("p","empty","تعذّر تحميل الرسائل.")); });
+    }
+    rl.onclick=load; load();
+  }).catch(function(){});
 })();
 
 (async function(){

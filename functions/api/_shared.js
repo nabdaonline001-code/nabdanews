@@ -22,6 +22,7 @@ export function timingEq(a, b) {
    Fallback: ADMIN_USERNAME (default "admin") + ADMIN_PASSWORD. Owners can create/delete staff accounts from the site.
    Staff accounts live (salted PBKDF2 hashes only) in private/users.json on GitHub; that path is blocked from the public web. */
 export const USERS_PATH = "private/users.json";
+export const MESSAGES_PATH = "private/messages.json";
 export function accounts(env) {
   const m = new Map();
   String(env.ADMIN_USERS || "").split(",").forEach(x => {
@@ -62,6 +63,30 @@ export async function changeUsers(env, mutate, who) {
     const body = { message: "Update staff accounts" + (who ? " (by " + who.replace(/[^\w.-]/g, "") + ")" : ""), content: b64(JSON.stringify(users, null, 1)), branch: c.branch };
     if (sha) body.sha = sha;
     const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${USERS_PATH}`, { method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (r.ok) return null;
+    if (r.status !== 409 && r.status !== 422) throw new Error("github-put-" + r.status);
+  }
+  throw new Error("github-conflict");
+}
+/* ---- generic private JSON file on GitHub (e.g. private/messages.json) ---- */
+export async function readJsonFile(env, path, fallback) {
+  const r = await fetch(fileUrl(env, path), { headers: gh(env) });
+  if (r.status === 404) return { data: fallback, sha: null };
+  if (!r.ok) throw new Error("github-get-" + r.status);
+  const m = await r.json();
+  let data = fallback; try { data = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(m.content.replace(/\s/g, "")), c => c.charCodeAt(0)))); } catch (e) {}
+  return { data, sha: m.sha };
+}
+/* mutate(data) changes data in place and returns null, or returns an error string to abort.
+   "[CF-Pages-Skip]" in the commit message stops Cloudflare Pages from rebuilding the site for this commit. */
+export async function changeJsonFile(env, path, fallback, mutate, message) {
+  const c = cfg(env);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { data, sha } = await readJsonFile(env, path, JSON.parse(JSON.stringify(fallback)));
+    const err = mutate(data); if (err) return err;
+    const body = { message: message + " [CF-Pages-Skip]", content: b64(JSON.stringify(data, null, 1)), branch: c.branch };
+    if (sha) body.sha = sha;
+    const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${path}`, { method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (r.ok) return null;
     if (r.status !== 409 && r.status !== 422) throw new Error("github-put-" + r.status);
   }

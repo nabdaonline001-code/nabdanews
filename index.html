@@ -73,7 +73,8 @@ nav .a{border-color:var(--ink);font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,
 .brk .wrap{overflow:hidden;white-space:nowrap}
 .tick{flex:1;min-width:0;overflow:hidden}
 .trk{display:flex;width:max-content;animation:tick 19s linear infinite}
-.grp{display:flex;gap:48px;padding-inline-end:48px}
+.grp{display:flex;gap:22px;padding-inline-end:22px}
+.brk .tk::after{content:"|";margin-inline-start:22px;opacity:.75;font-weight:400}
 .brk:hover .trk,.brk:focus-within .trk{animation-play-state:paused}
 @keyframes tick{to{transform:translateX(50%)}}
 @media (prefers-reduced-motion:reduce){.trk{animation:none}.tick{overflow-x:auto}.grp[aria-hidden]{display:none}}

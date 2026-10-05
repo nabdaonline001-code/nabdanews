@@ -4,6 +4,8 @@ const UA = { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKi
 export async function onRequestGet({ request }) {
   const q = new URL(request.url).searchParams;
   const urls = (q.get("p") || "").split(",").map(x => "https://" + q.get("h") + x).filter(u => OK.test(u)).slice(0, 14);
+  const dump = q.get("dump");
+  if (dump && urls[0]) { const r = await fetch(urls[0], { headers: UA, signal: AbortSignal.timeout(6000) }); let t = await r.text(); const g = q.get("g"); if (g) { const re = new RegExp(g, "g"); t = (t.match(re) || []).slice(0, +dump).join("\n"); } else t = t.slice(0, +dump); return new Response(t, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } }); }
   const out = await Promise.all(urls.map(async u => {
     try {
       const r = await fetch(u, { headers: UA, redirect: "follow", signal: AbortSignal.timeout(6000) });

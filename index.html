@@ -365,28 +365,10 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .bar nav{margin-inline-start:28px;margin-inline-end:auto}
 .bar .sbtn{flex:none}
 @media (max-width:520px){.bar nav{margin-inline-start:0}}
-.livebtn{flex:none;display:inline-flex;align-items:center;gap:7px;background:#C8102E;color:#fff;border:2px solid #C8102E;padding:6px 12px;font:700 .9rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;cursor:pointer;border-radius:0;margin-inline-end:6px}
-.livebtn:hover{background:#a50d26;border-color:#a50d26}
-.livebtn:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
+.livebtn{flex:none;display:inline-flex;align-items:center;gap:7px;background:#C8102E;color:#fff;border:2px solid #C8102E;padding:6px 12px;font:700 .9rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;border-radius:0;margin-inline-end:6px;cursor:default;user-select:none}
 .livebtn svg{animation:lvPulse 1.6s ease-in-out infinite}
 @keyframes lvPulse{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.livebtn svg{animation:none}}
-.lvm{position:fixed;inset:0;z-index:9999;background:rgba(15,25,20,.72);display:flex;align-items:center;justify-content:center;padding:16px}
-.lvm[hidden]{display:none}
-.lvb{background:#fff;color:#2b3a33;border-top:6px solid #C8102E;width:min(720px,100%);max-height:92vh;overflow:auto;padding:18px 18px 22px;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
-.lvh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-.lvh h2{margin:0;font-size:1.15rem;display:flex;align-items:center;gap:8px}
-.lvh h2 i{font-style:normal;background:#C8102E;color:#fff;font-size:.75rem;padding:2px 8px}
-.lvx{background:none;border:1px solid #cfd9d4;color:#2b3a33;font-size:1rem;padding:4px 10px;cursor:pointer}
-.lvx:focus-visible,.lvb button:focus-visible,.lvb input:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
-.lvb .vwrap{margin:0}
-.lvb p{line-height:1.9;margin:8px 0;color:#5a7567}
-.lvadm{margin-top:16px;border-top:1px solid #cfd9d4;padding-top:12px;display:grid;gap:8px}
-.lvadm input{border:1px solid #cfd9d4;padding:8px 10px;font:inherit;direction:ltr;text-align:left}
-.lvadm .row{display:flex;gap:8px;flex-wrap:wrap}
-.lvadm button{border:1px solid #5a7567;background:#5a7567;color:#fff;padding:7px 14px;font:inherit;cursor:pointer}
-.lvadm button.gh{background:#fff;color:#5a7567}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lvb{background:#1f2b26;color:#e6eeea}:root:not([data-theme="light"]) .lvb p{color:#9db3a8}:root:not([data-theme="light"]) .lvx{color:#e6eeea;border-color:#33443c}:root:not([data-theme="light"]) .lvadm input{background:#17201c;color:#e6eeea;border-color:#33443c}}
 @media (max-width:520px){.livebtn{padding:5px 8px;font-size:.8rem;gap:5px}.livebtn svg{width:15px;height:15px}}
 .sbtn{background:none;border:0;color:#5a7567;cursor:pointer;padding:6px 10px;display:inline-flex;align-items:center}
 .sbtn:hover{background:rgba(90,117,103,.1)}
@@ -455,7 +437,7 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
       <a class="tl" href="#sports">رياضة</a>
       <a class="tl" href="#culture">ثقافة</a>
     </nav>
-    <button class="livebtn" id="livebtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>بث تجريبي</span></button>
+    <span class="livebtn" id="livebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>بث تجريبي</span></span>
     <button class="sbtn" id="sbtn" type="button" aria-label="بحث" aria-expanded="false" aria-controls="srch"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
   </div>
 </header>
@@ -1680,47 +1662,6 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   },function(){});
 })();
 
-/* ---------- test live stream: red header button + dialog; the admin pastes the stream link ---------- */
-(async function(){
-  var btn=document.getElementById("livebtn"); if(!btn) return;
-  var db=null,user=null,cur={url:"",title:""},adminOn=false,ov=null,lastFocus=null;
-  try{ if(window.claude&&claude.use){ db=await claude.use("db"); user=await claude.use("user"); } }catch(e){}
-  try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
-  var ref=db?db.doc("lead/live"):null;
-  if(ref){ try{ ref.onSnapshot(function(d){ var x=(d&&d.data&&d.data())||{}; cur={url:String(x.url||""),title:String(x.title||"")}; if(ov&&!ov.hidden) draw(); },function(){}); }catch(e){} }
-  function close(){ if(!ov) return; ov.hidden=true; ov.querySelector(".lvbody").textContent=""; document.removeEventListener("keydown",onKey); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
-  function onKey(e){ if(e.key==="Escape") close(); }
-  function draw(){
-    var b=ov.querySelector(".lvbody"); b.textContent="";
-    var p=cur.url?videoEmbed(cur.url):null;
-    if(p){ var w=el("div","vwrap"); w.appendChild(p); b.appendChild(w); }
-    else if(/^https?:\/\//i.test(cur.url)){ var l=el("a","vlink","▶ مشاهدة البث"); l.href=cur.url; l.target="_blank"; l.rel="noopener noreferrer"; b.appendChild(l); }
-    else b.appendChild(el("p",null,"البث التجريبي غير متاح حالياً. سيظهر هنا فور بدئه."));
-    if(cur.title) b.appendChild(el("p",null,cur.title));
-    if(adminOn){
-      var a=el("div","lvadm"), u=el("input"), t=el("input"), r=el("div","row"), sv=el("button",null,"حفظ البث"), cl=el("button","gh","إيقاف البث"), msg=el("p",null,"");
-      u.type="url"; u.placeholder="رابط البث (يوتيوب / فيسبوك / فيميو / ملف mp4)"; u.value=cur.url; u.setAttribute("aria-label","رابط البث");
-      t.type="text"; t.placeholder="عنوان البث (اختياري)"; t.value=cur.title; t.maxLength=120; t.setAttribute("aria-label","عنوان البث"); t.style.direction="rtl"; t.style.textAlign="right";
-      sv.type="button"; cl.type="button";
-      sv.onclick=function(){ var v=u.value.trim(); if(v&&!/^https?:\/\//i.test(v)){ msg.textContent="الرابط لازم يبدأ بـ https://"; return; } msg.textContent="جاري الحفظ…"; ref.set({url:v,title:t.value.trim()}).then(function(){ msg.textContent="تم الحفظ."; },function(){ msg.textContent="تعذّر الحفظ، حاول مرة ثانية."; }); };
-      cl.onclick=function(){ msg.textContent="جاري الإيقاف…"; ref.set({url:"",title:""}).then(function(){ msg.textContent="تم إيقاف البث."; },function(){ msg.textContent="تعذّر الحفظ."; }); };
-      r.appendChild(sv); r.appendChild(cl); a.appendChild(u); a.appendChild(t); a.appendChild(r); a.appendChild(msg); b.appendChild(a);
-    }
-  }
-  function open(){
-    if(!ov){
-      ov=el("div","lvm"); ov.hidden=true; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label","البث التجريبي");
-      var box=el("div","lvb"), h=el("div","lvh"), t=el("h2"), tag=el("i",null,"تجريبي"), x=el("button","lvx","✕");
-      t.appendChild(document.createTextNode("بث مباشر ")); t.appendChild(tag); x.type="button"; x.setAttribute("aria-label","إغلاق"); x.onclick=close;
-      h.appendChild(t); h.appendChild(x); box.appendChild(h); box.appendChild(el("div","lvbody")); ov.appendChild(box);
-      ov.addEventListener("click",function(e){ if(e.target===ov) close(); });
-      document.body.appendChild(ov);
-    }
-    lastFocus=document.activeElement; ov.hidden=false; draw(); document.addEventListener("keydown",onKey);
-    var c=ov.querySelector(".lvx"); if(c) c.focus();
-  }
-  btn.addEventListener("click",open);
-})();
 </script>
 </body>
 </html>

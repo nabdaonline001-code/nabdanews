@@ -17,11 +17,17 @@ export const SOURCES = [
 
 /* ---------- parsing ---------- */
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
-function decode(s) {
-  return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+function decodeOnce(s) {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
     if (e[0] === "#") { const c = e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); try { return String.fromCodePoint(c); } catch (x) { return m; } }
     return ENT[e.toLowerCase()] ?? m;
-  }).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  });
+}
+function decode(s) {
+  s = s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1");
+  // some feeds double-encode (&amp;quot;): decode up to 3 times until stable
+  for (let i = 0; i < 3; i++) { const n = decodeOnce(s); if (n === s) break; s = n; }
+  return s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 function tag(block, name) { const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, "i")); return m ? decode(m[1]) : ""; }
 export function parseFeed(xml) {

@@ -803,7 +803,13 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     man.forEach(function(i){ seen[normTx(i.text)]=1; });
     var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)]; })
       .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });
-    return man.concat(au).sort(function(x,y){ return y.order-x.order; });
+    var out=man.concat(au).sort(function(x,y){ return y.order-x.order; });
+    if(!out.length){
+      /* never leave the bar empty: fall back to the latest known headlines of any age, then to a fixed line */
+      out=AUTO.slice().sort(function(x,y){ return y.ts-x.ts; }).slice(0,8).map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });
+      if(!out.length) out=[{id:"static",text:"تابعوا «نبضة» لآخر الأخبار المحلية والدولية والاقتصاد والرياضة",cat:"politics",order:0}];
+    }
+    return out;
   }
   function loadAuto(){
     fetch("/api/ticker",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
@@ -811,22 +817,22 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function renderTicker(){
     var trk=document.querySelector(".trk"); if(!trk) return;
-    trk.textContent="";
     var shown=liveItems().filter(function(i){ return filt==="all"||i.cat===filt; });
     var sig=filt+"|"+shown.map(function(i){ return i.id+":"+i.text; }).join("|");
-    if(sig===lastSig) return; lastSig=sig;
+    if(sig===lastSig && trk.firstChild) return; lastSig=sig;
+    trk.textContent="";
     if(!shown.length){
       var g=document.createElement("div"); g.className="grp";
       var sp=document.createElement("span"); sp.textContent=filt==="all"?"لا توجد أخبار عاجلة حالياً":"لا توجد أخبار عاجلة في هذا القسم"; g.appendChild(sp);
       trk.appendChild(g); trk.style.animation="none"; return;
     }
-    var chars=0;
-    for(var k=0;k<2;k++){
-      var grp=document.createElement("div"); grp.className="grp";
-      if(k===1) grp.setAttribute("aria-hidden","true");
-      shown.forEach(function(it){ grp.appendChild(mkLink(it,k===1)); if(k===0) chars+=(it.text||"").length; });
-      trk.appendChild(grp);
-    }
+    var chars=0, tick=trk.parentNode, need=Math.max(tick.clientWidth,320);
+    function fill(grp,k){ shown.forEach(function(it){ var e=mkLink(it,k); if(k) e.setAttribute("aria-hidden","true"); grp.appendChild(e); }); }
+    var first=document.createElement("div"); first.className="grp"; trk.appendChild(first);
+    fill(first,false); shown.forEach(function(it){ chars+=(it.text||"").length; });
+    /* repeat the headlines inside one group until it is at least as wide as the bar, so the loop never shows a gap */
+    var guard=0; while(first.getBoundingClientRect().width<need && guard++<12){ fill(first,true); chars+=shown.reduce(function(n,it){ return n+(it.text||"").length; },0); }
+    var second=first.cloneNode(true); second.setAttribute("aria-hidden","true"); trk.appendChild(second);
     trk.style.animation="";
     trk.style.animationDuration=Math.max(14,Math.round(chars*0.19))+"s";
   }
@@ -916,6 +922,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     brk.appendChild(fr);
   }
   loadAuto(); setInterval(loadAuto,300000); setInterval(renderTicker,60000);
+  var rzT=null; window.addEventListener("resize",function(){ clearTimeout(rzT); rzT=setTimeout(function(){ lastSig=null; renderTicker(); },250); });
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){return i.text;});
     renderTicker(); renderRows();

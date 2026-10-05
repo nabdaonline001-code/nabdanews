@@ -807,7 +807,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function loadAuto(){
     fetch("/api/ticker",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
-      .then(function(j){ if(j&&Array.isArray(j.items)){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; renderTicker(); } }).catch(function(){});
+      .then(function(j){ if(j&&Array.isArray(j.items)&&j.items.length){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; renderTicker(); } }).catch(function(){});
   }
   function renderTicker(){
     var trk=document.querySelector(".trk"); if(!trk) return;

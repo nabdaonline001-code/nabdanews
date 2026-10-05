@@ -90,7 +90,7 @@ export async function build(now = Date.now()) {
     cand.push(...mine);
   }
   let windowMin = 60, picked = [];
-  for (const w of [60, 120, 240]) {
+  for (const w of [60, 120, 240, 720, 1440]) {
     windowMin = w; picked = [];
     const per = {}, seen = new Set();
     for (const c of cand.slice().sort((a, b) => b.ts - a.ts)) {
@@ -100,7 +100,7 @@ export async function build(now = Date.now()) {
       if ((per[c.src] = (per[c.src] || 0) + 1) > 3) continue;
       seen.add(k); seen.add(k2); picked.push(c);
     }
-    if (picked.length >= 8) break;
+    if (picked.length >= (w <= 120 ? 8 : 6)) break;
   }
   picked = picked.slice(0, 16).map(c => ({ text: c.text, cat: catOf(c.text), ts: c.ts }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };

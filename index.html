@@ -529,7 +529,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
       <h1 id="leadT"><a id="leadTa" href="#article">المجلس البلدي يقرّ مسارات جديدة للحافلات على الطريق الرئيسي</a></h1>
       <p id="leadB">أُقرّ القرار بعد جلسة استماع علنية طويلة. تبدأ الأعمال في الربيع المقبل ويُتوقع أن تقلّل مدة التنقل لآلاف الركاب يومياً.</p>
       <p><a class="more" href="#article">اقرأ الخبر كاملاً</a></p>
-      <p class="by" id="leadBy">بقلم فريق نبضة · قراءة في 6 دقائق</p>
+      <p class="by" id="leadBy" hidden></p>
       <div id="leadadm" class="mkpanel" hidden></div>
     </article>
     <div class="side">
@@ -1292,7 +1292,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function apply(x){
     if(typeof x.title==="string" && x.title){ T.textContent=x.title; LEAD.title=x.title; }
     if(typeof x.body==="string"){ B.textContent=x.body; LEAD.body=x.body; }
-    if(typeof x.by==="string"){ BY.textContent=x.by; LEAD.by=x.by; }
+    if(typeof x.by==="string"){ BY.textContent=x.by; LEAD.by=x.by; BY.hidden=!x.by.trim(); }
     if(typeof x.full==="string") LEAD.full=x.full;
     if(typeof x.imageAlt==="string"){ LEAD.imageAlt=x.imageAlt; applyImg(); }
     if(location.hash==="#article") window.renderArticle();
@@ -1322,7 +1322,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     pane.appendChild(field("عنوان الخبر",inT));
     pane.appendChild(field("ملخص الخبر (يظهر في الصفحة الرئيسية)",inB));
     pane.appendChild(field("النص الكامل (يظهر عند فتح الخبر، اترك سطراً فارغاً بين الفقرات)",inF));
-    pane.appendChild(field("سطر الكاتب (مثل: بقلم فريق نبضة · قراءة في 6 دقائق)",inBy));
+    pane.appendChild(field("سطر الكاتب (اختياري، يُترك فارغاً لإخفائه)",inBy));
     inAlt=document.createElement("input"); inAlt.type="text"; inAlt.maxLength=140;
     inFile=document.createElement("input"); inFile.type="file"; inFile.accept="image/*";
     var delImg=document.createElement("button"); delImg.type="button"; delImg.className="ghost"; delImg.textContent="حذف الصورة";

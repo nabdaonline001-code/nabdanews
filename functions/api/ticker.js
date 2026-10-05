@@ -11,6 +11,7 @@ export const SOURCES = [
   { id: "annahar", urls: ["https://www.annahar.com/rss"], skipLink: /\/(articles|opinion|opinions|lifestyle|style|entertainment|people|fun|tech|technology|health|culture|cinema|tv|stars|fashion|food|travel|cars|science|women|society|blogs)\//i },
   { id: "mtv", html: { url: "https://www.mtv.com.lb/", parse: (h, now) => parseMtv(h, now) }, urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
   { id: "hadath", html: { url: "https://www.alhadath.net/", parse: (h, now) => parseHadath(h, now) }, urls: ["https://www.alarabiya.net/feed/rss2/ar/last-page.xml", bing("alhadath.net")] },
+  { id: "nna", custom: now => fetchNna(now), urls: [] },
   { id: "nbn", urls: [bing("nbn.com.lb"), gnews("nbn.com.lb")] }
 ];
 
@@ -42,7 +43,7 @@ export function parseFeed(xml) {
 
 /* ---------- house rules ---------- */
 const MEDIA = /بالفيديو|بالصور|بالصورة|(?<!\p{L})صورة(?!\p{L})|(?<!\p{L})فيديو(?!\p{L})|شاهد|شاهدوا|إليكم|تفاصيل|تابعوا|\(صور|لقطات|بالأرقام/u;
-const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق|التحكم المروري|سرعة المشي|ترتبط بانخفاض|ترتبط بارتفاع|دراسة جديدة|حادثي سير|حادث سير|جرحى في حادث|شكراً لكل معلم|شكرا لكل معلم|يوم المعلم/;
+const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق|أسرار الصحف|مقدمات نشرات|عناوين الصحف|الصحف الصادرة|حفل تكريم|أقامت حفل|احتفلت|التحكم المروري|سرعة المشي|ترتبط بانخفاض|ترتبط بارتفاع|دراسة جديدة|حادثي سير|حادث سير|جرحى في حادث|شكراً لكل معلم|شكرا لكل معلم|يوم المعلم/;
 const MINOR = /بالجرم المشهود|سرقة|سارق|سطو|مشاجرة|إشكال|حادث سير|حادث سيارة|ضبطت قوى الأمن|ضبط مخدرات|ضبط كمية|توقيف شخص|توقيف مطلوب|نصائح|فوائد|وصفة|حظك|برجك|الطقس|حالة الطقس/;
 const LEB = /لبنان|اللبناني|الجنوب|بنت جبيل|النبطية|مرجعيون|حاصبيا|الضاحية|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|عيتا|كفرشوبا|شبعا|عيترون|الطيبة|الليطاني|صيدا|(?<!\p{L})صور(?!\p{L})/u;
 const ECON = /اقتصاد|الاقتصاد|البورصة|بورصة|الأسهم|الدولار|الليرة|مصرف|المصارف|البنك|بنك|النفط|برنت|الذهب|الفضة|الأسعار|التضخم|الموازنة|الضريبة|صندوق النقد|الصادرات|الواردات|الفائدة|المحروقات|البنزين|المازوت|الودائع|سندات|ناتج محلي|عملة/;
@@ -101,9 +102,35 @@ export function parseHadath(html, now = Date.now()) {
   return out;
 }
 
+// National News Agency: its RSS is frozen on old items, so read the news sitemaps instead. news.xml lists one sitemap
+// per section with its last-update time; each section has a per-day sitemap whose urls carry the headline as the slug
+// and the update time as lastmod.
+export function parseNnaDay(xml) {
+  const out = [];
+  for (const m of xml.matchAll(/<loc>[^<]*?\/news\/(\d+)\/([^<\/]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)) {
+    let slug = m[2]; try { slug = decodeURIComponent(slug); } catch (e) { continue; }
+    const title = slug.replace(/-+/g, " ").replace(/\s+/g, " ").trim(), ts = Date.parse(m[3]);
+    if (title && ts) out.push({ title, link: "https://nna-leb.gov.lb/ar/news/" + m[1], ts });
+  }
+  return out;
+}
+async function fetchNna(now) {
+  const get = async u => { const r = await fetch(u, { headers: { ...BROWSER, Accept: "application/xml,text/xml,*/*" }, signal: AbortSignal.timeout(5000) }); if (!r.ok) throw new Error("http-" + r.status); return r.text(); };
+  const idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml");
+  const cats = [...idx.matchAll(/\/sitemap\/cat\/(\d+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)].filter(m => now - Date.parse(m[2]) < 30 * 3600000).slice(0, 8).map(m => m[1]);
+  const b = new Date(now + 3 * 3600000), day = d => d.toISOString().slice(0, 10);
+  const days = [day(b)]; if (b.getUTCHours() < 4) days.push(day(new Date(b.getTime() - 86400000)));
+  const out = [];
+  await Promise.all(cats.flatMap(c => days.map(async d => { try { out.push(...parseNnaDay(await get(`https://nna-leb.gov.lb/ar/sitemap/n/${c}?date=${d}`))); } catch (e) {} })));
+  return out;
+}
+
 /* ---------- fetching ---------- */
 async function fetchFeed(src) {
   let last = "no-url";
+  if (src.custom) {
+    try { const items = await src.custom(Date.now()); if (items.length) return { items, via: "custom" }; last = "custom-empty"; } catch (e) { last = "custom-" + String(e.name || e.message || e); }
+  }
   if (src.html) {
     try {
       const r = await fetch(src.html.url, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(5000) });

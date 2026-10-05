@@ -55,6 +55,8 @@ export function parseFeed(xml) {
 /* ---------- house rules ---------- */
 const MEDIA = /بالفيديو|بالصور|بالصورة|(?<!\p{L})صورة(?!\p{L})|(?<!\p{L})فيديو(?!\p{L})|شاهد|شاهدوا|إليكم|تفاصيل|تابعوا|\(صور|لقطات|بالأرقام/u;
 const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق|مخدّرات|مخدرات|مروّج|مروجي|مداهمات|تاجر أسلحة|أسرار الصحف|مقدمات نشرات|عناوين الصحف|الصحف الصادرة|حفل تكريم|أقامت حفل|احتفلت|التحكم المروري|سرعة المشي|ترتبط بانخفاض|ترتبط بارتفاع|دراسة جديدة|حادثي سير|حادث سير|جرحى في حادث|شكراً لكل معلم|شكرا لكل معلم|يوم المعلم|هكذا|أولى لحظات|تتحدث عن|تتحدّث عن|التنمر|يُهدّد البشر|يهدد البشر|وهب الأعضاء|لكلّ محاربة|لكل محاربة|لستِ وحدكِ|لست وحدك|كارداشيان|مربيات|مربية|فاميلي|يحققان حلمهما|عرض حي|حفل زفاف|حفلة|يثير الجدل|تبكي|على المسرح|خلال تكريمها|خلال تكريمه|عساف|منى واصف|ملحم زين|ثناء|غنائه|غنائها|أغنيته|أغنيتها|مقدمة النشرة|مقدمة نشرة|ستالون|الأوسكار|بالطول والعرض|مراسلون :|إيقاق العالم|إيقاع العالم|كشاشي|تكريمات عالمية|بحاجة ماسّة|بحاجة ماسة|وحدات دم|حلقة اليوم|أبرز محطات حلقة|شمس الصباح|Avengers|Avatar|Endgame|شباك التذاكر|إيرادات الأفلام|مباشر مع|نافذة|الجزء الثاني|الجزء الأول|حلقة|بودكاست/;
+/* entertainment / celebrity / lifestyle / obituary-of-a-writer: never breaking news */
+const SHOWBIZ = /(?<!\p{L})(?:مغنّ?ي|مغنية|مطرب|مطربة|ممثل|ممثلة|ألبوم|أغنية|أغنيتها|أغنيته|كليب|إطلالة|تتألق|مهرجان|غرامي|ملكة جمال|موضة|رشاقة|ريجيم|حمية|أبراج|حظك|عيد ميلاد|خطوبة|خطبتها|يكشف سر|تكشف سر|مفاجأة صادمة|يثير الجدل|تثير الجدل|بالصور|وفاة الكاتب|وفاة الفنان|وفاة الفنانة|وفاة الممثل|وفاة المغني)(?!\p{L})/u;
 const MINOR = /بالجرم المشهود|سرقة|سارق|سطو|مشاجرة|إشكال|حادث سير|حادث سيارة|ضبطت قوى الأمن|ضبط مخدرات|ضبط كمية|توقيف شخص|توقيف مطلوب|نصائح|فوائد|وصفة|حظك|برجك|الطقس|حالة الطقس/;
 const LEB = /لبنان|اللبناني|الجنوب|بنت جبيل|النبطية|مرجعيون|حاصبيا|الضاحية|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|عيتا|كفرشوبا|شبعا|عيترون|الطيبة|الليطاني|صيدا|(?<!\p{L})صور(?!\p{L})/u;
 const ECON = /اقتصاد|الاقتصاد|البورصة|بورصة|الأسهم|الدولار|الليرة|مصرف|المصارف|البنك|بنك|النفط|برنت|الذهب|الفضة|الأسعار|التضخم|الموازنة|الضريبة|صندوق النقد|الصادرات|الواردات|الفائدة|المحروقات|البنزين|المازوت|الودائع|سندات|ناتج محلي|عملة/;
@@ -65,7 +67,7 @@ export function clean(t, link) {
   // "خاص"/"حصري" items and programme titles (نافذة…, مباشر مع…, "A | B") are not breaking news
   if (/^(خاص|حصري)(?!\p{L})/u.test(t) || /^(نافذة|مباشر مع|حلقة|بودكاست)(?!\p{L})/u.test(t) || /\s\|\s/.test(t)) return null;
   t = t.replace(/^عاجل\s*[|:\-–—]?\s*/, "");
-  if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t)) return null;
+  if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
   if (t.length < 18 || t.length > 190) return null;
   // word policy
   t = t.replace(/م[ي]?ل[ي]?ش[ي]?ات/g, "فصائل");
@@ -74,13 +76,35 @@ export function clean(t, link) {
     t = t.replace(/(?:ال)?عدو\s+(?=(?:ال)?إسرائيل)/g, "");
     t = t.replace(/العدوان/g, "الهجوم").replace(/عدوان/g, "هجوم");
   }
-  t = t.replace(/\s+/g, " ").trim();
-  return t.length >= 12 ? t : null;
+  t = tidy(t);
+  if (!t || arWords(t) < 4) return null;
+  return t;
 }
+/* typography and stray-noise clean-up so every headline reads like a newsroom headline */
+const NUM_OK_BEFORE = /^(إلى|الى|نحو|حوالي|قرابة|بنسبة|عند|حصيلة|مقتل|إصابة|وفاة|رقم|المرتبة|الجولة|يوم|عام|سنة|دقيقة|ساعة|جولة|الدور|المجموعة|الفئة|ب|ل|من|في|على|بين|و)$/;
+export function tidy(t) {
+  t = t.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g, " ").replace(/\s+/g, " ").trim();
+  t = t.replace(/^[\-–—•·|:؛,،\s]+|[\-–—•·|\s]+$/g, "");                       // stray bullets / dashes at the edges
+  t = t.replace(/\s*[|｜]\s*(?:قناة\s*)?(?:الجزيرة|العربية|الحدث|الجديد|إل بي سي|ام تي في|MTV|LBCI|النهار|الوكالة الوطنية للإعلام)\s*$/u, ""); // source suffix
+  t = t.replace(/"([^"]{2,}?)"/g, "«$1»").replace(/“([^”]{2,}?)”/g, "«$1»");    // ASCII / curly quotes → «»
+  t = t.replace(/\s+([:،؛.!])/g, "$1").replace(/([:،؛])(?=[^\s\d])/g, "$1 ");   // spacing around punctuation
+  t = t.replace(/([.!،:؛])\1+/g, "$1");
+  const m = t.match(/^(.*\S)\s+(\d{1,2})$/u);                                 // a stray counter glued to the end ("… لا طائل منه 4")
+  if (m) { const prev = m[1].split(" ").pop(); if (!NUM_OK_BEFORE.test(prev) && !/\d/.test(prev) && m[1].length > 30) t = m[1]; }
+  t = t.replace(/ترمب/g, "ترامب");                                               // one spelling for the same name
+  return t.replace(/\s+/g, " ").trim();
+}
+const arWords = t => (t.match(/[\u0621-\u064A]{2,}/g) || []).length;
 export function catOf(t) { return ECON.test(t) ? "economy" : SPORT.test(t) ? "sports" : "politics"; }
-const words = s => new Set(s.replace(/[\u064B-\u0652\u0640]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(w => w.length > 2));
-const similar = (a, b) => { const A = words(a), B = words(b); let i = 0; for (const w of A) if (B.has(w)) i++; return i / Math.min(A.size, B.size || 1) >= 0.6 && Math.min(A.size, B.size) >= 4; };
-const norm = s => s.replace(/[^\p{L}\p{N}]/gu, "");
+const STOP = new Set("في على من إلى الى عن مع بعد قبل أن ان إن التي الذي هذا هذه ذلك كان كانت يكون بين حول خلال أمام ضد لدى ثم أو او لا لم لن قد كل بعض اليوم بأن بان أكد اكد قال قالت يقول وقال يعلن تعلن اعلن غارة غارات سقوط جرحى جريح قتلى قتيل وزير وزيرة مجلس تسفر عن أمام امام رئيس مصدر مصادر بعد يؤكد تؤكد".split(" "));
+const fold = s => s.replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ترمب/g, "ترامب");
+const stem = w => w.replace(/(.)\1+/g, "$1").replace(/^(?:وال|بال|فال|كال|لل|ال|و|ل)(?=.{4})/, "").replace(/(?:ون|ين|ات|ان|ا|ي|ه|ن)$/, "").replace(/(?:ي|ا|ن)$/, "");
+const STOPS = new Set([...STOP].map(w => stem(fold(w))));
+const words = s => new Set(fold(s).replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).map(stem).filter(w => w.length > 2 && !STOP.has(w) && !STOPS.has(w)));
+/* two headlines are "the same story" when they share most of their content words (spelling-insensitive, light stemming) */
+const sameWord = (x, y) => x === y || (x.length >= 5 && y.length >= 5 && x.slice(0, 4) === y.slice(0, 4));
+const similar = (a, b) => { const A = [...words(a)], B = [...words(b)]; let i = 0; for (const w of A) if (B.some(v => sameWord(w, v))) i++; const m = Math.min(A.length, B.length); return m >= 3 && i / m >= 0.55 && i >= 3; };
+const norm = s => fold(s).replace(/[^\p{L}\p{N}]/gu, "");
 
 /* ---------- HTML front pages (sites with no usable RSS) ---------- */
 // MTV: article links are /News/<section>/<id>/<slug> with the headline in div.news-title. Ids grow with time, so the

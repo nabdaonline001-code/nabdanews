@@ -12,7 +12,11 @@ export const SOURCES = [
   { id: "mtv", html: { url: "https://www.mtv.com.lb/", parse: (h, now) => parseMtv(h, now) }, urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
   { id: "hadath", html: { url: "https://www.alhadath.net/", parse: (h, now) => parseHadath(h, now) }, urls: ["https://www.alarabiya.net/feed/rss2/ar/last-page.xml", bing("alhadath.net")] },
   { id: "nna", custom: now => fetchNna(now), urls: [] },
-  { id: "nbn", urls: [bing("nbn.com.lb"), gnews("nbn.com.lb")] }
+  { id: "nbn", urls: [bing("nbn.com.lb"), gnews("nbn.com.lb")] },
+  { id: "france24", urls: ["https://www.france24.com/ar/rss", gnews("france24.com/ar"), bing("france24.com/ar")], skipLink: /\/(culture|sport|video|tv-shows|programmes|reportage|magazine)\//i },
+  { id: "alaraby", urls: ["https://www.alaraby.com/rss", gnews("alaraby.com")], skipLink: /\/(opinion|culture|lifestyle|sport|programs|tv-guide)\//i },
+  { id: "axiosar", urls: ["https://www.axiosar.com/feed", "https://axiosar.com/feed/", gnews("axiosar.com"), bing("axiosar.com")] },
+  { id: "shams", custom: () => fetchYouTube("@Shamsnewstv"), urls: [], fix: t => t.replace(/\s*[|｜]\s*(?:قناة\s*)?شمس.*$/i, "").replace(/#\S+/g, "").trim() }
 ];
 
 /* ---------- parsing ---------- */
@@ -37,6 +41,13 @@ export function parseFeed(xml) {
     const title = tag(b, "title"), link = tag(b, "link"), when = tag(b, "pubDate") || tag(b, "dc:date") || tag(b, "published");
     const ts = Date.parse(when);
     if (title && isFinite(ts)) out.push({ title, link, ts });
+  }
+  if (!out.length) { /* Atom (e.g. YouTube channel feeds) */
+    for (const m of xml.matchAll(/<entry[\s>][\s\S]*?<\/entry>/gi)) {
+      const b = m[0], lm = b.match(/<link[^>]*href="([^"]+)"/i);
+      const title = tag(b, "title"), ts = Date.parse(tag(b, "published") || tag(b, "updated"));
+      if (title && isFinite(ts)) out.push({ title, link: lm ? decode(lm[1]) : "", ts });
+    }
   }
   return out;
 }
@@ -125,6 +136,18 @@ async function fetchNna(now) {
   return out;
 }
 
+/* ---------- YouTube channel (sources with no website feed) ---------- */
+async function fetchYouTube(handle) {
+  const r = await fetch("https://www.youtube.com/" + handle, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5", Cookie: "CONSENT=YES+1; SOCS=CAI" }, signal: AbortSignal.timeout(6000) });
+  if (!r.ok) throw new Error("yt-page-" + r.status);
+  const h = await r.text();
+  const m = h.match(/"externalId":"(UC[\w-]{22})"/) || h.match(/"channelId":"(UC[\w-]{22})"/) || h.match(/channel\/(UC[\w-]{22})/);
+  if (!m) throw new Error("yt-no-id");
+  const f = await fetch("https://www.youtube.com/feeds/videos.xml?channel_id=" + m[1], { headers: BROWSER, signal: AbortSignal.timeout(5000) });
+  if (!f.ok) throw new Error("yt-feed-" + f.status);
+  return parseFeed(await f.text());
+}
+
 /* ---------- fetching ---------- */
 async function fetchFeed(src) {
   let last = "no-url";
@@ -157,7 +180,8 @@ export async function build(now = Date.now()) {
     for (const it of r.items) {
       if (s.skipLink && s.skipLink.test(it.link)) continue;
       if (it.ts > now + 600000) continue;
-      const text = clean(/news\.google\./.test(r.via || "") ? stripSource(it.title) : it.title, it.link);
+      const raw = s.fix ? s.fix(it.title) : it.title;
+      const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link);
       if (text) mine.push({ text, ts: it.ts, src: s.id });
     }
     mine.sort((a, b) => b.ts - a.ts);

@@ -362,6 +362,9 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .ad img{display:block;width:100%;height:auto;max-height:170px;object-fit:cover;margin:0 0 10px}
 .aprev{display:block;max-width:160px;max-height:100px;object-fit:cover;margin:6px 0}
 .arow input[type=file],.aadd input[type=file]{padding:6px}
+.bar nav{margin-inline-start:28px;margin-inline-end:auto}
+.bar .sbtn{flex:none}
+@media (max-width:520px){.bar nav{margin-inline-start:0}}
 .sbtn{background:none;border:0;color:#5a7567;cursor:pointer;padding:6px 10px;display:inline-flex;align-items:center}
 .sbtn:hover{background:rgba(90,117,103,.1)}
 .sbtn:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
@@ -415,7 +418,6 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
   <div class="wrap bar">
     <a class="logo" dir="ltr" href="#home" aria-label="NABDA, نبضة">NABDA <span class="sep" aria-hidden="true">|</span> <span class="ar" lang="ar" dir="rtl">نبضة</span></a>
     <nav aria-label="القائمة الرئيسية">
-      <button class="sbtn" id="sbtn" type="button" aria-label="بحث" aria-expanded="false" aria-controls="srch"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
       <div class="dd">
         <button class="ddb" type="button" aria-expanded="false" aria-controls="ddp">الأخبار <span aria-hidden="true">▾</span></button>
         <div class="ddp" id="ddp" hidden>
@@ -430,6 +432,7 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
       <a class="tl" href="#sports">رياضة</a>
       <a class="tl" href="#culture">ثقافة</a>
     </nav>
+    <button class="sbtn" id="sbtn" type="button" aria-label="بحث" aria-expanded="false" aria-controls="srch"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
   </div>
 </header>
 <section class="wrap srch" id="srch" lang="ar" dir="rtl" hidden aria-label="البحث">

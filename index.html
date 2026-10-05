@@ -360,6 +360,7 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 @keyframes nblink{0%,100%{opacity:1}50%{opacity:.1}}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a::before{animation:none}}
 .ad img{display:block;width:100%;height:auto;max-height:170px;object-fit:cover;margin:0 0 10px}
+.sthumb{display:block;width:100%;height:auto;max-height:190px;object-fit:cover;margin:0 0 8px;background:var(--line)}
 .aprev{display:block;max-width:160px;max-height:100px;object-fit:cover;margin:6px 0}
 .arow input[type=file],.aadd input[type=file]{padding:6px}
 .bar nav{margin-inline-start:28px;margin-inline-end:auto}
@@ -614,6 +615,7 @@ var NEWS=[];
 function newsHref(id){ return "#news/"+encodeURIComponent(id); }
 function storyEl(it,lbl){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
+  if(it.image&&/^data:image\//.test(it.image)){ var ia=el("a"); ia.href=newsHref(it.id); ia.tabIndex=-1; ia.setAttribute("aria-hidden","true"); var im=el("img","sthumb"); im.src=it.image; im.alt=""; im.loading="lazy"; ia.appendChild(im); d.appendChild(ia); }
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
   h.appendChild(a); d.appendChild(h);
   if(it.summary) d.appendChild(el("p",null,it.summary));
@@ -710,7 +712,7 @@ function renderNewsArticle(id){
   var it=null; NEWS.forEach(function(n){ if(n.id===id) it=n; });
   if(!it){ buildArticle({tag:"",title:"الخبر غير موجود",meta:"",sum:"ربما حُذف هذا الخبر أو تغيّر رابطه.",full:""}); return null; }
   var dt=""; try{ dt=new Date(it.order).toLocaleDateString("ar",{year:"numeric",month:"long",day:"numeric"}); }catch(e){}
-  buildArticle({tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full});
+  buildArticle({tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title});
   return it;
 }
 function route(keep){
@@ -1185,6 +1187,34 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     catch(e){ say(e&&e.code==="invalid_argument"?"ليست لديك صلاحية التعديل.":"تعذّر الحفظ، حاول مرة أخرى."); }
     btn.disabled=false;
   }
+  var curImg="", fPrev, fFile, fRm;
+  function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
+  function shrinkImg(file){
+    return new Promise(function(res,rej){
+      var fr=new FileReader();
+      fr.onerror=function(){ rej(new Error("read")); };
+      fr.onload=function(){
+        var img=new Image();
+        img.onerror=function(){ rej(new Error("decode")); };
+        img.onload=function(){
+          var scale=Math.min(1,900/Math.max(img.naturalWidth,img.naturalHeight)), out="";
+          for(var round=0;round<6;round++){
+            var c=document.createElement("canvas");
+            c.width=Math.max(1,Math.round(img.naturalWidth*scale)); c.height=Math.max(1,Math.round(img.naturalHeight*scale));
+            var ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+            var q=0.8; out=c.toDataURL("image/jpeg",q);
+            while(out.length>100000 && q>0.4){ q-=0.1; out=c.toDataURL("image/jpeg",q); }
+            if(out.length<=100000) break;
+            scale*=0.8;
+          }
+          if(out.length>125000) rej(new Error("big")); else res(out);
+        };
+        img.src=fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  function showImg(d){ curImg=d||""; if(fPrev){ fPrev.hidden=!curImg; if(curImg) fPrev.src=curImg; else fPrev.removeAttribute("src"); } if(fRm) fRm.hidden=!curImg; if(!curImg&&fFile) fFile.value=""; }
   function field(label,node){ var w=el("label","f"); w.appendChild(el("span",null,label)); w.appendChild(node); return w; }
   function secSelect(withAll){
     var sel=document.createElement("select");
@@ -1193,11 +1223,11 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return sel;
   }
   function resetForm(){
-    editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; fUrl.value="";
+    editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; fUrl.value=""; showImg("");
     fSave.textContent="إضافة الخبر"; fCancel.hidden=true; fHead.textContent="إضافة خبر جديد";
   }
   function startEdit(it){
-    editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fUrl.value=it.url||"";
+    editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fUrl.value=it.url||""; showImg(it.image);
     fSave.textContent="حفظ التعديل"; fCancel.hidden=false; fHead.textContent="تعديل الخبر"; say("");
     fTitle.focus();
   }
@@ -1236,6 +1266,16 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     fFull=document.createElement("textarea"); fFull.maxLength=8000; fFull.style.minHeight="200px";
     box.appendChild(field("القسم",fSec)); box.appendChild(field("العنوان",fTitle));
     box.appendChild(field("الرابط (لقسم «اقرأ»: يفتح عند الضغط على العنوان. لقسم «فيديو»: رابط الفيديو من يوتيوب أو فيسبوك أو فيميو أو ملف mp4)",fUrl));
+    fFile=document.createElement("input"); fFile.type="file"; fFile.accept="image/*"; fFile.setAttribute("aria-label","صورة الخبر");
+    fPrev=document.createElement("img"); fPrev.className="aprev"; fPrev.alt="معاينة صورة الخبر"; fPrev.hidden=true;
+    fRm=el("button","ghost","إزالة الصورة"); fRm.type="button"; fRm.hidden=true; fRm.onclick=function(){ showImg(""); say("أُزيلت الصورة. اضغط حفظ لتثبيت ذلك."); };
+    fFile.onchange=function(){
+      var file=fFile.files&&fFile.files[0]; if(!file) return;
+      if(!/^image\//.test(file.type)){ say("اختر ملف صورة."); fFile.value=""; return; }
+      say("جارٍ تجهيز الصورة...");
+      shrinkImg(file).then(function(d){ showImg(d); say("تم اختيار الصورة. اضغط حفظ/إضافة لتثبيتها."); },function(){ say("تعذّر تجهيز الصورة، جرّب صورة أخرى."); });
+    };
+    var imgW=field("صورة الخبر (اختيارية، تظهر في القائمة وفي صفحة الخبر)",fFile); imgW.appendChild(fPrev); imgW.appendChild(fRm); box.appendChild(imgW);
     box.appendChild(field("الملخص (سطر أو سطران)",fSum));
     box.appendChild(field("النص الكامل (اترك سطراً فارغاً بين الفقرات)",fFull));
     var btns=el("div","btns");
@@ -1245,7 +1285,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     fSave.onclick=function(){
       var t=fTitle.value.trim(); if(!t){ say("اكتب عنوان الخبر أولاً."); fTitle.focus(); return; }
       var uu=fUrl.value.trim(); if(uu&&!/^https?:\/\//i.test(uu)){ say("الرابط يجب أن يبدأ بـ https://"); fUrl.focus(); return; }
-      var data={section:fSec.value,title:t,summary:fSum.value.trim(),full:fFull.value.trim(),url:uu};
+      var data={section:fSec.value,title:t,summary:fSum.value.trim(),full:fFull.value.trim(),url:uu,image:curImg};
       if(editing){ var id=editing; run(fSave,async function(){ await col.doc(id).update(data); resetForm(); },"تم حفظ التعديل."); }
       else{ data.order=Date.now(); run(fSave,async function(){ await col.add(data); resetForm(); },"تمت إضافة الخبر."); }
     };
@@ -1282,7 +1322,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   col.orderBy("order","desc").onSnapshot(function(snap){
     NEWS=snap.docs.map(function(d){ var x=d.data()||{};
-      return {id:d.id,section:String(x.section||""),title:String(x.title||""),summary:String(x.summary||""),full:String(x.full||""),url:String(x.url||""),order:Number(x.order)||0}; })
+      return {id:d.id,section:String(x.section||""),title:String(x.title||""),summary:String(x.summary||""),full:String(x.full||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0}; })
       .filter(function(i){ return i.title && SECDEF.hasOwnProperty(i.section); });
     window.refreshViews(); renderList();
   },function(){ /* keep the sample stories if the store is unavailable */ });

@@ -2,16 +2,17 @@
    house rules (word policy, no questions / "watch the video" teasers / petty crime), keeps only recent items (60 min,
    widened up to 4 h when the news is quiet), and is edge-cached for 5 minutes. Public, read-only. */
 const BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/rss+xml,application/xml,text/xml,*/*", "Accept-Language": "ar,en;q=0.8" };
+const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("site:" + site)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
 export const SOURCES = [
   { id: "jazeera", urls: ["https://www.aljazeera.net/rss"], skipLink: /\/(opinions|lifestyle|blogs|culture|features|health|programs)\// },
   { id: "jadeed", urls: ["https://www.aljadeed.tv/Rss/latest-news/ar"] },
   { id: "lbci", urls: ["https://www.lbcgroup.tv/Rss/latest-news/ar"] },
   { id: "annahar", urls: ["https://www.annahar.com/rss"] },
-  { id: "mtv", urls: [gnews("mtv.com.lb")], strip: true },
-  { id: "mayadeen", urls: ["https://www.almayadeen.net/rss", gnews("almayadeen.net")] },
-  { id: "hadath", urls: [gnews("alhadath.net"), "https://www.alarabiya.net/feed/rss2/ar/last-page.xml"] },
-  { id: "nbn", urls: [gnews("nbn.com.lb")], strip: true }
+  { id: "mtv", urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
+  { id: "mayadeen", urls: ["https://www.almayadeen.net/rss", bing("almayadeen.net"), gnews("almayadeen.net")] },
+  { id: "hadath", urls: [bing("alhadath.net"), "https://www.alarabiya.net/feed/rss2/ar/last-page.xml"] },
+  { id: "nbn", urls: [bing("nbn.com.lb"), gnews("nbn.com.lb")] }
 ];
 
 /* ---------- parsing ---------- */
@@ -63,7 +64,7 @@ async function fetchFeed(src) {
   let last = "no-url";
   for (const u of src.urls) {
     try {
-      const r = await fetch(u, { headers: BROWSER, signal: AbortSignal.timeout(5000) });
+      const r = await fetch(u, { headers: BROWSER, signal: AbortSignal.timeout(4000) });
       if (!r.ok) { last = "http-" + r.status; continue; }
       const items = parseFeed(await r.text()); if (!items.length) { last = "empty"; continue; }
       return { items, via: u };
@@ -81,7 +82,7 @@ export async function build(now = Date.now()) {
     for (const it of r.items) {
       if (s.skipLink && s.skipLink.test(it.link)) continue;
       if (it.ts > now + 600000) continue;
-      const text = clean(s.strip || /news\.google\./.test(r.via || "") ? stripSource(it.title) : it.title, it.link);
+      const text = clean(/news\.google\./.test(r.via || "") ? stripSource(it.title) : it.title, it.link);
       if (text) mine.push({ text, ts: it.ts, src: s.id });
     }
     mine.sort((a, b) => b.ts - a.ts);
@@ -108,7 +109,7 @@ export async function build(now = Date.now()) {
 export async function onRequestGet({ request, waitUntil }) {
   const cache = typeof caches !== "undefined" ? caches.default : null;
   const key = new Request(new URL(request.url).origin + "/api/ticker");
-  if (cache) { const hit = await cache.match(key); if (hit) return hit; }
+  if (cache && !new URL(request.url).searchParams.has("fresh")) { const hit = await cache.match(key); if (hit) return hit; }
   const data = await build();
   const res = new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": data.items.length ? "public, max-age=300" : "public, max-age=60" } });
   if (cache) { const p = cache.put(key, res.clone()); if (waitUntil) waitUntil(p); else await p; }

@@ -913,6 +913,18 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var DIRS=[["up","ارتفاع ▲"],["down","انخفاض ▼"],["flat","ثابت"]];
   function readItem(d){ var x=d.data()||{}; var dr=x.dir==="down"?"down":x.dir==="flat"?"flat":"up"; return {id:d.id,label:String(x.label||""),value:String(x.value||""),dir:dr,order:Number(x.order)||0}; }
   function arrow(dr){ return dr==="up"?"▲ ":dr==="down"?"▼ ":""; }
+  /* live prices (gold, silver, Brent): rows are matched by their label; refreshed every 5 minutes */
+  var LIVE=null;
+  function liveKey(l){ return /الذهب/.test(l)?"gold":/الفضة/.test(l)?"silver":/برنت|النفط/.test(l)?"brent":""; }
+  function fmtLive(k){
+    var d=k&&LIVE&&LIVE[k]; if(!d||typeof d.price!=="number") return null;
+    var v="$"+d.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}), dir="flat";
+    if(typeof d.pct==="number"){ dir=d.pct>0?"up":d.pct<0?"down":"flat"; v+="  "+(d.pct>0?"+":d.pct<0?"\u2212":"")+Math.abs(d.pct).toFixed(2)+"%"; }
+    return {value:v,dir:dir};
+  }
+  function loadLive(){
+    fetch("/api/markets",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(j){ if(j){ LIVE=j; renderMarkets(); } }).catch(function(){});
+  }
   function renderMarkets(){
     rowsEl.textContent="";
     var bd=rowsEl.closest(".board"); if(bd){ bd.hidden=!items.length&&!adminOn; if(window.syncSide) syncSide(); }
@@ -920,7 +932,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     items.forEach(function(it){
       var r=document.createElement("div"); r.className="mk";
       var a=document.createElement("span"); a.textContent=it.label;
-      var b=document.createElement("span"); b.className=it.dir; b.textContent=arrow(it.dir)+it.value;
+      var lv=fmtLive(liveKey(it.label)), b=document.createElement("span");
+      if(lv){ b.className=lv.dir; b.textContent=arrow(lv.dir)+lv.value; b.style.direction="ltr"; b.style.unicodeBidi="isolate"; b.style.whiteSpace="nowrap"; b.style.fontSize=".92em"; }
+      else{ b.className=it.dir; b.textContent=arrow(it.dir)+it.value; }
       r.appendChild(a); r.appendChild(b); rowsEl.appendChild(r);
     });
   }
@@ -994,6 +1008,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     };
     head.appendChild(btn);
   }
+  loadLive(); setInterval(loadLive,300000);
   col.orderBy("order","asc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){return i.label&&i.value;});
     renderMarkets(); renderList();

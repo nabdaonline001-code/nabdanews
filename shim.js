@@ -1,6 +1,6 @@
 /* NABDA static shim.
    Visitors: a read-only "db" served from data/site.json; the two forms become e-mail.
-   Owner: footer link "دخول المدير" (or nabdanews.org/#admin) -> password. A signed HttpOnly cookie is set by /api/login
+   Owner: footer link "Log in" (or nabdanews.org/#admin) -> password. A signed HttpOnly cookie is set by /api/login
    (Cloudflare Pages Functions); each change is sent to /api/save, which commits data/site.json to GitHub
    (the site redeploys itself within about a minute). */
 (function(){
@@ -128,8 +128,8 @@
   function openLogin(){
     var ov=h("div","position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px");
     var bx=h("form","background:#fff;color:#2b3a33;max-width:420px;width:100%;padding:22px;border-top:8px solid #5a7567;font:15px/1.8 'Noto Kufi Arabic',Tahoma,sans-serif");
-    bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","دخول المدير");
-    bx.appendChild(h("h2","margin:0 0 10px;font-size:1.2rem;color:#5a7567","دخول المدير"));
+    bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","Log in");
+    bx.appendChild(h("h2","margin:0 0 10px;font-size:1.2rem;color:#5a7567","Log in"));
     var usr=h("input","width:100%;box-sizing:border-box;padding:10px;margin-bottom:8px;border:1px solid #5a7567;font:inherit;direction:ltr"); usr.type="text"; usr.placeholder="اسم المستخدم"; usr.autocomplete="username"; usr.setAttribute("aria-label","اسم المستخدم");
     bx.appendChild(usr);
     var inp=h("input","width:100%;box-sizing:border-box;padding:10px;border:1px solid #5a7567;font:inherit;direction:ltr"); inp.type="password"; inp.placeholder="كلمة المرور"; inp.autocomplete="current-password"; inp.setAttribute("aria-label","كلمة المرور");
@@ -163,7 +163,7 @@
   }
   function footerLink(){
     var f=document.querySelector("footer.ft")||document.querySelector("footer"); if(!f) return;
-    var a=h("a","display:inline-block;margin:14px 16px 0;padding:6px 16px;border:1px solid currentColor;font:600 .95rem 'Noto Kufi Arabic',Tahoma,sans-serif;cursor:pointer;color:inherit;text-decoration:none","تسجيل الدخول | Login");
+    var a=h("a","display:inline-block;margin:14px 16px 0;padding:6px 16px;border:1px solid currentColor;font:600 .95rem 'Noto Kufi Arabic',Tahoma,sans-serif;cursor:pointer;color:inherit;text-decoration:none","Log in");
     a.href="#admin"; a.setAttribute("rel","nofollow"); f.appendChild(a);
     a.addEventListener("click",function(e){ e.preventDefault(); openLogin(); });
   }

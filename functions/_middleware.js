@@ -9,7 +9,7 @@ const PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>NABDA | نبضة — نعود قريباً</title>
+<title>NABDA | نبضة — قريباً</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700;900&display=swap">
 <style>
@@ -21,6 +21,7 @@ main{min-height:100%;display:flex;flex-direction:column;align-items:center;justi
 h1{font-weight:900;font-size:clamp(72px,18vw,140px);line-height:1.15;margin:4px 0 0}
 svg{display:block;width:min(420px,86vw);height:auto;margin:6px 0 26px}
 p{margin:0 0 8px;font-size:clamp(17px,4.4vw,21px);line-height:1.9;max-width:34em}
+.brief{max-width:26em;opacity:.9}
 .soon{font-weight:700;font-size:clamp(22px,6vw,30px);margin-bottom:12px}
 footer{position:fixed;inset-inline:0;bottom:0;padding:12px 16px;display:flex;justify-content:center}
 .lg{background:none;border:1px solid var(--g);color:var(--g);font:600 14px "Noto Kufi Arabic",Tahoma,sans-serif;padding:6px 16px;cursor:pointer;border-radius:0;direction:ltr}
@@ -59,8 +60,8 @@ h1.rise{animation:rise .9s ease-out .3s forwards,beat 2.8s ease-in-out 1.4s infi
   <div class="lat rise">NABDA</div>
   <h1 class="rise">نبضة</h1>
   <svg class="rise" viewBox="0 0 420 70" aria-hidden="true"><polyline class="ecg-base" points="0,35 180,35 194,35 206,10 224,62 242,4 256,35 420,35" fill="none" stroke="#5a7567" stroke-width="4" stroke-linejoin="miter" stroke-linecap="square"/><polyline class="ecg" pathLength="100" points="0,35 180,35 194,35 206,10 224,62 242,4 256,35 420,35" fill="none" stroke="#5a7567" stroke-width="4.5" stroke-linejoin="miter" stroke-linecap="round"/></svg>
-  <p class="soon rise">نعود قريباً</p>
-  <p class="rise">نعمل على تجهيز الموقع ليصلكم بأفضل صورة. شكراً لصبركم.</p>
+  <p class="soon rise">قريباً</p>
+  <p class="rise brief">موقع إخباري عربي يتابع الأحداث لحظة بلحظة: أخبار عاجلة، سياسة، اقتصاد، رياضة وأسواق، بلغة واضحة وموجزة.</p>
   <form id="f" hidden>
     <label for="u" class="lat" style="letter-spacing:0;padding:0;font-weight:500">اسم المستخدم</label>
     <input id="u" autocomplete="username" required>

@@ -29,10 +29,20 @@ form[hidden]{display:none}
 input{width:100%;padding:10px;border:1px solid var(--g);border-radius:0;font:inherit;direction:ltr;color:#2b3a33}
 input:focus-visible,.lg:focus-visible,button:focus-visible{outline:3px solid var(--g);outline-offset:2px}
 form button{padding:9px;border:1px solid var(--g);background:var(--g);color:#fff;font:inherit;cursor:pointer;border-radius:0}
+.snd{position:fixed;top:14px;inset-inline-start:14px;width:42px;height:42px;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.snd svg{width:20px;height:20px;margin:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.snd .off{display:none}.snd.muted .on{display:none}.snd.muted .off{display:block}
+.snd.hint{animation:pl 1.6s ease-in-out infinite}
+@keyframes pl{50%{box-shadow:0 0 0 8px rgba(90,117,103,.18)}}
+@media (prefers-reduced-motion:reduce){.snd.hint{animation:none}}
 #st{min-height:1.6em;color:#C8102E;font-size:14px;margin:0}
 </style>
 </head>
 <body>
+<button class="snd muted hint" id="snd" type="button" aria-label="تشغيل الموسيقى" title="موسيقى">
+  <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+  <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+</button>
 <main>
   <div class="lat">NABDA</div>
   <h1>نبضة</h1>
@@ -59,6 +69,57 @@ f.onsubmit=function(e){
   .then(function(r){ if(r.ok){ location.reload(); } else { st.textContent="اسم المستخدم أو كلمة المرور غير صحيحة."; } })
   .catch(function(){ st.textContent="تعذّر الدخول، حاول مرة أخرى."; });
 };
+
+/* calm ambient music, synthesised in the browser (no audio file). Browsers block sound until the visitor taps once,
+   so it starts on the first tap anywhere on the page; the round button mutes / unmutes it. */
+(function(){
+  var AC=window.AudioContext||window.webkitAudioContext, btn=document.getElementById("snd");
+  if(!AC){ btn.hidden=true; return; }
+  var ctx,master,wet,on=false,started=false,timer,step=0,wanted=true;
+  var CH=[[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,66]];            /* Am7 Fmaj7 Cmaj7 G6 */
+  var hz=function(n){return 440*Math.pow(2,(n-69)/12);};
+  function tone(n,t,dur,vol,type,out){
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type; o.frequency.value=hz(n); o.detune.value=(Math.random()-.5)*8;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+Math.min(1.6,dur*.4));
+    g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t+dur+.1);
+  }
+  function bar(){
+    if(!on) return;
+    var c=CH[step%4],t=ctx.currentTime+.05,len=6;
+    c.forEach(function(n){ tone(n-12,t,len+1.5,.05,"sine",master); tone(n,t,len+1,.022,"triangle",master); });
+    tone(c[0]-24,t,len+1,.07,"sine",master);
+    for(var i=0;i<8;i++){ var n=c[(i*3+step)%4]+12+(i%3===2?12:0); tone(n,t+i*(len/8)+.1,2.4,.03,"sine",wet); }
+    step++; timer=setTimeout(bar,len*1000-300);
+  }
+  function build(){
+    ctx=new AC(); master=ctx.createGain(); master.gain.value=0; master.connect(ctx.destination);
+    wet=ctx.createGain(); wet.gain.value=1; wet.connect(master);
+    var d=ctx.createDelay(1.5); d.delayTime.value=.55; var fb=ctx.createGain(); fb.gain.value=.42;
+    var lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1800;
+    wet.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(master);
+  }
+  function play(){
+    if(!ctx) build();
+    ctx.resume().then(function(){
+      if(ctx.state!=="running") return;
+      on=true; btn.classList.remove("muted","hint"); btn.setAttribute("aria-label","إيقاف الموسيقى");
+      master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(.9,ctx.currentTime,1.2);
+      if(!started){ started=true; bar(); }
+    }).catch(function(){});
+  }
+  function stop(){
+    on=false; started=false; clearTimeout(timer); btn.classList.add("muted"); btn.classList.remove("hint");
+    btn.setAttribute("aria-label","تشغيل الموسيقى");
+    if(ctx){ master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(0,ctx.currentTime,.25); }
+  }
+  btn.onclick=function(e){ e.stopPropagation(); wanted=false; if(on) stop(); else { wanted=true; play(); } };
+  function first(e){ if(e&&e.target&&e.target.closest&&e.target.closest("#snd")) return; if(wanted&&!on) play(); }
+  ["pointerdown","keydown","touchstart"].forEach(function(ev){ addEventListener(ev,function h(e){ first(e); if(on) removeEventListener(ev,h); },{passive:true}); });
+  try{ play(); }catch(e){}
+  document.addEventListener("visibilitychange",function(){ if(!ctx||!on) return; if(document.hidden) ctx.suspend(); else ctx.resume(); });
+})();
 </script>
 </body>
 </html>`;

@@ -8,7 +8,7 @@ export const SOURCES = [
   { id: "jazeera", urls: ["https://www.aljazeera.net/rss"], skipLink: /\/(opinions|lifestyle|blogs|culture|features|health|programs)\// },
   { id: "jadeed", urls: ["https://www.aljadeed.tv/Rss/latest-news/ar"] },
   { id: "lbci", urls: ["https://www.lbcgroup.tv/Rss/latest-news/ar"] },
-  { id: "annahar", urls: ["https://www.annahar.com/rss"] },
+  { id: "annahar", urls: ["https://www.annahar.com/rss"], skipLink: /\/(articles|opinion|opinions|lifestyle|style|entertainment|people|fun|tech|technology|health|culture|cinema|tv|stars|fashion|food|travel|cars|science|women|society|blogs)\//i },
   { id: "mtv", urls: [bing("mtv.com.lb"), gnews("mtv.com.lb")] },
   { id: "mayadeen", urls: ["https://www.almayadeen.net/rss", bing("almayadeen.net"), gnews("almayadeen.net")] },
   { id: "hadath", urls: [bing("alhadath.net"), "https://www.alarabiya.net/feed/rss2/ar/last-page.xml"] },
@@ -37,6 +37,7 @@ export function parseFeed(xml) {
 
 /* ---------- house rules ---------- */
 const MEDIA = /بالفيديو|بالصور|بالصورة|(?<!\p{L})صورة(?!\p{L})|(?<!\p{L})فيديو(?!\p{L})|شاهد|شاهدوا|إليكم|تفاصيل|تابعوا|\(صور|لقطات|بالأرقام/u;
+const SOFT = /\.{2,}|…|عُثر عليه جثة|عثر عليه جثة|عارضة أزياء|ظهور مفاجئ|يعترف|مسلسل|فيلم|الفنانة|الفنان|نجمة|نجوم|هوليوود|عرض أزياء|رحلة الحب|زواج|طلاق/;
 const MINOR = /بالجرم المشهود|سرقة|سارق|سطو|مشاجرة|إشكال|حادث سير|حادث سيارة|ضبطت قوى الأمن|ضبط مخدرات|ضبط كمية|توقيف شخص|توقيف مطلوب|نصائح|فوائد|وصفة|حظك|برجك|الطقس|حالة الطقس/;
 const LEB = /لبنان|اللبناني|الجنوب|بنت جبيل|النبطية|مرجعيون|حاصبيا|الضاحية|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|عيتا|كفرشوبا|شبعا|عيترون|الطيبة|الليطاني|صيدا|(?<!\p{L})صور(?!\p{L})/u;
 const ECON = /اقتصاد|الاقتصاد|البورصة|بورصة|الأسهم|الدولار|الليرة|مصرف|المصارف|البنك|بنك|النفط|برنت|الذهب|الفضة|الأسعار|التضخم|الموازنة|الضريبة|صندوق النقد|الصادرات|الواردات|الفائدة|المحروقات|البنزين|المازوت|الودائع|سندات|ناتج محلي|عملة/;
@@ -44,7 +45,7 @@ const SPORT = /رياضة|الرياضة|مباراة|المباراة|كأس|د
 export function clean(t, link) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^(عاجل|خاص|حصري)\s*[|:\-–—]\s*/, "").replace(/^عاجل\s+/, "");
-  if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t)) return null;
+  if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t)) return null;
   if (t.length < 18 || t.length > 190) return null;
   // word policy
   t = t.replace(/م[ي]?ل[ي]?ش[ي]?ات/g, "فصائل");

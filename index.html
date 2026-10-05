@@ -348,6 +348,9 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .readbox .rd{display:block;color:#fff;padding:9px 0;border-top:1px solid rgba(255,255,255,.35);font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.95rem;line-height:1.6}
 .readbox .rd:hover{text-decoration:underline}
 .readbox p{color:#fff;margin:0}
+.readbox .admbtn{color:#fff;border-color:#fff}
+.readbox .admbtn:hover{background:rgba(255,255,255,.15)}
+.readbox .admbtn:focus-visible{outline-color:#fff}
 #s-news .story h3 a::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:#5a7567;margin-inline-end:10px;vertical-align:middle;animation:nblink 1.2s ease-in-out infinite}
 @keyframes nblink{0%,100%{opacity:1}50%{opacity:.1}}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a::before{animation:none}}
@@ -640,7 +643,7 @@ function renderHome(){
     rl.textContent="";
     var rn=NEWS.filter(function(n){ return n.section==="read"; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
     if(!rn.length) rl.appendChild(el("p",null,"لا توجد مواد بعد."));
-    var rb=rl.closest(".readbox"); if(rb) rb.hidden=!rn.length;
+    var rb=rl.closest(".readbox"); if(rb) rb.hidden=!rn.length&&!window.NEWSADMIN;
     rn.forEach(function(it){ var a=el("a","rd",it.title), u=/^https?:\/\//i.test(it.url||"")?it.url:""; if(u){ a.href=u; a.target="_blank"; a.rel="noopener noreferrer"; } else a.href=newsHref(it.id); rl.appendChild(a); });
   }
   HOMEKEYS.forEach(function(k){
@@ -1183,6 +1186,18 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       if(open){ if(!built) build(); fTitle.focus(); }
     };
     bar.appendChild(btn);
+    window.NEWSADMIN=true;
+    var rh=document.getElementById("readh");
+    if(rh){
+      var rbtn=el("button","admbtn","إدارة"); rbtn.type="button"; rbtn.setAttribute("aria-controls","newsadm");
+      rbtn.onclick=function(){
+        if(panel.hidden) btn.onclick();
+        if(!built) build();
+        resetForm(); fSec.value="read"; filt.value="read"; renderList();
+        panel.scrollIntoView({behavior:"smooth",block:"start"}); fTitle.focus();
+      };
+      rh.appendChild(rbtn);
+    }
   }
   col.orderBy("order","desc").onSnapshot(function(snap){
     NEWS=snap.docs.map(function(d){ var x=d.data()||{};

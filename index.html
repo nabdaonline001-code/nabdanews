@@ -917,10 +917,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var LIVE=null;
   function liveKey(l){ return /الذهب/.test(l)?"gold":/الفضة/.test(l)?"silver":/برنت|النفط/.test(l)?"brent":""; }
   function fmtLive(k){
-    var d=k&&LIVE&&LIVE[k]; if(!d||typeof d.price!=="number") return null;
-    var v="$"+d.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}), dir="flat";
-    if(typeof d.pct==="number"){ dir=d.pct>0?"up":d.pct<0?"down":"flat"; v+="  "+(d.pct>0?"+":d.pct<0?"\u2212":"")+Math.abs(d.pct).toFixed(2)+"%"; }
-    return {value:v,dir:dir};
+    var d=k&&LIVE&&LIVE[k]; if(!d||typeof d.pct!=="number") return null;
+    var dir=d.pct>0?"up":d.pct<0?"down":"flat";
+    return {value:(d.pct>0?"+":d.pct<0?"\u2212":"")+Math.abs(d.pct).toFixed(2)+"%",dir:dir};
   }
   function loadLive(){
     fetch("/api/markets",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(j){ if(j){ LIVE=j; renderMarkets(); } }).catch(function(){});

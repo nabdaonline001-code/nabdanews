@@ -172,6 +172,8 @@ async function fetchFeed(src) {
 }
 function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slice(0, i) : t; }
 
+const TARGET = 25;     /* headlines in the bar (about one hour's worth) */
+const PER_SOURCE = 5;  /* at most this many from any one channel */
 export async function build(now = Date.now()) {
   const res = await Promise.all(SOURCES.map(s => fetchFeed(s).then(r => ({ s, r }))));
   const status = {}, cand = [];
@@ -196,12 +198,14 @@ export async function build(now = Date.now()) {
       if (now - c.ts > w * 60000) continue;
       const k = norm(c.text), k2 = k.slice(0, 28);
       if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
-      if ((per[c.src] = (per[c.src] || 0) + 1) > 3) continue;
+      if ((per[c.src] = (per[c.src] || 0) + 1) > PER_SOURCE) continue;
       seen.add(k); seen.add(k2); picked.push(c);
+      if (picked.length >= TARGET) break;
     }
-    if (picked.length >= (w <= 120 ? 8 : 6)) break;
+    /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
+    if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, 16).map(c => ({ text: c.text, cat: catOf(c.text), ts: c.ts }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.text, cat: catOf(c.text), ts: c.ts }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 

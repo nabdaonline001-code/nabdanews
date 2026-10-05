@@ -152,3 +152,17 @@ export async function commitOps(env, ops, who) {
   }
   throw new Error("github-conflict");
 }
+
+/* Commit a binary file (e.g. an uploaded short video) to the repository. */
+export async function putFile(env, path, bytes, message) {
+  const c = cfg(env);
+  const parts = [];
+  for (let i = 0; i < bytes.length; i += 0x6000) { // multiple of 3 so chunks concatenate into valid base64
+    let bin = ""; const end = Math.min(i + 0x6000, bytes.length);
+    for (let j = i; j < end; j += 0x2000) bin += String.fromCharCode.apply(null, bytes.subarray(j, Math.min(j + 0x2000, end)));
+    parts.push(btoa(bin));
+  }
+  const body = `{"message":${JSON.stringify(message)},"branch":${JSON.stringify(c.branch)},"content":"` + parts.join("") + `"}`;
+  const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${path}`, { method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" }, body });
+  if (!r.ok) throw new Error("github-put-" + r.status);
+}

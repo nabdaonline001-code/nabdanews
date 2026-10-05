@@ -351,6 +351,7 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin:16px 0}
 .vcard h3{margin:10px 0 4px;font-size:1rem}.vcard p{margin:0;color:var(--muted)}
 .vwrap{position:relative;aspect-ratio:16/9;background:#000}
+.vwrap.vert{aspect-ratio:9/16}
 .vwrap .vframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vlink{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;background:#2b3a33;color:#fff;font-size:1.1rem}
 .readbox .admbtn{color:#fff;border-color:#fff}
@@ -672,12 +673,13 @@ function renderHome(){
 }
 function videoEmbed(u){
   u=String(u||"").trim(); var m, src="";
+  if(/^\/videos\/[\w.-]+\.(mp4|webm)$/i.test(u)){ var uv=document.createElement("video"); uv.src=u; uv.controls=true; uv.preload="metadata"; uv.setAttribute("playsinline",""); uv.className="vframe"; uv.addEventListener("loadedmetadata",function(){ if(uv.videoHeight>uv.videoWidth&&uv.parentNode) uv.parentNode.classList.add("vert"); }); return uv; }
   if(!/^https?:\/\//i.test(u)) return null;
   if((m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i))) src="https://www.youtube-nocookie.com/embed/"+m[1];
   else if((m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/i))) src="https://player.vimeo.com/video/"+m[1];
   else if(/^https?:\/\/(www\.|m\.|web\.)?(facebook\.com|fb\.watch)\//i.test(u)) src="https://www.facebook.com/plugins/video.php?show_text=false&href="+encodeURIComponent(u);
   if(src){ var f=document.createElement("iframe"); f.src=src; f.loading="lazy"; f.allowFullscreen=true; f.title="مشغّل الفيديو"; f.setAttribute("allow","accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"); f.setAttribute("referrerpolicy","strict-origin-when-cross-origin"); f.className="vframe"; return f; }
-  if(/\.(mp4|webm|ogv|m3u8)(\?|#|$)/i.test(u)){ var v=document.createElement("video"); v.src=u; v.controls=true; v.preload="metadata"; v.setAttribute("playsinline",""); v.className="vframe"; return v; }
+  if(/\.(mp4|webm|ogv|m3u8)(\?|#|$)/i.test(u)){ var v=document.createElement("video"); v.src=u; v.controls=true; v.preload="metadata"; v.setAttribute("playsinline",""); v.className="vframe"; v.addEventListener("loadedmetadata",function(){ if(v.videoHeight>v.videoWidth&&v.parentNode) v.parentNode.classList.add("vert"); }); return v; }
   return null;
 }
 function renderVideos(a,list){
@@ -685,7 +687,7 @@ function renderVideos(a,list){
   var g=el("div","vgrid");
   list.forEach(function(it){
     var c=el("div","vcard"), p=videoEmbed(it.url);
-    if(p){ var w=el("div","vwrap"); w.appendChild(p); c.appendChild(w); }
+    if(p){ var w=el("div","vwrap"+(/youtube\.com\/shorts\//i.test(it.url||"")?" vert":"")); w.appendChild(p); c.appendChild(w); }
     else if(/^https?:\/\//i.test(it.url||"")){ var l=el("a","vlink","▶ مشاهدة الفيديو"); l.href=it.url; l.target="_blank"; l.rel="noopener noreferrer"; c.appendChild(l); }
     c.appendChild(el("h3",null,it.title));
     if(it.summary) c.appendChild(el("p",null,it.summary));
@@ -1186,7 +1188,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     catch(e){ say(e&&e.code==="invalid_argument"?"ليست لديك صلاحية التعديل.":"تعذّر الحفظ، حاول مرة أخرى."); }
     btn.disabled=false;
   }
-  var curImg="", fPrev, fFile, fRm;
+  var curImg="", fPrev, fFile, fRm, vUpW, vUpF, vUpS;
+  function syncUp(){ if(vUpW) vUpW.hidden=!(fSec&&fSec.value==="video"); }
   function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
   function shrinkImg(file){
     return new Promise(function(res,rej){
@@ -1222,11 +1225,11 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return sel;
   }
   function resetForm(){
-    editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; fUrl.value=""; showImg("");
+    editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; fUrl.value=""; showImg(""); if(vUpF){ vUpF.value=""; vUpS.textContent=""; }
     fSave.textContent="إضافة الخبر"; fCancel.hidden=true; fHead.textContent="إضافة خبر جديد";
   }
   function startEdit(it){
-    editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fUrl.value=it.url||""; showImg(it.image);
+    editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fUrl.value=it.url||""; showImg(it.image); syncUp();
     fSave.textContent="حفظ التعديل"; fCancel.hidden=false; fHead.textContent="تعديل الخبر"; say("");
     fTitle.focus();
   }
@@ -1274,7 +1277,29 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       say("جارٍ تجهيز الصورة...");
       shrinkImg(file).then(function(d){ showImg(d); say("تم اختيار الصورة. اضغط حفظ/إضافة لتثبيتها."); },function(){ say("تعذّر تجهيز الصورة، جرّب صورة أخرى."); });
     };
-    var imgW=field("صورة الخبر (اختيارية، تظهر في القائمة وفي صفحة الخبر)",fFile); imgW.appendChild(fPrev); imgW.appendChild(fRm); box.appendChild(imgW);
+    var imgW=field("صورة الخبر (اختيارية، تظهر داخل صفحة الخبر عند فتحه)",fFile); imgW.appendChild(fPrev); imgW.appendChild(fRm); box.appendChild(imgW);
+    vUpW=el("div","f"); vUpW.hidden=true;
+    var vUpL=el("label","f"); vUpL.appendChild(el("span",null,"رفع فيديو قصير (Shorts) من جهازك: mp4 أو webm حتى 20 ميغابايت، ويفضّل عمودي"));
+    vUpF=document.createElement("input"); vUpF.type="file"; vUpF.accept="video/mp4,video/webm,.mp4,.webm"; vUpF.setAttribute("aria-label","رفع فيديو");
+    vUpL.appendChild(vUpF); vUpW.appendChild(vUpL); vUpS=el("p","hint",""); vUpS.setAttribute("role","status"); vUpW.appendChild(vUpS);
+    vUpF.onchange=function(){
+      var file=vUpF.files&&vUpF.files[0]; if(!file) return;
+      var ext=/\.webm$/i.test(file.name)||file.type==="video/webm"?"webm":/\.mp4$/i.test(file.name)||file.type==="video/mp4"?"mp4":"";
+      if(!ext){ vUpS.textContent="الصيغة غير مدعومة. استخدم mp4 أو webm."; vUpF.value=""; return; }
+      if(file.size>20*1024*1024){ vUpS.textContent="الفيديو أكبر من 20 ميغابايت ("+Math.round(file.size/1048576)+" ميغابايت). قلّل الجودة أو المدة وحاول مجدداً."; vUpF.value=""; return; }
+      vUpF.disabled=true; vUpS.textContent="جارٍ الرفع… 0%";
+      var xhr=new XMLHttpRequest(); xhr.open("POST","/api/upload?ext="+ext); xhr.withCredentials=true;
+      xhr.upload.onprogress=function(e){ if(e.lengthComputable) vUpS.textContent="جارٍ الرفع… "+Math.round(e.loaded*100/e.total)+"%"; };
+      xhr.onerror=function(){ vUpF.disabled=false; vUpS.textContent="تعذّر الرفع، تحقق من الاتصال وحاول مرة أخرى."; };
+      xhr.onload=function(){
+        vUpF.disabled=false; var r={}; try{ r=JSON.parse(xhr.responseText); }catch(e){}
+        if(xhr.status===200&&r.url){ fUrl.value=r.url; vUpS.textContent="تم الرفع. اضغط «إضافة الخبر» لنشره؛ يظهر الفيديو على الموقع بعد حوالي دقيقة."; }
+        else vUpS.textContent=xhr.status===413||r.error==="too-large"?"الفيديو كبير جداً (الحد 20 ميغابايت).":xhr.status===401?"انتهت الجلسة، سجّل الدخول من جديد.":r.error==="bad-file"?"الملف ليس فيديو "+ext+" صالحاً.":"تعذّر الرفع، حاول مرة أخرى.";
+      };
+      xhr.send(file);
+    };
+    box.appendChild(vUpW);
+    fSec.addEventListener("change",syncUp); syncUp();
     box.appendChild(field("الملخص (سطر أو سطران)",fSum));
     box.appendChild(field("النص الكامل (اترك سطراً فارغاً بين الفقرات)",fFull));
     var btns=el("div","btns");
@@ -1283,7 +1308,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     fCancel.onclick=function(){ resetForm(); say(""); };
     fSave.onclick=function(){
       var t=fTitle.value.trim(); if(!t){ say("اكتب عنوان الخبر أولاً."); fTitle.focus(); return; }
-      var uu=fUrl.value.trim(); if(uu&&!/^https?:\/\//i.test(uu)){ say("الرابط يجب أن يبدأ بـ https://"); fUrl.focus(); return; }
+      var uu=fUrl.value.trim(); if(uu&&!/^https?:\/\//i.test(uu)&&!/^\/videos\/[\w.-]+\.(mp4|webm)$/i.test(uu)){ say("الرابط يجب أن يبدأ بـ https://"); fUrl.focus(); return; }
       var data={section:fSec.value,title:t,summary:fSum.value.trim(),full:fFull.value.trim(),url:uu,image:curImg};
       if(editing){ var id=editing; run(fSave,async function(){ await col.doc(id).update(data); resetForm(); },"تم حفظ التعديل."); }
       else{ data.order=Date.now(); run(fSave,async function(){ await col.add(data); resetForm(); },"تمت إضافة الخبر."); }
@@ -1309,7 +1334,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     window.openNewsAdmin=function(sec){
       if(panel.hidden) btn.onclick();
       if(!built) build();
-      resetForm(); fSec.value=sec; filt.value=sec; renderList();
+      resetForm(); fSec.value=sec; syncUp(); filt.value=sec; renderList();
       panel.scrollIntoView({behavior:"smooth",block:"start"}); fTitle.focus();
     };
     var rh=document.getElementById("readh");

@@ -352,6 +352,8 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .vcard h3{margin:10px 0 4px;font-size:1rem}.vcard p{margin:0;color:var(--muted)}
 .vwrap{position:relative;aspect-ratio:16/9;background:#000}
 .vwrap.vert{aspect-ratio:9/16}
+.art>.vwrap{max-width:720px;margin:0 0 18px}
+.art>.vwrap.vert{max-width:300px}
 .shorts{margin:8px 0 30px}
 .shh{display:flex;align-items:center;gap:12px;margin-bottom:12px;border-bottom:2px solid var(--line);padding-bottom:6px}
 .shh h2{margin:0;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:1.35rem;letter-spacing:.06em;direction:ltr}
@@ -615,7 +617,7 @@ function buildArticle(o){
   a.appendChild(el("h1",null,o.title));
   if(o.meta) a.appendChild(el("p","meta",o.meta));
   if(o.img&&/^data:image\//.test(o.img)){ var im=el("img","aimg"); im.src=o.img; im.alt=o.alt||""; a.appendChild(im); }
-  if(o.embed){ var ew=el("div","vwrap"+(o.vert?" vert":"")); ew.appendChild(o.embed); ew.style.maxWidth=o.vert?"360px":"100%"; ew.style.margin="0 0 18px"; a.appendChild(ew); }
+  if(o.embed){ var ew=el("div","vwrap"+(o.vert?" vert":"")); ew.appendChild(o.embed); a.appendChild(ew); }
   if(o.sum) a.appendChild(el("p","sum",o.sum));
   var txt=el("div","txt");
   String(o.full||"").split(/\n+/).forEach(function(t){ t=t.trim(); if(t) txt.appendChild(el("p",null,t)); });

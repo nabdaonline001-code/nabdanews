@@ -163,7 +163,7 @@
   }
   function footerLink(){
     var f=document.querySelector("footer.ft")||document.querySelector("footer"); if(!f) return;
-    var a=h("a","display:inline-block;margin:10px 0 0;font-size:.8rem;opacity:.75;cursor:pointer;color:inherit","دخول المدير");
+    var a=h("a","display:inline-block;margin:14px 16px 0;padding:6px 16px;border:1px solid currentColor;font:600 .95rem 'Noto Kufi Arabic',Tahoma,sans-serif;cursor:pointer;color:inherit;text-decoration:none","تسجيل الدخول | Login");
     a.href="#admin"; a.setAttribute("rel","nofollow"); f.appendChild(a);
     a.addEventListener("click",function(e){ e.preventDefault(); openLogin(); });
   }

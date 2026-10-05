@@ -115,7 +115,7 @@ export function parseNnaDay(xml) {
   return out;
 }
 async function fetchNna(now) {
-  const get = async u => { const r = await fetch(u, { headers: { ...BROWSER, Accept: "application/xml,text/xml,*/*" }, signal: AbortSignal.timeout(5000) }); if (!r.ok) throw new Error("http-" + r.status); return r.text(); };
+  const get = async u => { const r = await fetch(u, { headers: { ...BROWSER, Accept: "application/xml,text/xml,*/*" }, signal: AbortSignal.timeout(9000) }); if (!r.ok) throw new Error("http-" + r.status); return r.text(); };
   const idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml");
   const cats = [...idx.matchAll(/\/sitemap\/cat\/(\d+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)].filter(m => now - Date.parse(m[2]) < 30 * 3600000).slice(0, 8).map(m => m[1]);
   const b = new Date(now + 3 * 3600000), day = d => d.toISOString().slice(0, 10);

@@ -616,7 +616,7 @@ var NEWS=[];
 function newsHref(id){ return "#news/"+encodeURIComponent(id); }
 function storyEl(it,lbl){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
-  if(it.image&&/^data:image\//.test(it.image)){ var ia=el("a"); ia.href=newsHref(it.id); ia.tabIndex=-1; ia.setAttribute("aria-hidden","true"); var im=el("img","sthumb"); im.src=it.image; im.alt=""; im.loading="lazy"; ia.appendChild(im); d.appendChild(ia); }
+  if(it.image&&it.section!=="world"&&/^data:image\//.test(it.image)){ var ia=el("a"); ia.href=newsHref(it.id); ia.tabIndex=-1; ia.setAttribute("aria-hidden","true"); var im=el("img","sthumb"); im.src=it.image; im.alt=""; im.loading="lazy"; ia.appendChild(im); d.appendChild(ia); }
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
   h.appendChild(a); d.appendChild(h);
   if(it.summary) d.appendChild(el("p",null,it.summary));

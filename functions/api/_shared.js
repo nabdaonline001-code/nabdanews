@@ -18,8 +18,10 @@ export function timingEq(a, b) {
   let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
-/* Accounts: ADMIN_USERS = "salam:pass1, ali:pass2" (split on the first ":" so passwords may contain ":"; no commas in passwords).
-   Fallback: ADMIN_USERNAME (default "admin") + ADMIN_PASSWORD. */
+/* Owner accounts: ADMIN_USERS = "salam:pass1, ali:pass2" (split on the first ":"; no commas in passwords).
+   Fallback: ADMIN_USERNAME (default "admin") + ADMIN_PASSWORD. Owners can create/delete staff accounts from the site.
+   Staff accounts live (salted PBKDF2 hashes only) in private/users.json on GitHub; that path is blocked from the public web. */
+export const USERS_PATH = "private/users.json";
 export function accounts(env) {
   const m = new Map();
   String(env.ADMIN_USERS || "").split(",").forEach(x => {
@@ -29,29 +31,76 @@ export function accounts(env) {
   if (env.ADMIN_PASSWORD) m.set((env.ADMIN_USERNAME || "admin").trim().toLowerCase(), env.ADMIN_PASSWORD);
   return m;
 }
-export async function checkLogin(env, user, given) {
-  const acc = accounts(env); if (!acc.size || typeof given !== "string") return null;
-  const u = String(user || "").trim().toLowerCase();
-  const want = acc.get(u) ?? "\u0000no-such-user";
-  const ok = timingEq(await hmac("cmp", given), await hmac("cmp", want)) && acc.has(u);
-  return ok ? u : null;
+export function hasAccounts(env) { return accounts(env).size > 0; }
+
+/* ---- staff password hashing ---- */
+function hex(bytes) { return [...bytes].map(b => b.toString(16).padStart(2, "0")).join(""); }
+async function pbkdf2(password, saltHex) {
+  const salt = Uint8Array.from(saltHex.match(/../g).map(h => parseInt(h, 16)));
+  const k = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  return hex(new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, k, 256)));
 }
-function sessionKey(env, u, pw) { return u + "|" + pw + "|" + (env.SESSION_SECRET || ""); }
+export async function makeHash(password) {
+  const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+  return { salt, hash: await pbkdf2(password, salt) };
+}
+
+/* ---- staff file on GitHub ---- */
+export async function readUsers(env) {
+  const r = await fetch(fileUrl(env, USERS_PATH), { headers: gh(env) });
+  if (r.status === 404) return { users: {}, sha: null };
+  if (!r.ok) throw new Error("github-users-" + r.status);
+  const m = await r.json();
+  let users = {}; try { users = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(m.content.replace(/\s/g, "")), c => c.charCodeAt(0)))); } catch (e) {}
+  return { users, sha: m.sha };
+}
+export async function changeUsers(env, mutate, who) {
+  const c = cfg(env);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { users, sha } = await readUsers(env);
+    const err = mutate(users); if (err) return err;
+    const body = { message: "Update staff accounts" + (who ? " (by " + who.replace(/[^\w.-]/g, "") + ")" : ""), content: b64(JSON.stringify(users, null, 1)), branch: c.branch };
+    if (sha) body.sha = sha;
+    const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${USERS_PATH}`, { method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (r.ok) return null;
+    if (r.status !== 409 && r.status !== 422) throw new Error("github-put-" + r.status);
+  }
+  throw new Error("github-conflict");
+}
+/* Resolve a username to { owner, secret, rec } or null. secret signs the session, so changing a password or deleting the user ends their sessions. */
+async function findUser(env, u) {
+  const acc = accounts(env);
+  if (acc.has(u)) return { owner: true, secret: acc.get(u) };
+  if (!env.GITHUB_TOKEN) return null;
+  try { const rec = (await readUsers(env)).users[u]; return rec ? { owner: false, secret: rec.hash, rec } : null; } catch (e) { return null; }
+}
+/* returns the username on success, else null */
+export async function checkLogin(env, user, given) {
+  if (typeof given !== "string" || given.length > 200) return null;
+  const u = String(user || "").trim().toLowerCase();
+  const f = await findUser(env, u);
+  if (!f) { await pbkdf2("x", "00".repeat(16)); return null; }
+  if (f.owner) return timingEq(await hmac("cmp", given), await hmac("cmp", f.secret)) ? u : null;
+  return timingEq(await pbkdf2(given, f.rec.salt), f.rec.hash) ? u : null;
+}
+function sessionKey(env, u, secret) { return u + "|" + secret + "|" + (env.SESSION_SECRET || ""); }
 export async function sessionCookie(env, u) {
+  const f = await findUser(env, u); if (!f) throw new Error("no-user");
   const exp = Date.now() + 30 * 864e5, uu = b64url(enc.encode(u));
-  const sig = await hmac(sessionKey(env, u, accounts(env).get(u)), "admin." + uu + "." + exp);
+  const sig = await hmac(sessionKey(env, u, f.secret), "admin." + uu + "." + exp);
   return `nabda_admin=${uu}.${exp}.${sig}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict`;
 }
 export function clearCookie() { return "nabda_admin=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict"; }
-/* returns the username when the session is valid, else null */
-export async function adminUser(request, env) {
+/* { name, owner } when the session is valid, else null */
+export async function session(request, env) {
   const m = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)nabda_admin=([\w-]+)\.(\d+)\.([\w-]+)/);
   if (!m || Number(m[2]) < Date.now()) return null;
   let u; try { u = new TextDecoder().decode(Uint8Array.from(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0))); } catch (e) { return null; }
-  const pw = accounts(env).get(u); if (!pw) return null;
-  return timingEq(await hmac(sessionKey(env, u, pw), "admin." + m[1] + "." + m[2]), m[3]) ? u : null;
+  const f = await findUser(env, u); if (!f) return null;
+  return timingEq(await hmac(sessionKey(env, u, f.secret), "admin." + m[1] + "." + m[2]), m[3]) ? { name: u, owner: f.owner } : null;
 }
-export async function isAdmin(request, env) { return !!(await adminUser(request, env)); }
+export async function adminUser(request, env) { const s = await session(request, env); return s ? s.name : null; }
+export async function isAdmin(request, env) { return !!(await session(request, env)); }
 export function sameOrigin(request) {
   const o = request.headers.get("Origin"); if (!o) return true;
   try { return new URL(o).host === new URL(request.url).host; } catch (e) { return false; }
@@ -60,7 +109,8 @@ export function sameOrigin(request) {
 /* ---------- GitHub ---------- */
 function cfg(env) { return { repo: env.GITHUB_REPO || "nabdaonline001-code/nabdanews", branch: env.GITHUB_BRANCH || "main", path: env.DATA_PATH || "data/site.json" }; }
 function gh(env, accept) { return { Authorization: "Bearer " + env.GITHUB_TOKEN, Accept: accept || "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "nabda-admin" }; }
-function url(env) { const c = cfg(env); return `https://api.github.com/repos/${c.repo}/contents/${c.path}?ref=${encodeURIComponent(c.branch)}`; }
+function fileUrl(env, path) { const c = cfg(env); return `https://api.github.com/repos/${c.repo}/contents/${path}?ref=${encodeURIComponent(c.branch)}`; }
+function url(env) { return fileUrl(env, cfg(env).path); }
 export async function fetchData(env) {
   const r = await fetch(url(env), { headers: gh(env, "application/vnd.github.raw+json") });
   if (!r.ok) throw new Error("github-get-" + r.status);

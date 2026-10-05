@@ -5,7 +5,7 @@
    (the site redeploys itself within about a minute). */
 (function(){
   var CFG=Object.assign({repo:"nabdaonline001-code/nabdanews",branch:"main",path:"data/site.json",email:"",web3formsKey:""},window.NABDA_CONFIG||{});
-  var admin=false;
+  var admin=false, owner=false;
   var store={}, listeners=[], ready=null, queue=[], timer=null, waiters=[];
 
   /* ---------- small UI helpers ---------- */
@@ -48,7 +48,7 @@
   function load(){
     if(ready) return ready;
     ready=api("me").catch(function(){ return {admin:false}; }).then(function(m){
-      admin=!!(m&&m.admin);
+      admin=!!(m&&m.admin); owner=!!(m&&m.owner);
       return admin?api("data").catch(function(){ return loadPublic(); }):loadPublic();
     }).then(function(j){ ingest(j); return true; }).catch(function(){ return false; });
     return ready;
@@ -154,11 +154,53 @@
     });
     inp.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
   }
+  /* ---------- staff accounts panel (owner only) ---------- */
+  var UERR={"bad-username":"اسم المستخدم: حروف إنجليزية صغيرة وأرقام فقط (2 إلى 30).","weak-password":"كلمة السر قصيرة، لازم 8 أحرف على الأقل.","reserved":"هذا الاسم محجوز لحساب مدير.","exists":"هذا الاسم موجود مسبقاً.","missing":"الحساب غير موجود.",auth:"انتهت الجلسة، حدّث الصفحة وادخل من جديد.",forbidden:"هذه الصفحة للمدير الأساسي فقط."};
+  function openUsers(){
+    var ov=h("div","position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px");
+    var bx=h("div","background:#fff;color:#2b3a33;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:22px;border-top:8px solid #5a7567;font:15px/1.8 'Noto Kufi Arabic',Tahoma,sans-serif");
+    bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","المستخدمون");
+    bx.appendChild(h("h2","margin:0 0 6px;font-size:1.2rem;color:#5a7567","المستخدمون (الموظفين)"));
+    bx.appendChild(h("p","margin:0 0 10px;font-size:.9rem;color:#555","كل موظف يدخل باسمه وكلمة سره من زر Log in، ويقدر يضيف ويعدّل الأخبار. وحدك تشوف هذه الصفحة."));
+    var list=h("div","margin:0 0 12px"), st=h("p","min-height:1.6em;margin:6px 0;color:#C8102E;font-size:.9rem"); st.setAttribute("role","status");
+    function btn(t,bg){ var b=h("button","padding:4px 12px;border:1px solid #5a7567;background:"+(bg?"#5a7567":"#fff")+";color:"+(bg?"#fff":"#5a7567")+";font:inherit;font-size:.85rem;cursor:pointer",t); b.type="button"; return b; }
+    function inp(ph,type){ var i=h("input","padding:8px;border:1px solid #5a7567;font:inherit;direction:ltr;min-width:0;flex:1"); i.type=type||"text"; i.placeholder=ph; i.autocomplete="off"; i.setAttribute("aria-label",ph); return i; }
+    function call(body,okMsg){
+      st.style.color="#2b3a33"; st.textContent="جارٍ الحفظ...";
+      return api("users","POST",body).then(function(){ st.style.color="#2b6b3a"; st.textContent=okMsg; return refresh(); })
+        .catch(function(e){ st.style.color="#C8102E"; st.textContent=UERR[e.message]||"تعذّر التنفيذ، حاول مرة أخرى."; });
+    }
+    function refresh(){
+      return api("users").then(function(j){
+        list.textContent="";
+        if(!j.users.length) list.appendChild(h("p","color:#777","ما في موظفين بعد."));
+        j.users.forEach(function(u){
+          var row=h("div","display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #dde4e0;flex-wrap:wrap");
+          row.appendChild(h("strong","direction:ltr",u.username));
+          var act=h("span","display:flex;gap:6px");
+          var pw=btn("تغيير كلمة السر"), del=btn("حذف");
+          pw.onclick=function(){ var p=window.prompt("كلمة السر الجديدة لـ "+u.username+" (8 أحرف على الأقل):"); if(p) call({action:"password",username:u.username,password:p},"تم تغيير كلمة السر."); };
+          del.onclick=function(){ if(window.confirm("حذف حساب "+u.username+"؟")) call({action:"delete",username:u.username},"تم حذف الحساب."); };
+          act.appendChild(pw); act.appendChild(del); row.appendChild(act); list.appendChild(row);
+        });
+      }).catch(function(e){ st.style.color="#C8102E"; st.textContent=UERR[e.message]||"تعذّر تحميل القائمة."; });
+    }
+    bx.appendChild(list);
+    bx.appendChild(h("h3","margin:8px 0 4px;font-size:1rem;color:#5a7567","إضافة موظف"));
+    var add=h("form","display:flex;gap:8px;flex-wrap:wrap"), nu=inp("اسم المستخدم (إنجليزي)"), np=inp("كلمة السر (8 أحرف+)","text"), go=btn("إضافة",true); go.type="submit";
+    add.appendChild(nu); add.appendChild(np); add.appendChild(go);
+    add.addEventListener("submit",function(ev){ ev.preventDefault(); call({action:"add",username:nu.value,password:np.value},"تمت إضافة الموظف. يقدر يدخل الآن.").then(function(){ if(st.style.color!=="rgb(200, 16, 46)"){ nu.value=""; np.value=""; } }); });
+    bx.appendChild(add); bx.appendChild(st);
+    var close=btn("إغلاق"); close.style.marginTop="8px"; close.onclick=function(){ ov.remove(); }; bx.appendChild(close);
+    ov.appendChild(bx); document.body.appendChild(ov); refresh(); nu.focus();
+    ov.addEventListener("keydown",function(e){ if(e.key==="Escape") ov.remove(); });
+  }
   function adminBar(){
     var b=h("div","position:fixed;inset-inline-start:16px;bottom:12px;z-index:99998;display:flex;gap:8px;align-items:center;background:#5a7567;color:#fff;padding:6px 12px;font:600 13px 'Noto Kufi Arabic',Tahoma,sans-serif");
     b.appendChild(h("span",null,"وضع المدير"));
     var x=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","خروج"); x.type="button";
     x.onclick=function(){ api("logout","POST",{}).catch(function(){}).then(function(){ location.reload(); }); };
+    if(owner){ var u=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","المستخدمون"); u.type="button"; u.onclick=openUsers; b.appendChild(u); }
     b.appendChild(x); document.body.appendChild(b);
   }
   function footerLink(){

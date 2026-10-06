@@ -322,13 +322,30 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .ngrid .story:nth-child(-n+3){border-top:0}
 @media (max-width:860px){#s-news{grid-column:auto}.ngrid{grid-template-columns:1fr}.ngrid .story:nth-child(2),.ngrid .story:nth-child(3){border-top:1px solid var(--line)}}
 .leadimg{display:block;margin:0 0 22px}
-.leadimg img{display:block;width:100%;height:100%;aspect-ratio:1/1;object-fit:cover}
-.leadimg{max-width:460px}
+.leadimg img{display:block;width:100%;height:100%;object-fit:cover}
+/* lead story with image: the photo fills the whole box, the headline sits on it, slow zoom on hover */
+.lead:has(#leadImgWrap:not([hidden])){--lz:cubic-bezier(.2,.7,.2,1);position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;justify-content:flex-end;min-height:clamp(400px,38vw,660px);padding:34px 40px;border-right-width:0}
+.lead:has(#leadImgWrap:not([hidden]))>.leadimg{position:absolute;inset:0;margin:0;z-index:-2;max-width:none;background:#3d5247}
+.lead:has(#leadImgWrap:not([hidden]))>.leadimg img{transition:transform 1.1s var(--lz);transform:scale(1.001);will-change:transform}
+.lead:has(#leadImgWrap:not([hidden])):hover>.leadimg img,.lead:has(#leadImgWrap:not([hidden])):focus-within>.leadimg img{transform:scale(1.08)}
+.lead:has(#leadImgWrap:not([hidden]))::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(to top,rgba(8,14,11,.88) 0,rgba(8,14,11,.55) 34%,rgba(8,14,11,.08) 66%,rgba(8,14,11,0) 100%);transition:opacity .6s ease}
+.lead:has(#leadImgWrap:not([hidden])) .lh{position:relative;z-index:3;justify-content:flex-start}
+.lead:has(#leadImgWrap:not([hidden])) .lh .tag{background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:3px 12px;font-size:.95rem}
+.lead:has(#leadImgWrap:not([hidden])) h1{font-size:clamp(1.35rem,2.5vw,2.3rem);line-height:1.45;margin:.45em 0 .1em;text-shadow:0 2px 14px rgba(0,0,0,.55);transition:transform .7s var(--lz)}
+.lead:has(#leadImgWrap:not([hidden])) h1 a::after{content:"";position:absolute;inset:0;z-index:1}
+.lead:has(#leadImgWrap:not([hidden])) h1 a:hover{text-decoration:none}
+.lead:has(#leadImgWrap:not([hidden])) #leadB,.lead:has(#leadImgWrap:not([hidden])) p:has(.more){max-height:0;opacity:0;overflow:hidden;margin:0;transform:translateY(10px);transition:max-height .7s var(--lz),opacity .55s ease,transform .7s var(--lz)}
+.lead:has(#leadImgWrap:not([hidden])):hover #leadB,.lead:has(#leadImgWrap:not([hidden])):focus-within #leadB{max-height:7.5em;opacity:.95;transform:none;margin:.3em 0 .5em;font-size:1.05rem;line-height:1.8}
+.lead:has(#leadImgWrap:not([hidden])):hover p:has(.more),.lead:has(#leadImgWrap:not([hidden])):focus-within p:has(.more){max-height:3em;opacity:1;transform:none;margin:0}
+.lead:has(#leadImgWrap:not([hidden])) .by{position:relative;z-index:3}
+.lead:has(#leadImgWrap:not([hidden])) .mkpanel{position:relative;z-index:4;color:#2b3a33}
+.lead:has(#leadImgWrap:not([hidden]))>.shr{z-index:5}
+@media (hover:none){.lead:has(#leadImgWrap:not([hidden])) #leadB{max-height:4.8em;opacity:.92;transform:none;margin:.3em 0 .4em;font-size:1rem;line-height:1.7}.lead:has(#leadImgWrap:not([hidden])) p:has(.more){max-height:3em;opacity:1;transform:none}}
+@media (max-width:860px){.lead:has(#leadImgWrap:not([hidden])){min-height:420px;padding:22px 20px}}
+@media (prefers-reduced-motion:reduce){.lead:has(#leadImgWrap:not([hidden]))>.leadimg img,.lead:has(#leadImgWrap:not([hidden])) h1,.lead:has(#leadImgWrap:not([hidden])) #leadB{transition:none}.lead:has(#leadImgWrap:not([hidden])):hover>.leadimg img{transform:none}}
 .about.art .aimg{display:block;width:100%;height:auto;max-height:440px;object-fit:cover;margin:0 0 20px}
 .mkpanel input[type=file]{padding:6px}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-@media (max-width:860px){.leadimg{max-width:none}}
-@media (min-width:861px){.lead:has(#leadImgWrap:not([hidden])){display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);column-gap:36px;align-content:center;align-items:center}.lead:has(#leadImgWrap:not([hidden])) > .leadimg{grid-column:1;grid-row:1 / span 12;margin:0}.lead:has(#leadImgWrap:not([hidden])) > :not(.leadimg):not(.shr){grid-column:2}}
 .lead h1,.lead h1 a,#leadT,#leadTa{font-family:"Baloo Bhaijaan 2","Cairo","Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-weight:800;letter-spacing:0;line-height:1.45}
 .adbox{flex:none;margin:0 0 28px}
 #adlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}

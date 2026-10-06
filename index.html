@@ -871,7 +871,7 @@ function renderHome(){
     var nl=NEWS.filter(isNewsSec).slice();
     nl.sort(function(x,y){ return y.order-x.order; }); nl=nl.slice(0,9);
     if(!nl.length) g.appendChild(el("div","story")).appendChild(el("p",null,"لا توجد أخبار بعد."));
-    nl.forEach(function(it){ var d=storyEl(it,false), p=d.querySelector("p"); if(p) p.remove(); g.appendChild(d); });
+    nl.forEach(function(it){ var d=storyEl(it,false), p=d.querySelector("p"); if(p) p.remove(); var pdt=d.querySelector(".pdate"); if(pdt) pdt.remove(); g.appendChild(d); });
   }
   var rl=document.getElementById("readlist");
   if(rl){
@@ -891,7 +891,6 @@ function renderHome(){
       var c=el("div","scard");
       c.appendChild(videoCard(it,allShorts));
       var h=el("h3"), ha=el("a",null,it.title); ha.href=newsHref(it.id); h.appendChild(ha); c.appendChild(h);
-      var sp2=it.nodate?"":pubDate(it.order); if(sp2) c.appendChild(el("time","pdate",sp2));
       c.appendChild(shareBtn(it.title,newsHref(it.id)));
       sg.appendChild(c);
     });
@@ -917,7 +916,6 @@ function renderHome(){
         var c=el("article","hcard"), ok=/^data:image\//.test(it.image||"");
         if(ok){ var w=el("div","himg"), im=document.createElement("img"); im.src=it.image; im.alt=""; im.loading="lazy"; w.appendChild(im); c.appendChild(w); } else c.classList.add("noimg");
         var h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id); h.appendChild(a); c.appendChild(h);
-        var hp=it.nodate?"":pubDate(it.order); if(hp) c.appendChild(el("time","pdate",hp));
         c.appendChild(shareBtn(it.title,newsHref(it.id)));
         gr.appendChild(c);
       });

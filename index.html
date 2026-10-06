@@ -725,6 +725,16 @@ function shareBtn(title,hash,label){
   b.addEventListener("click",function(ev){ ev.preventDefault(); ev.stopPropagation(); shareItem(LEAD.title,shareUrl("#article")); });
   lead.appendChild(b);
 })();
+(function(){
+  var lead=document.querySelector("article.lead"); if(!lead||!window.matchMedia||!matchMedia("(hover:hover)").matches) return;
+  var last=0;
+  lead.addEventListener("mouseenter",function(){
+    var w=document.getElementById("leadImgWrap"); if(!w||w.hidden) return;
+    var n=Date.now(); if(n-last<1200) return; last=n; vSound("hover");
+  });
+  function unlock(){ try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC){ VAC=VAC||new AC(); if(VAC.state==="suspended") VAC.resume(); } }catch(e){} }
+  ["pointerdown","keydown"].forEach(function(ev){ addEventListener(ev,function h(){ unlock(); removeEventListener(ev,h); },{passive:true}); });
+})();
 function buildArticle(o){
   var ap=document.getElementById("articlepage"); ap.textContent="";
   var a=el("article","about art"); a.setAttribute("lang","ar"); a.setAttribute("dir","rtl");
@@ -849,6 +859,15 @@ function vSound(kind){
       f.frequency.setValueAtTime(450,t); f.frequency.exponentialRampToValueAtTime(3400,t+.3);
       var g2=c.createGain(); g2.gain.value=.045; n.connect(f); f.connect(g2); g2.connect(c.destination); n.start(t);
       o.start(t); o.stop(t+.26);
+    }else if(kind==="hover"){
+      o.frequency.setValueAtTime(420,t); o.frequency.exponentialRampToValueAtTime(640,t+.16);
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.022,t+.04); g.gain.exponentialRampToValueAtTime(.0001,t+.26);
+      var hl=Math.floor(c.sampleRate*.3), hb=c.createBuffer(1,hl,c.sampleRate), hd=hb.getChannelData(0);
+      for(var j=0;j<hl;j++) hd[j]=(Math.random()*2-1)*Math.sin(Math.PI*j/hl);
+      var hn=c.createBufferSource(); hn.buffer=hb; var hf=c.createBiquadFilter(); hf.type="bandpass"; hf.Q.value=.9;
+      hf.frequency.setValueAtTime(600,t); hf.frequency.exponentialRampToValueAtTime(2600,t+.28);
+      var hg=c.createGain(); hg.gain.value=.03; hn.connect(hf); hf.connect(hg); hg.connect(c.destination); hn.start(t);
+      o.start(t); o.stop(t+.3);
     }else if(kind==="swipe"){
       o.frequency.setValueAtTime(520,t); o.frequency.exponentialRampToValueAtTime(760,t+.07);
       g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.025,t+.015); g.gain.exponentialRampToValueAtTime(.0001,t+.09);

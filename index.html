@@ -322,11 +322,13 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .ngrid .story:nth-child(-n+3){border-top:0}
 @media (max-width:860px){#s-news{grid-column:auto}.ngrid{grid-template-columns:1fr}.ngrid .story:nth-child(2),.ngrid .story:nth-child(3){border-top:1px solid var(--line)}}
 .leadimg{display:block;margin:0 0 22px}
-.leadimg img{display:block;width:100%;height:auto;max-height:320px;object-fit:cover}
+.leadimg img{display:block;width:100%;height:100%;aspect-ratio:1/1;object-fit:cover}
+.leadimg{max-width:460px}
 .about.art .aimg{display:block;width:100%;height:auto;max-height:440px;object-fit:cover;margin:0 0 20px}
 .mkpanel input[type=file]{padding:6px}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-@media (max-width:860px){.leadimg img{max-height:220px}}
+@media (max-width:860px){.leadimg{max-width:none}}
+@media (min-width:861px){.lead:has(#leadImgWrap:not([hidden])){display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);column-gap:36px;align-content:center;align-items:center}.lead:has(#leadImgWrap:not([hidden])) > .leadimg{grid-column:1;grid-row:1 / span 12;margin:0}.lead:has(#leadImgWrap:not([hidden])) > :not(.leadimg):not(.shr){grid-column:2}}
 .lead h1,.lead h1 a,#leadT,#leadTa{font-family:"Baloo Bhaijaan 2","Cairo","Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-weight:800;letter-spacing:0;line-height:1.45}
 .adbox{flex:none;margin:0 0 28px}
 #adlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}

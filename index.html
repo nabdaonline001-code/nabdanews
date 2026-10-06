@@ -390,6 +390,14 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .shorts .scard h3,.shorts .scard h3 a{color:#2F4A3E}
 .shorts .scard>.shr{color:#2F4A3E}.shorts .scard>.shr:hover{background:rgba(47,74,62,.12)}
 @media (max-width:640px){.shorts{padding:12px 14px 12px}}
+/* markets: animated arrow */
+.mka{display:inline-block;font-size:.85em;line-height:1;will-change:transform,opacity}
+.board .mk span.mka,.mk span.mka{color:inherit;background:none;padding:0;font-weight:inherit}
+.up>.mka{animation:mkUp 1.7s cubic-bezier(.4,0,.2,1) infinite}
+.down>.mka{animation:mkDn 1.7s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes mkUp{0%{transform:translateY(3px);opacity:.35}45%{transform:translateY(-3px);opacity:1}70%{transform:translateY(-3px);opacity:1}100%{transform:translateY(3px);opacity:.35}}
+@keyframes mkDn{0%{transform:translateY(-3px);opacity:.35}45%{transform:translateY(3px);opacity:1}70%{transform:translateY(3px);opacity:1}100%{transform:translateY(-3px);opacity:.35}}
+@media (prefers-reduced-motion:reduce){.mka{animation:none!important}}
 .about.art .aimg{display:block;width:100%;height:auto;max-height:440px;object-fit:cover;margin:0 0 20px}
 .mkpanel input[type=file]{padding:6px}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -1339,6 +1347,12 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var DIRS=[["up","ارتفاع ▲"],["down","انخفاض ▼"],["flat","ثابت"]];
   function readItem(d){ var x=d.data()||{}; var dr=x.dir==="down"?"down":x.dir==="flat"?"flat":"up"; return {id:d.id,label:String(x.label||""),value:String(x.value||""),dir:dr,order:Number(x.order)||0}; }
   function arrow(dr){ return dr==="up"?"▲ ":dr==="down"?"▼ ":""; }
+  /* badge = animated arrow + value (the arrow gently moves in its own direction) */
+  function badge(b,dr,val){
+    b.textContent="";
+    if(dr==="up"||dr==="down"){ var a=document.createElement("span"); a.className="mka"; a.setAttribute("aria-hidden","true"); a.textContent=dr==="up"?"▲":"▼"; b.appendChild(a); b.appendChild(document.createTextNode(" ")); b.setAttribute("aria-label",(dr==="up"?"ارتفاع ":"انخفاض ")+val); } else b.removeAttribute("aria-label");
+    b.appendChild(document.createTextNode(val));
+  }
   /* live prices (gold, silver, Brent): rows are matched by their label; refreshed every 5 minutes */
   var LIVE=null;
   function liveKey(l){ return /الذهب/.test(l)?"gold":/الفضة/.test(l)?"silver":/برنت|النفط/.test(l)?"brent":""; }
@@ -1358,8 +1372,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       var r=document.createElement("div"); r.className="mk";
       var a=document.createElement("span"); a.textContent=it.label;
       var lv=fmtLive(liveKey(it.label)), b=document.createElement("span");
-      if(lv){ b.className=lv.dir; b.textContent=arrow(lv.dir)+lv.value; b.style.direction="ltr"; b.style.unicodeBidi="isolate"; b.style.whiteSpace="nowrap"; b.style.fontSize=".92em"; }
-      else{ b.className=it.dir; b.textContent=arrow(it.dir)+it.value; }
+      if(lv){ b.className=lv.dir; badge(b,lv.dir,lv.value); b.style.direction="ltr"; b.style.unicodeBidi="isolate"; b.style.whiteSpace="nowrap"; b.style.fontSize=".92em"; }
+      else{ b.className=it.dir; badge(b,it.dir,it.value); }
       r.appendChild(a); r.appendChild(b); rowsEl.appendChild(r);
     });
   }

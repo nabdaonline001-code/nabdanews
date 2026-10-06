@@ -48,6 +48,23 @@ nav .l{border-color:var(--local)} nav .s{border-color:var(--sport)} nav .e{borde
 .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding-bottom:40px}
 .col{background:var(--panel);border-radius:0;padding:22px;border-top:8px solid var(--c)}
 .col h2{margin:0 0 6px;font-size:1.5rem;color:var(--c)}
+.shr{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:#5a7567;cursor:pointer;flex:none;-webkit-tap-highlight-color:transparent}
+.shr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shr:hover{background:rgba(90,117,103,.14)}
+.shr:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
+.story{position:relative}
+.story:has(>.shr) h3{padding-inline-end:40px}
+.story>.shr{position:absolute;inset-inline-end:-6px;top:10px}
+.vcard>.shr,.scard>.shr{margin-top:2px}
+.rdrow{display:flex;align-items:center;gap:6px;border-top:1px solid rgba(255,255,255,.35)}
+.rdrow .rd{flex:1;border-top:0}
+.readbox .shr{color:#fff}.readbox .shr:hover{background:rgba(255,255,255,.18)}.readbox .shr:focus-visible{outline-color:#fff}
+.lead{position:relative}
+.lead>.shr{position:absolute;inset-inline-end:10px;top:10px;color:#fff;background:rgba(0,0,0,.28)}
+.lead>.shr:hover{background:rgba(0,0,0,.45)}
+.artshare{display:flex;align-items:center;gap:8px;margin:2px 0 14px}
+.artshare .shr{width:auto;height:38px;border-radius:19px;padding:0 16px 0 14px;gap:8px;border:1px solid #5a7567;font:600 .92rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
+.shtoast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2b3a33;color:#fff;padding:10px 18px;font:600 .95rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;z-index:9999;max-width:90vw;text-align:center}
 .story{padding:14px 0;border-top:1px solid var(--line)}
 .story:first-of-type{border-top:0}
 .story h3{margin:0 0 4px;font-size:1.12rem;line-height:1.25}
@@ -661,12 +678,36 @@ function copyRow(label,val){
   var b=el("button","cbtn","نسخ"); b.type="button"; b.onclick=function(){ copyText(val,b); }; w.appendChild(b);
   return w;
 }
+var SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>';
+function shareUrl(hash){ return location.origin+location.pathname+(hash||""); }
+function shToast(msg){ var t=el("div","shtoast",msg); t.setAttribute("role","status"); document.body.appendChild(t); setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2200); }
+function copyText(txt){
+  if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext) return navigator.clipboard.writeText(txt);
+  return new Promise(function(ok,no){ try{ var ta=document.createElement("textarea"); ta.value=txt; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;top:0;opacity:0"; document.body.appendChild(ta); ta.select(); var r=document.execCommand("copy"); document.body.removeChild(ta); r?ok():no(); }catch(e){ no(e); } });
+}
+function shareItem(title,url){
+  if(navigator.share){ navigator.share({title:title,text:title,url:url}).catch(function(e){ if(e&&e.name==="AbortError") return; copyText(url).then(function(){ shToast("تم نسخ الرابط"); },function(){ shToast(url); }); }); return; }
+  copyText(url).then(function(){ shToast("تم نسخ الرابط"); },function(){ window.prompt("انسخ الرابط:",url); });
+}
+function shareBtn(title,hash,label){
+  var b=el("button","shr"); b.type="button"; b.innerHTML=SHARE_ICON; b.setAttribute("aria-label","مشاركة: "+title); b.title="مشاركة";
+  if(label){ b.appendChild(document.createTextNode(label)); }
+  b.addEventListener("click",function(ev){ ev.preventDefault(); ev.stopPropagation(); shareItem(title,shareUrl(hash)); });
+  return b;
+}
+(function(){
+  var lead=document.querySelector("article.lead"); if(!lead) return;
+  var b=el("button","shr"); b.type="button"; b.innerHTML=SHARE_ICON; b.title="مشاركة"; b.setAttribute("aria-label","مشاركة الخبر");
+  b.addEventListener("click",function(ev){ ev.preventDefault(); ev.stopPropagation(); shareItem(LEAD.title,shareUrl("#article")); });
+  lead.appendChild(b);
+})();
 function buildArticle(o){
   var ap=document.getElementById("articlepage"); ap.textContent="";
   var a=el("article","about art"); a.setAttribute("lang","ar"); a.setAttribute("dir","rtl");
   if(o.tag) a.appendChild(el("span","tag",o.tag));
   a.appendChild(el("h1",null,o.title));
   if(o.meta) a.appendChild(el("p","meta",o.meta));
+  if(o.share){ var as=el("div","artshare"); as.appendChild(shareBtn(o.title,o.share,"مشاركة")); a.appendChild(as); }
   if(o.img&&/^data:image\//.test(o.img)){ var im=el("img","aimg"); im.src=o.img; im.alt=o.alt||""; a.appendChild(im); }
   if(o.embed){ var ew=el("div","vwrap"+(o.vert?" vert":"")); ew.appendChild(o.embed); a.appendChild(ew); }
   if(o.sum) a.appendChild(el("p","sum",o.sum));
@@ -677,7 +718,7 @@ function buildArticle(o){
   var b=el("a","back","العودة إلى الصفحة الرئيسية"); b.href="#home"; a.appendChild(b);
   ap.appendChild(a);
 }
-window.renderArticle=function(){ buildArticle({tag:"أهم خبر",title:LEAD.title,meta:LEAD.by,sum:LEAD.body,full:LEAD.full,img:LEAD.image,alt:LEAD.imageAlt}); };
+window.renderArticle=function(){ buildArticle({share:"#article",tag:"أهم خبر",title:LEAD.title,meta:LEAD.by,sum:LEAD.body,full:LEAD.full,img:LEAD.image,alt:LEAD.imageAlt}); };
 
 var SECDEF={local:{t:"محلي",c:"--local"},world:{t:"دولي",c:"--pol"},sports:{t:"رياضة",c:"--sport"},economy:{t:"اقتصاد",c:"--econ"},culture:{t:"ثقافة",c:"--local"},read:{t:"اقرأ",c:"--local"},video:{t:"فيديو",c:"--sport"},shorts:{t:"SHORTS",c:"--sport"}};
 var SECKEYS=["local","world","sports","economy","culture","read","video","shorts"], HOMEKEYS=[];
@@ -689,6 +730,7 @@ function storyEl(it,lbl){
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
   h.appendChild(a); d.appendChild(h);
   if(it.summary) d.appendChild(el("p",null,it.summary));
+  d.appendChild(shareBtn(it.title,newsHref(it.id)));
   return d;
 }
 function isNewsSec(n){ return n.section==="local"||n.section==="world"||n.section==="economy"; }
@@ -730,7 +772,7 @@ function renderHome(){
     var rn=NEWS.filter(function(n){ return n.section==="read"; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
     if(!rn.length) rl.appendChild(el("p",null,"لا توجد مواد بعد."));
     var rb=rl.closest(".readbox"); if(rb) rb.hidden=!rn.length&&!window.NEWSADMIN;
-    rn.forEach(function(it){ var a=el("a","rd",it.title); a.href=newsHref(it.id); rl.appendChild(a); });
+    rn.forEach(function(it){ var row=el("div","rdrow"), a=el("a","rd",it.title); a.href=newsHref(it.id); row.appendChild(a); row.appendChild(shareBtn(it.title,newsHref(it.id))); rl.appendChild(row); });
   }
   var sb=document.getElementById("shortsbox"), sg=document.getElementById("sgrid");
   if(sb&&sg){
@@ -741,7 +783,7 @@ function renderHome(){
     sl.forEach(function(it){
       var c=el("div","scard");
       c.appendChild(videoCard(it,allShorts));
-      var h=el("h3"), ha=el("a",null,it.title); ha.href=newsHref(it.id); h.appendChild(ha); c.appendChild(h);
+      var h=el("h3"), ha=el("a",null,it.title); ha.href=newsHref(it.id); h.appendChild(ha); c.appendChild(h); c.appendChild(shareBtn(it.title,newsHref(it.id)));
       sg.appendChild(c);
     });
     if(window.NEWSADMIN&&window.openNewsAdmin&&!sb.querySelector(".admbtn")){ var sab=el("button","admbtn","إدارة"); sab.type="button"; sab.onclick=function(){ window.openNewsAdmin("shorts"); }; sb.querySelector(".shh").appendChild(sab); }
@@ -914,6 +956,7 @@ function renderVideos(a,list){
     c.appendChild(videoCard(it,list));
     var vh=el("h3"), vha=el("a",null,it.title); vha.href=newsHref(it.id); vh.appendChild(vha); c.appendChild(vh);
     if(it.summary) c.appendChild(el("p",null,it.summary));
+    c.appendChild(shareBtn(it.title,newsHref(it.id)));
     g.appendChild(c);
   });
   a.appendChild(g);
@@ -937,7 +980,7 @@ function renderNewsArticle(id){
   if(!it){ buildArticle({tag:"",title:"الخبر غير موجود",meta:"",sum:"ربما حُذف هذا الخبر أو تغيّر رابطه.",full:""}); return null; }
   var dt=""; try{ dt=new Date(it.order).toLocaleDateString("ar",{year:"numeric",month:"long",day:"numeric"}); }catch(e){}
   var isV=(it.section==="video"||it.section==="shorts"), emb=isV?videoEmbed(it.url):null;
-  buildArticle({tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||"")});
+  buildArticle({share:newsHref(it.id),tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||"")});
   return it;
 }
 function route(keep){

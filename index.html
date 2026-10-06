@@ -826,8 +826,7 @@ function pubDate(ts){
   try{
     var d=new Date(ts), o={timeZone:"Asia/Beirut"};
     var a=d.toLocaleDateString("ar-LB-u-nu-latn",{timeZone:"Asia/Beirut",day:"numeric",month:"long",year:"numeric"});
-    var t=d.toLocaleTimeString("ar-LB-u-nu-latn",{timeZone:"Asia/Beirut",hour:"numeric",minute:"2-digit",hour12:true});
-    return a+" \u00b7 "+t;
+    return a;
   }catch(e){ return ""; }
 }
 function newsHref(id){ return "#news/"+encodeURIComponent(id); }

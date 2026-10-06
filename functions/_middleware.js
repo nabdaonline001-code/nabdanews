@@ -23,14 +23,14 @@ svg{display:block;width:min(420px,86vw);height:auto;margin:6px 0 26px}
 p{margin:0 0 8px;font-size:clamp(17px,4.4vw,21px);line-height:1.9;max-width:34em}
 .brief{max-width:26em;opacity:.9}
 .soon{font-weight:700;font-size:clamp(22px,6vw,30px);margin-bottom:12px}
-footer{position:fixed;inset-inline:0;bottom:0;padding:12px 16px;display:flex;justify-content:center}
+footer{z-index:5;position:fixed;inset-inline:0;bottom:0;padding:12px 16px;display:flex;justify-content:center}
 .lg{background:none;border:1px solid var(--g);color:var(--g);font:600 14px "Noto Kufi Arabic",Tahoma,sans-serif;padding:6px 16px;cursor:pointer;border-radius:0;direction:ltr}
 form{margin-top:28px;width:min(340px,100%);display:flex;flex-direction:column;gap:8px}
 form[hidden]{display:none}
 input{width:100%;padding:10px;border:1px solid var(--g);border-radius:0;font:inherit;direction:ltr;color:#2b3a33}
 input:focus-visible,.lg:focus-visible,button:focus-visible{outline:3px solid var(--g);outline-offset:2px}
 form button{padding:9px;border:1px solid var(--g);background:var(--g);color:#fff;font:inherit;cursor:pointer;border-radius:0}
-.snd{position:fixed;top:14px;inset-inline-start:14px;width:42px;height:42px;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.snd{z-index:5;position:fixed;top:14px;inset-inline-start:14px;width:42px;height:42px;border:1px solid var(--g);background:#fff;color:var(--g);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .snd svg{width:20px;height:20px;margin:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .snd .off{display:none}.snd.muted .on{display:none}.snd.muted .off{display:block}
 .snd.hint{animation:pl 1.6s ease-in-out infinite}

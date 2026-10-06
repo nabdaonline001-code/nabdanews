@@ -1074,7 +1074,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return a;
   }
   /* ticker = manual items (last 60 min) + automatic channel headlines from /api/ticker */
-  var AUTO=[], AUTOWIN=60, lastSig=null;
+  var AUTO=[], AUTOWIN=60, lastSig=null, autoDone=false;
+  try{ var _c=JSON.parse(localStorage.getItem("nabda_auto")||"null"); if(_c&&Array.isArray(_c.items)&&_c.items.length){ AUTO=_c.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(_c.win)||60; } }catch(e){}
   function normTx(s){ return String(s||"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
   function liveItems(){
     var now=Date.now(), seen={};
@@ -1086,13 +1087,15 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     if(!out.length){
       /* never leave the bar empty: fall back to the latest known headlines of any age, then to a fixed line */
       out=AUTO.slice().sort(function(x,y){ return y.ts-x.ts; }).slice(0,8).map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });
+      if(!out.length && !autoDone) return [];
       if(!out.length) out=[{id:"static",text:"تابعوا «نبضة» لآخر الأخبار المحلية والدولية والاقتصاد والرياضة",cat:"politics",order:0}];
     }
     return out;
   }
   function loadAuto(){
     fetch("/api/ticker",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
-      .then(function(j){ if(j&&Array.isArray(j.items)&&j.items.length){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; renderTicker(); } }).catch(function(){});
+      .then(function(j){ if(j&&Array.isArray(j.items)&&j.items.length){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; try{ localStorage.setItem("nabda_auto",JSON.stringify({items:AUTO,win:AUTOWIN})); }catch(e){} } })
+      .catch(function(){}).then(function(){ autoDone=true; renderTicker(); });
   }
   function renderTicker(){
     var trk=document.querySelector(".trk"); if(!trk) return;
@@ -1100,6 +1103,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var sig=filt+"|"+shown.map(function(i){ return i.id+":"+i.text; }).join("|");
     if(sig===lastSig && trk.firstChild) return; lastSig=sig;
     trk.textContent="";
+    if(!shown.length && !autoDone && filt==="all"){ trk.style.animation="none"; return; }
     if(!shown.length){
       var g=document.createElement("div"); g.className="grp";
       var sp=document.createElement("span"); sp.textContent=filt==="all"?"لا توجد أخبار عاجلة حالياً":"لا توجد أخبار عاجلة في هذا القسم"; g.appendChild(sp);

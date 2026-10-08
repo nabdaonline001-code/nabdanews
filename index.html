@@ -2323,7 +2323,7 @@ if(DEFS.length&&wrapEl&&hdrBar){
       if(it.desc) c.appendChild(el("p",null,it.desc));
       var h=applyHref(it.apply);
       if(/^https:/.test(h)){ var a=el("a","japply","قدّم الآن"); a.href=h; a.target="_blank"; a.rel="noopener noreferrer"; c.appendChild(a); }
-      else if(h){ c.appendChild(copyRow("للتقديم راسلنا على:",h.replace(/^mailto:/,""))); }
+      else if(h){ c.appendChild(copyRow("أرسل السيرة الذاتية على:",h.replace(/^mailto:/,""))); }
       listEl.appendChild(c);
     });
   }

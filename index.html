@@ -6,6 +6,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NABDA | نبضة — أخبار محلية ودولية ورياضة واقتصاد</title>
+<meta name="description" content="نبضة | NABDA: موقع إخباري عربي يقدّم آخر الأخبار المحلية والدولية وأخبار الرياضة والاقتصاد والثقافة بلغة واضحة وبسيطة.">
+<link rel="canonical" href="https://nabdanews.org/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#5a7567">
+<meta property="og:type" content="website"><meta property="og:site_name" content="نبضة | NABDA"><meta property="og:locale" content="ar_AR">
+<meta property="og:title" content="نبضة | NABDA: أخبار محلية ودولية ورياضة واقتصاد">
+<meta property="og:description" content="آخر الأخبار المحلية والدولية والرياضة والاقتصاد والثقافة بلغة واضحة وبسيطة.">
+<meta property="og:url" content="https://nabdanews.org/"><meta property="og:image" content="https://nabdanews.org/og-image.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="نبضة | NABDA"><meta name="twitter:description" content="آخر الأخبار المحلية والدولية والرياضة والاقتصاد والثقافة."><meta name="twitter:image" content="https://nabdanews.org/og-image.png">
+<link rel="icon" href="/favicon-48.png" sizes="48x48" type="image/png"><link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png"><link rel="apple-touch-icon" href="/favicon-192.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"NewsMediaOrganization","@id":"https://nabdanews.org/#org","name":"نبضة | NABDA","alternateName":["نبضة","NABDA"],"url":"https://nabdanews.org/","logo":{"@type":"ImageObject","url":"https://nabdanews.org/favicon-192.png"},"email":"nabdaonline001@gmail.com"},{"@type":"WebSite","@id":"https://nabdanews.org/#site","url":"https://nabdanews.org/","name":"نبضة | NABDA","inLanguage":"ar","publisher":{"@id":"https://nabdanews.org/#org"}}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Source+Serif+4:wght@400;600&family=Noto+Kufi+Arabic:wght@700&family=Cairo:wght@700;800&family=Baloo+Bhaijaan+2:wght@800&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
@@ -774,7 +786,13 @@ function copyRow(label,val){
   return w;
 }
 var SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-4M8.6 13.5l6.8 4"/></svg>';
-function shareUrl(hash){ return location.origin+location.pathname+(hash||""); }
+function shareUrl(hash){
+  /* news and the lead story share their own crawlable page (/n/<id>): real title, summary and photo in link previews and Google */
+  var m=/^#news\/(.+)$/.exec(hash||"");
+  if(m&&!/^s-/.test(decodeURIComponent(m[1]))) return location.origin+"/n/"+m[1];
+  if(hash==="#article") return location.origin+"/n/lead";
+  return location.origin+location.pathname+(hash||"");
+}
 function shToast(msg){ var t=el("div","shtoast",msg); t.setAttribute("role","status"); document.body.appendChild(t); setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2200); }
 function copyText(txt){
   if(navigator.clipboard&&navigator.clipboard.writeText&&window.isSecureContext) return navigator.clipboard.writeText(txt);

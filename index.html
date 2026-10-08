@@ -439,8 +439,8 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .lead h1,.lead h1 a,#leadT,#leadTa{font-family:"Baloo Bhaijaan 2","Cairo","Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-weight:800;letter-spacing:0;line-height:1.45}
 .adbox{flex:none;margin:0 0 28px}
-#adlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-#adlist .ad{margin-bottom:0}
+.adlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.adlist .ad{margin-bottom:0}
 #s-news{background:none;border:0;padding:0;margin-top:6px}
 #s-news h2{color:#5a7567;margin:0 0 4px;padding-bottom:8px;border-bottom:2px solid #5a7567}
 #s-news .story h3{font-size:1.1rem;line-height:1.6}
@@ -449,22 +449,23 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox{margin-top:10px}
 .adbox[hidden]{display:none!important}
 .adbox{margin:14px 0 6px;padding:18px 12px;background:#EEF3F0;border:0}
+#adsslot2{margin:26px 0 24px}
 .adbox:not(.isadm) .adh{display:none}
 .adbox .adh{margin:0 auto 10px;max-width:970px}
 .adbox .adh{margin-bottom:10px}
 .adbox .adh h2{font-size:.85rem;font-weight:600;color:#7a8a82;letter-spacing:0}
-#adlist{align-items:start}
-#adlist .ad{border-color:var(--line);background:#fff}
-#adlist{display:flex;flex-direction:column;gap:12px;max-width:970px;margin-inline:auto}
-#adlist .ad.adimg{padding:0;border:0;background:none;position:relative}
-#adlist .ad.adimg::after{content:"إعلان";position:absolute;bottom:6px;inset-inline-start:6px;font-size:.7rem;line-height:1.4;background:rgba(255,255,255,.88);color:#555;padding:0 6px}
-#adlist .ad img{width:100%;height:auto;max-height:none;object-fit:contain;margin:0}
-#adlist .adnote{border:1.5px dashed #9db3a7;background:#F7FAF8;padding:14px;text-align:center;color:#5a7567;font-size:.95rem}
+.adlist{align-items:start}
+.adlist .ad{border-color:var(--line);background:#fff}
+.adlist{display:flex;flex-direction:column;gap:12px;max-width:970px;margin-inline:auto}
+.adlist .ad.adimg{padding:0;border:0;background:none;position:relative}
+.adlist .ad.adimg::after{content:"إعلان";position:absolute;bottom:6px;inset-inline-start:6px;font-size:.7rem;line-height:1.4;background:rgba(255,255,255,.88);color:#555;padding:0 6px}
+.adlist .ad img{width:100%;height:auto;max-height:none;object-fit:contain;margin:0}
+.adlist .adnote{border:1.5px dashed #9db3a7;background:#F7FAF8;padding:14px;text-align:center;color:#5a7567;font-size:.95rem}
 .astat{display:inline-block;font-size:.8rem;padding:2px 8px;border:1px solid var(--line);margin:4px 0;color:#2F4A3E}
 .astat.on{background:#EEF3F0}.astat.off{color:#C8102E;border-color:#C8102E}
 .arow label,.aadd label{display:block;font-size:.85rem;margin:6px 0 2px}
-#adlist .adfree{border:1.5px dashed #9db3a7;text-align:center;padding:22px 14px;background:#F7FAF8}
-#adlist .adfree b{color:#2F4A3E}
+.adlist .adfree{border:1.5px dashed #9db3a7;text-align:center;padding:22px 14px;background:#F7FAF8}
+.adlist .adfree b{color:#2F4A3E}
 .side[hidden],.board[hidden]{display:none!important}
 .top.solo{grid-template-columns:1fr}
 @media (max-width:520px){
@@ -666,7 +667,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 <main class="wrap" id="home">
   <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
-      <div id="adlist"></div>
+      <div id="adlist" class="adlist"></div>
     </aside>
 
   <div class="date" id="today"></div>
@@ -712,6 +713,11 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   </section>
 
   <div id="secboxes"></div>
+
+  <aside class="adbox" id="adsslot2" aria-label="مساحة إعلانية" hidden>
+      <div class="adh"><h2>إعلانات</h2></div>
+      <div id="adlist2" class="adlist"></div>
+    </aside>
 
 </main>
 <main class="wrap" id="aboutpage" hidden>
@@ -1910,19 +1916,22 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return f;
   }
   function renderAds(){
-    listEl.textContent="";
-    var live=items.filter(function(i){ return isLive(i); }), slot=document.getElementById("adsslot");
-    if(slot){ slot.hidden=!(live.length||adminOn); if(adminOn) slot.classList.add("isadm"); }
-    if(!live.length){
-      if(adminOn){ listEl.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً — هذه المساحة مخفية عن الزوّار حتى يبدأ إعلان.")); }
-      return;
-    }
-    live.forEach(function(it){
-      var u=safeUrl(it.url), n=el(u?"a":"div",it.image?"ad adimg":"ad");
-      if(u){ n.href=u; n.target="_blank"; n.rel="noopener noreferrer sponsored"; if(it.image) n.setAttribute("aria-label",it.title); }
-      if(it.image){ var im=document.createElement("img"); im.src=it.image; im.alt=it.title; im.loading="lazy"; n.appendChild(im); }
-      else { n.appendChild(el("b",null,it.title)); if(it.text) n.appendChild(el("span",null,it.text)); }
-      listEl.appendChild(n);
+    var live=items.filter(function(i){ return isLive(i); });
+    [["adsslot","adlist"],["adsslot2","adlist2"]].forEach(function(p){
+      var slot=document.getElementById(p[0]), le=document.getElementById(p[1]); if(!le) return;
+      le.textContent="";
+      if(slot){ slot.hidden=!(live.length||adminOn); if(adminOn) slot.classList.add("isadm"); }
+      if(!live.length){
+        if(adminOn){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً — هذه المساحة مخفية عن الزوّار حتى يبدأ إعلان.")); }
+        return;
+      }
+      live.forEach(function(it){
+        var u=safeUrl(it.url), n=el(u?"a":"div",it.image?"ad adimg":"ad");
+        if(u){ n.href=u; n.target="_blank"; n.rel="noopener noreferrer sponsored"; if(it.image) n.setAttribute("aria-label",it.title); }
+        if(it.image){ var im=document.createElement("img"); im.src=it.image; im.alt=it.title; im.loading="lazy"; n.appendChild(im); }
+        else { n.appendChild(el("b",null,it.title)); if(it.text) n.appendChild(el("span",null,it.text)); }
+        le.appendChild(n);
+      });
     });
   }
 

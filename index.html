@@ -1995,6 +1995,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       if(open){ if(!built) build(); nT.focus(); pane.scrollIntoView({behavior:"smooth",block:"start"}); }
     };
     head.appendChild(btn);
+    var sh=document.querySelector("#adsslot .adh");
+    if(sh){ var b2=el("button","mkbtn","إدارة الإعلانات"); b2.type="button"; b2.onclick=function(){ if(pane.hidden) btn.onclick(); else pane.scrollIntoView({behavior:"smooth",block:"start"}); }; sh.appendChild(b2); }
   }
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){ return i.title; });

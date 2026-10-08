@@ -3,7 +3,7 @@ const enc = new TextEncoder();
 const COLLECTIONS = ["breaking", "markets", "lead", "news", "ads", "social", "jobs"];
 /* Staff permissions: one per admin area. Owners have all of them. A staff account without a "perms" list (created before
    permissions existed) keeps full access until the owner sets its permissions. */
-export const NEWS_SECTIONS = ["local", "world", "sports", "economy", "culture", "read", "video", "shorts"];
+export const NEWS_SECTIONS = ["local", "world", "sports", "economy", "culture", "art", "read", "video", "shorts"];
 export const PERMS = ["breaking", ...NEWS_SECTIONS.map(k => "news_" + k), "lead", "markets", "social", "jobs", "ads_top", "ads_bottom", "ads_side"];
 export function cleanPerms(v) { return Array.isArray(v) ? [...new Set(v.filter(x => PERMS.includes(x)))] : null; }
 export function permsOf(s) { return !s ? [] : s.owner ? PERMS.slice() : (s.perms || PERMS.slice()); }

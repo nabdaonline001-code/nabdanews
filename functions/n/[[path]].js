@@ -2,7 +2,7 @@
    and /n/<id>.jpg (the article photo). Content comes from data/site.json, the same file the site itself reads.
    /n/lead is the current "أهم خبر". The in-page app keeps using #news/<id>; these URLs are for Google and for link previews. */
 const CANON = "https://nabdanews.org";
-const SEC = { local: "محلي", world: "دولي", sports: "رياضة", economy: "اقتصاد", culture: "ثقافة", read: "اقرأ" };
+const SEC = { local: "محلي", world: "دولي", sports: "رياضة", economy: "اقتصاد", culture: "ثقافة", art: "فن", read: "اقرأ" };
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const plain = s => String(s || "").replace(/\s+/g, " ").trim();

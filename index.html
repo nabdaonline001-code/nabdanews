@@ -652,6 +652,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
       <a class="tl" href="#read">اقرأ</a>
       <a class="tl" href="#sports">رياضة</a>
       <a class="tl" href="#culture">ثقافة</a>
+      <a class="tl" href="#art">فن</a>
       <a class="tl" href="#shorts">SHORTS</a>
     </nav>
     <span class="livebtn" id="livebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>بث تجريبي</span></span>
@@ -893,8 +894,8 @@ function buildArticle(o){
 }
 window.renderArticle=function(){ buildArticle({share:"#article",tag:"أهم خبر",title:LEAD.title,meta:LEAD.by,sum:LEAD.body,full:LEAD.full,img:LEAD.image,alt:LEAD.imageAlt}); };
 
-var SECDEF={local:{t:"محلي",c:"--local"},world:{t:"دولي",c:"--pol"},sports:{t:"رياضة",c:"--sport"},economy:{t:"اقتصاد",c:"--econ"},culture:{t:"ثقافة",c:"--local"},read:{t:"اقرأ",c:"--local"},video:{t:"فيديو",c:"--sport"},shorts:{t:"SHORTS",c:"--sport"}};
-var SECKEYS=["local","world","sports","economy","culture","read","video","shorts"], HOMEKEYS=[];
+var SECDEF={local:{t:"محلي",c:"--local"},world:{t:"دولي",c:"--pol"},sports:{t:"رياضة",c:"--sport"},economy:{t:"اقتصاد",c:"--econ"},culture:{t:"ثقافة",c:"--local"},art:{t:"فن",c:"--local"},read:{t:"اقرأ",c:"--local"},video:{t:"فيديو",c:"--sport"},shorts:{t:"SHORTS",c:"--sport"}};
+var SECKEYS=["local","world","sports","economy","culture","art","read","video","shorts"], HOMEKEYS=[];
 var NEWS=[];
 (function(){ var b=Date.now(); Object.keys(SEC).forEach(function(k){ SEC[k].i.forEach(function(x,n){ NEWS.push({id:"s-"+k+"-"+n,section:k,title:x[0],summary:x[1],full:"",order:b-n*1000,nodate:true}); }); }); })();
 function pubDate(ts){
@@ -990,7 +991,7 @@ function renderHome(){
   var sbx=document.getElementById("secboxes");
   if(sbx){
     sbx.textContent="";
-    ["sports","culture","economy"].forEach(function(k){
+    ["sports","culture","art","economy"].forEach(function(k){
       var list=NEWS.filter(function(n){ return n.section===k; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
       if(!list.length&&!(window.NEWSCAN&&window.NEWSCAN(k))) return;
       var sec=el("section","hsec"); sec.id="hs-"+k; sec.setAttribute("aria-label",SECDEF[k].t);

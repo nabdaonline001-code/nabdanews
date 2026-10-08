@@ -31,6 +31,14 @@ function bytes(dataUri) {
   for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
   return { type: "image/" + m[1], data: u };
 }
+async function imgBytes(env, url, src) {
+  const b = bytes(src); if (b) return b;
+  const m = /^\/img\/[A-Za-z0-9._-]+\.(jpg|png|webp)$/.exec(src || ""); if (!m) return null;
+  try {
+    const r = await env.ASSETS.fetch(new URL(src, url.origin)); if (!r.ok) return null;
+    return { type: "image/" + (m[1] === "jpg" ? "jpeg" : m[1]), data: new Uint8Array(await r.arrayBuffer()) };
+  } catch (e) { return null; }
+}
 function dateAr(ts) {
   try { return new Date(ts).toLocaleDateString("ar-LB-u-nu-latn", { timeZone: "Asia/Beirut", day: "numeric", month: "long", year: "numeric" }); } catch (e) { return ""; }
 }
@@ -100,7 +108,7 @@ export async function onRequestGet(ctx) {
   try { site = await loadSite(ctx.env, url); } catch (e) { return new Response("temporarily unavailable", { status: 503, headers: { "Retry-After": "300" } }); }
   const it = pick(site, id);
   if (!it) return notFound();
-  const b = bytes(it.image);
+  const b = await imgBytes(ctx.env, url, it.image);
   if (wantImg) {
     if (!b) return notFound();
     return new Response(b.data, { headers: { "Content-Type": b.type, "Cache-Control": "public, max-age=3600" } });

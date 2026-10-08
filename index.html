@@ -850,10 +850,11 @@ economy:{t:"اقتصاد",c:"--econ",i:[["المتاجر الصغيرة تسجّ
 ,culture:{t:"ثقافة",c:"--local",i:[["معرض فني جديد يجمع أعمال شباب المدينة","يستمر المعرض ثلاثة أسابيع بدخول مجاني."],["مهرجان الأفلام القصيرة يعلن برنامج دورته الجديدة","يشمل البرنامج عروضاً وورش عمل للمخرجين الشباب."],["إعادة افتتاح المكتبة العامة بعد ترميمها","تضم المكتبة قاعة جديدة للأطفال."],["أمسية موسيقية تراثية على المسرح البلدي","تقام الأمسية مساء الجمعة المقبل."]]}
 };
 var PG={important:["الأخبار المهمة","ستظهر هنا أهم أخبار اليوم فور نشرها."],radar:["رادار","ستظهر هنا متابعات سريعة لأبرز ما يتداوله الناس."],shorts:["شورتس","ستظهر هنا مقاطع الفيديو القصيرة فور نشرها."],informer:["المُخبر","ستظهر هنا مواد هذا القسم فور نشرها."],special:["خاص","ستظهر هنا المواد الخاصة بالموقع فور نشرها."],security:["أمن وقضاء","ستظهر هنا أخبار الأمن والقضاء فور نشرها."],photos:["تقارير مصوّرة","ستظهر هنا التقارير المصوّرة فور نشرها."],read:["اقرأ","ستظهر هنا المقالات والتقارير المطوّلة فور نشرها."],video:["الفيديو","ستظهر هنا مقاطع الفيديو فور نشرها."],culture:["ثقافة","ستظهر هنا أخبار الثقافة فور نشرها."],world:["دولي","ستظهر هنا الأخبار الدولية فور نشرها."],writers:["كتّابنا","ستظهر هنا مقالات كتّاب الموقع فور نشرها."],ads:["أعلن معنا","للإعلان على الموقع، تواصل معنا عبر البيانات التي ستُضاف هنا."],jobs:["وظائف شاغرة","لا توجد وظائف شاغرة حالياً. ستُنشر الفرص الجديدة في هذه الصفحة."],archive:["الأرشيف","سيجد القارئ هنا أخبار الأيام والشهور السابقة."],complaints:["الشكاوى والتصحيحات","إذا لاحظت خطأً في خبر، أرسل لنا ملاحظتك وسنصحّحه بسرعة. ستُضاف طريقة الإرسال هنا."],privacy:["سياسة الخصوصية","ستُكتب هنا سياسة الموقع في جمع بيانات الزوار واستخدامها."],guidelines:["إرشادات التحرير","ستُكتب هنا المعايير التي يلتزم بها فريق التحرير في نشر الأخبار."]};
+function isImgSrc(v){ return typeof v==="string"&&(/^data:image\//.test(v)||/^\/img\/[A-Za-z0-9._-]+$/.test(v)); }
 var LEAD={title:document.getElementById("leadTa").textContent,body:document.getElementById("leadB").textContent,by:document.getElementById("leadBy").textContent,full:"",image:"",imageAlt:""};
 function applyImg(){
   var w=document.getElementById("leadImgWrap"), im=document.getElementById("leadImg");
-  var ok=/^data:image\//.test(LEAD.image||"");
+  var ok=isImgSrc(LEAD.image);
   if(w&&im){ w.hidden=!ok; if(ok){ im.src=LEAD.image; im.alt=LEAD.imageAlt||""; } else { im.removeAttribute("src"); } }
   if(location.hash==="#article") window.renderArticle();
 }
@@ -915,7 +916,7 @@ function buildArticle(o){
   a.appendChild(el("h1",null,o.title));
   if(o.meta) a.appendChild(el("p","meta",o.meta));
   if(o.share){ var as=el("div","artshare"); as.appendChild(shareBtn(o.title,o.share,"مشاركة")); var alb=leadBtn(o.item); if(alb) as.appendChild(alb); a.appendChild(as); }
-  if(o.img&&/^data:image\//.test(o.img)){ var im=el("img","aimg"); im.src=o.img; im.alt=o.alt||""; a.appendChild(im); }
+  if(isImgSrc(o.img)){ var im=el("img","aimg"); im.src=o.img; im.alt=o.alt||""; a.appendChild(im); }
   if(o.embed){ var ew=el("div","vwrap"+(o.vert?" vert":"")); ew.appendChild(o.embed); a.appendChild(ew); }
   if(o.sum) a.appendChild(el("p","sum",o.sum));
   var txt=el("div","txt");
@@ -1039,7 +1040,7 @@ function renderHome(){
       var gr=el("div","hgrid");
       if(!list.length) gr.appendChild(el("p",null,"لا توجد أخبار بعد."));
       list.forEach(function(it){
-        var c=el("article","hcard"), ok=/^data:image\//.test(it.image||"");
+        var c=el("article","hcard"), ok=isImgSrc(it.image);
         if(ok){ var w=el("div","himg"), im=document.createElement("img"); im.src=it.image; im.alt=""; im.loading="lazy"; w.appendChild(im); c.appendChild(w); } else c.classList.add("noimg");
         var h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id); h.appendChild(a); c.appendChild(h);
         var hlb=leadBtn(it,"onimg"); if(hlb) c.appendChild(hlb);
@@ -1715,7 +1716,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   /* admin: make an existing news item the lead story (title, summary, full text, photo) */
   if(adminOn){
     window.setLeadFromNews=async function(it){
-      var good=(typeof it.image==="string"&&/^data:image\/jpeg;base64,/.test(it.image)&&it.image.length<=190000);
+      var good=(isImgSrc(it.image)&&it.image.length<=190000);
       await ref.set({title:String(it.title||"").slice(0,160),body:String(it.summary||"").slice(0,600),full:String(it.full||"").slice(0,8000),by:LEAD.by||"",imageAlt:String(it.title||"").slice(0,140)});
       if(good) await imgRef.set({data:it.image}); else await imgRef.delete();
     };
@@ -1754,7 +1755,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   var curImg="", fPrev, fFile, fRm, vUpW, vUpF, vUpS;
   function syncUp(){ if(vUpW) vUpW.hidden=!(fSec&&(fSec.value==="video"||fSec.value==="shorts")); }
-  function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
+  function goodImg(v){ if(typeof v!=="string") return ""; if(/^\/img\/[A-Za-z0-9._-]+$/.test(v)) return v; return (/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
   function shrinkImg(file){
     return new Promise(function(res,rej){
       var fr=new FileReader();
@@ -1968,7 +1969,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       fr.readAsDataURL(file);
     });
   }
-  function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
+  function goodImg(v){ if(typeof v!=="string") return ""; if(/^\/img\/[A-Za-z0-9._-]+$/.test(v)) return v; return (/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
   function fileField(onData,label,say){
     var f=document.createElement("input"); f.type="file"; f.accept="image/*"; f.setAttribute("aria-label",label);
     f.onchange=function(){

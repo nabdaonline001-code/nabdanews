@@ -192,11 +192,33 @@ export function validOps(ops) {
     typeof o.id === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(o.id) &&
     (o.t === "del" || (o.d && typeof o.d === "object" && !Array.isArray(o.d))));
 }
+
+/* Images are kept as real files (img/<hash>.jpg), not inside data/site.json: any data-URI image in an op is committed as a file
+   and replaced by its /img/... URL. If that fails the image simply stays inline, nothing is lost. */
+const IMG_DATA = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/;
+async function externalizeImages(env, ops) {
+  for (const o of ops) {
+    if (!o || !o.d || typeof o.d !== "object") continue;
+    for (const k of Object.keys(o.d)) {
+      const v = o.d[k]; if (typeof v !== "string" || v.length < 3000) continue;
+      const m = IMG_DATA.exec(v); if (!m) continue;
+      try {
+        const bin = atob(m[2]), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)).slice(0, 10), b => b.toString(16).padStart(2, "0")).join("");
+        const path = "img/" + hash + "." + (m[1] === "jpeg" ? "jpg" : m[1]);
+        try { await putFile(env, path, bytes, "Add image " + hash + " [CF-Pages-Skip]"); } catch (e) { if (!/-422$/.test(String(e.message))) throw e; /* 422 = same file already there */ }
+        o.d[k] = "/" + path;
+      } catch (e) { /* keep the inline image */ }
+    }
+  }
+}
 export async function commitOps(env, ops, who, sess) {
-  const c = cfg(env);
+  const c = cfg(env); let ext = false;
   for (let attempt = 0; attempt < 3; attempt++) {
     const [root, sha] = await Promise.all([fetchData(env), fetchSha(env)]);
     if (sess && missingPerm(root, ops, sess)) throw new Error("forbidden");
+    if (!ext) { await externalizeImages(env, ops); ext = true; }
     ops.forEach(o => applyOp(root, o));
     const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${c.path}`, {
       method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" },

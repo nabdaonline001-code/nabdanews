@@ -51,6 +51,22 @@
   function loadPublic(){
     return fetch("data/site.json?v="+Math.floor(Date.now()/60000),{cache:"no-cache"}).then(function(r){ if(!r.ok) throw new Error("data"); return r.json(); });
   }
+  /* re-read the data (used when a menu link is clicked) and redraw everything that listens; skipped while the admin has unsaved changes */
+  var lastRefresh=0;
+  function refresh(){
+    if(!ready||queue.length||Date.now()-lastRefresh<4000) return Promise.resolve(false);
+    lastRefresh=Date.now();
+    return ready.then(function(){ return admin?api("data").catch(function(){ return loadPublic(); }):loadPublic(); })
+      .then(function(j){ if(queue.length) return false; Object.keys(store).forEach(function(k){ delete store[k]; }); ingest(j); fire(); return true; })
+      .catch(function(){ return false; });
+  }
+  window.NABDA_REFRESH=refresh;
+  document.addEventListener("click",function(e){
+    var a=e.target&&e.target.closest?e.target.closest("header a[href^='#']"):null; if(!a) return;
+    var href=a.getAttribute("href"); if(!href||href==="#") return;
+    var same=href===(location.hash||"#home")||(href==="#home"&&!location.hash);
+    refresh().then(function(){ if(same){ window.dispatchEvent(new HashChangeEvent("hashchange")); window.scrollTo(0,0); } });
+  });
   function load(){
     if(ready) return ready;
     ready=api("me").catch(function(){ return {admin:false}; }).then(function(m){

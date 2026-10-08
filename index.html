@@ -456,7 +456,7 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adside{display:none}
 .adside:not(.isadm) .adh{display:none}
 .adside .adlist{max-width:300px;margin:0}
-.adside.fits:not([hidden]){display:block;position:fixed;top:150px;width:300px;z-index:5}
+.adside.fits:not([hidden]){display:block;position:absolute;top:150px;width:300px;z-index:5}
 .adbox:not(.isadm) .adh{display:none}
 .adbox .adh{margin:0 auto 10px;max-width:970px}
 .adbox .adh{margin-bottom:10px}
@@ -2055,7 +2055,7 @@ var admins=[
     var a=m.querySelector(".about")||m, x=Math.round(a.getBoundingClientRect().left-316);
     if(x<8){ sl.classList.remove("fits"); return; }
     sl.style.left=x+"px"; sl.classList.add("fits");
-    var ft=document.querySelector("footer"), mt=ft?ft.getBoundingClientRect().top-sl.offsetHeight-12:150; sl.style.top=Math.max(70,Math.min(150,mt))+"px";
+    var ft=document.querySelector("footer"), mt=ft?ft.getBoundingClientRect().top+window.pageYOffset-sl.offsetHeight-12:150; sl.style.top=Math.max(70,Math.min(150,mt))+"px";
   }
   var lastHome=null; function homeWatch(){ var hm=document.getElementById("home"), h=!(hm&&hm.hidden); if(h!==lastHome){ lastHome=h; renderAds(); } }
   setInterval(homeWatch,250); window.addEventListener("hashchange",function(){ setTimeout(homeWatch,80); });

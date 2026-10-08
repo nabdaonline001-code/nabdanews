@@ -1915,7 +1915,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     });
   }
   function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
-  function fileField(onData,label){
+  function fileField(onData,label,say){
     var f=document.createElement("input"); f.type="file"; f.accept="image/*"; f.setAttribute("aria-label",label);
     f.onchange=function(){
       var file=f.files&&f.files[0]; if(!file) return;
@@ -1966,7 +1966,7 @@ function mkAdmin(P){
       var r=el("div","arow");
       var t=inp(it.title,"","عنوان الإعلان"), x=area(it.text,"","نص الإعلان"), u=inp(it.url,"","رابط الإعلان (اختياري)",true);
       var curImg=it.image, prev=document.createElement("img"); prev.className="aprev"; prev.alt=""; prev.hidden=!curImg; if(curImg) prev.src=curImg;
-      var ff=fileField(function(d){ curImg=d; prev.src=d; prev.hidden=false; },"صورة الإعلان");
+      var ff=fileField(function(d){ curImg=d; prev.src=d; prev.hidden=false; },"صورة الإعلان",say);
       var rmImg=el("button","ghost","حذف الصورة"); rmImg.type="button"; rmImg.onclick=function(){ curImg=""; prev.hidden=true; prev.removeAttribute("src"); ff.value=""; say("تم حذف الصورة. اضغط حفظ لتثبيت ذلك."); };
       var stt=statusOf(it), sb=el("span","astat "+stt[0],stt[1]);
       var sd=dtField(it.start,"بداية الإعلان"), ed=dtField(it.end,"نهاية الإعلان");
@@ -1998,7 +1998,7 @@ function mkAdmin(P){
     var add=el("div","aadd");
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https:// رابط الإعلان (اختياري)","رابط الإعلان (اختياري)",true);
     var newImg="", nPrev=document.createElement("img"); nPrev.className="aprev"; nPrev.alt=""; nPrev.hidden=true;
-    var nF=fileField(function(d){ newImg=d; nPrev.src=d; nPrev.hidden=false; },"صورة الإعلان");
+    var nF=fileField(function(d){ newImg=d; nPrev.src=d; nPrev.hidden=false; },"صورة الإعلان",say);
     var nS=dtField(0,"بداية الإعلان"), nE=dtField(0,"نهاية الإعلان");
     var acts=el("div","acts");
     addBtn=el("button",null,"إضافة"); addBtn.type="button";

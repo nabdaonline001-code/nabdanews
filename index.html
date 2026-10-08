@@ -451,6 +451,17 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox{margin:14px 0 6px;padding:18px 12px;background:#EEF3F0;border:0}
 #adsslot2{margin:26px 0 24px}
 .adwrap:empty{display:none}
+.adtabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}
+#adsadm .adtab{background:#fff;color:#5a7567}
+#adsadm .adtab.on{background:#5a7567;color:#fff}
+.abox h3{margin:0 0 6px;font-size:1.1rem;color:#2F4A3E}
+.admbtn[aria-expanded="true"]{background:#5a7567;color:#fff;box-shadow:0 0 0 3px rgba(90,117,103,.3)}
+.mkbtn[aria-expanded="true"]{box-shadow:0 0 0 3px rgba(90,117,103,.4)}
+.admbtn.pulse,.mkbtn.pulse{animation:admpulse 1.2s ease-out}
+@keyframes admpulse{0%{box-shadow:0 0 0 0 rgba(90,117,103,.8),0 0 16px 5px rgba(90,117,103,.6)}100%{box-shadow:0 0 0 14px rgba(90,117,103,0),0 0 0 0 rgba(90,117,103,0)}}
+.adm.glow,.mkpanel.glow{animation:admglow 1.5s ease-out}
+@keyframes admglow{0%{box-shadow:0 0 0 0 rgba(90,117,103,.85),0 0 34px 10px rgba(90,117,103,.55)}100%{box-shadow:0 0 0 0 rgba(90,117,103,0),0 0 0 0 rgba(90,117,103,0)}}
+@media (prefers-reduced-motion:reduce){.admbtn.pulse,.mkbtn.pulse,.adm.glow,.mkpanel.glow{animation:none}}
 .achk{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.95rem;color:#2F4A3E;cursor:pointer}
 .achk input{width:auto;margin:0}
 .adside{display:none}
@@ -671,9 +682,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 </div>
 <section class="wrap adm" id="newsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار"></section>
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
-<section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان العلوي"></section>
-<section class="wrap adm" id="adsadm2" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان السفلي"></section>
-<section class="wrap adm" id="adsadm3" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان الجانبي"></section>
+<section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلانات"></section>
 <aside class="adside" id="adsslotside" aria-label="مساحة إعلانية جانبية" hidden>
   <div class="adh"><h2>إعلان جانبي</h2></div>
   <div id="adlistside" class="adlist"></div>
@@ -1968,7 +1977,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
 
 function mkAdmin(P){
-  var pane=document.getElementById(P.paneId), head=document.querySelector("header .bar");
+  var pane=P.pane;
   function mine(){ return items.filter(function(i){ return i.pos===P.pos; }); }
   var rowsEl=null, st=null, nT=null, nX=null, nU=null, addBtn=null, built=false;
   function say(t){ if(st) st.textContent=t||""; }
@@ -2016,8 +2025,8 @@ function mkAdmin(P){
   }
   function build(){
     pane.textContent="";
-    var box=el("div","box"); pane.appendChild(box);
-    box.appendChild(el("h2",null,P.title));
+    var box=el("div","abox"); pane.appendChild(box);
+    box.appendChild(el("h3",null,P.title));
     box.appendChild(el("p","hint","مقاس صورة الإعلان المطلوب من المعلن: "+P.size+" بكسل (JPG أو PNG) — تُعرض كاملة بدون قص، وإذا رُفعت صورة بنسبة مختلفة تُعرض بنسبتها كما هي. الصورة وحدها هي الإعلان، والعنوان للوصف فقط. يظهر الإعلان بين تاريخ البدء وتاريخ الإنهاء، وإذا لم يوجد إعلان فعّال تختفي المساحة عن الزوّار تلقائياً."));
     var add=el("div","aadd");
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https://example.com","رابط الإعلان (LINK)",true);
@@ -2039,23 +2048,38 @@ function mkAdmin(P){
     box.appendChild(add); box.appendChild(rowsEl); box.appendChild(st);
     built=true; renderRows();
   }
-  if(canPos[P.pos] && pane && head){
-    var btn=el("button","admbtn",P.title); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls",P.paneId);
-    btn.onclick=function(){
-      var open=pane.hidden; pane.hidden=!open; btn.setAttribute("aria-expanded",String(open));
-      if(open){ if(!built) build(); nT.focus(); pane.scrollIntoView({behavior:"smooth",block:"start"}); }
-    };
-    head.appendChild(btn);
-    var sh=document.querySelector("#"+P.slotId+" .adh");
-    if(sh){ var b2=el("button","mkbtn","إدارة الإعلان"); b2.type="button"; b2.onclick=function(){ if(pane.hidden) btn.onclick(); else pane.scrollIntoView({behavior:"smooth",block:"start"}); }; sh.appendChild(b2); }
-  }
-  return {renderRows:renderRows};
+  return {renderRows:renderRows, open:function(){ if(!built) build(); if(nT) nT.focus(); }};
 }
-var admins=[
-  mkAdmin({pos:"top",paneId:"adsadm",slotId:"adsslot",title:"إدارة الإعلان العلوي",size:"970×250"}),
-  mkAdmin({pos:"bottom",paneId:"adsadm2",slotId:"adsslot2",title:"إدارة الإعلان السفلي",size:"970×250"}),
-  mkAdmin({pos:"side",paneId:"adsadm3",slotId:"adsslotside",title:"إدارة الإعلان الجانبي",size:"300×600"})
-];
+var admins=[], adminsByPos={}, tabBtns={}, panes={}, lastTab=null;
+var wrapEl=document.getElementById("adsadm"), hdrBar=document.querySelector("header .bar");
+var DEFS=[["top","الإعلان العلوي (تحت عاجل)","970×250","adsslot"],["bottom","الإعلان السفلي (أسفل الصفحة)","970×250","adsslot2"],["side","الإعلان الجانبي (طولي)","300×600","adsslotside"]].filter(function(d){ return canPos[d[0]]; });
+if(DEFS.length&&wrapEl&&hdrBar){
+  var abox=el("div","box"); abox.appendChild(el("h2",null,"إدارة الإعلانات"));
+  var tabs=el("div","adtabs"); tabs.setAttribute("role","tablist"); abox.appendChild(tabs);
+  var hbtn=el("button","admbtn","إدارة الإعلانات"); hbtn.type="button"; hbtn.setAttribute("aria-expanded","false"); hbtn.setAttribute("aria-controls","adsadm");
+  var showTab=function(pos){
+    lastTab=pos;
+    DEFS.forEach(function(d){ var on=d[0]===pos; panes[d[0]].hidden=!on; tabBtns[d[0]].setAttribute("aria-selected",String(on)); tabBtns[d[0]].classList.toggle("on",on); });
+    adminsByPos[pos].open();
+  };
+  var openAds=function(pos){ wrapEl.hidden=false; hbtn.setAttribute("aria-expanded","true"); showTab(pos||lastTab||DEFS[0][0]); wrapEl.scrollIntoView({behavior:"smooth",block:"start"}); };
+  DEFS.forEach(function(d){
+    var tb=el("button","adtab",d[1]); tb.type="button"; tb.setAttribute("role","tab"); tb.setAttribute("aria-selected","false");
+    var p=el("div","adpane"); p.hidden=true; p.setAttribute("role","tabpanel");
+    tabs.appendChild(tb); abox.appendChild(p);
+    var a=mkAdmin({pos:d[0],pane:p,title:d[1],size:d[2]});
+    adminsByPos[d[0]]=a; admins.push(a); tabBtns[d[0]]=tb; panes[d[0]]=p;
+    tb.onclick=function(){ showTab(d[0]); };
+    var sh=document.querySelector("#"+d[3]+" .adh");
+    if(sh){ var b2=el("button","mkbtn","إدارة الإعلان"); b2.type="button"; b2.onclick=function(){ openAds(d[0]); }; sh.appendChild(b2); }
+  });
+  wrapEl.appendChild(abox);
+  hbtn.onclick=function(){
+    if(!wrapEl.hidden){ wrapEl.hidden=true; hbtn.setAttribute("aria-expanded","false"); }
+    else openAds();
+  };
+  hdrBar.appendChild(hbtn);
+}
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){ return i.title; });
     renderAds(); admins.forEach(function(a){ a.renderRows(); });
@@ -2328,6 +2352,19 @@ var admins=[
   },function(){});
 })();
 
+</script>
+<script>
+(function(){
+  document.addEventListener("click",function(e){
+    var b=e.target&&e.target.closest?e.target.closest(".admbtn,.mkbtn"):null; if(!b) return;
+    b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); setTimeout(function(){ b.classList.remove("pulse"); },1300);
+    setTimeout(function(){
+      var id=b.getAttribute("aria-controls"), p=id?document.getElementById(id):null;
+      if(!p||p.hidden) p=document.querySelector(".adm:not([hidden]), .mkpanel:not([hidden])");
+      if(p&&!p.hidden){ p.classList.remove("glow"); void p.offsetWidth; p.classList.add("glow"); setTimeout(function(){ p.classList.remove("glow"); },1600); }
+    },90);
+  },true);
+})();
 </script>
 </body>
 </html>

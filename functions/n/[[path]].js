@@ -21,7 +21,7 @@ function pick(site, id) {
   }
   const n = (site.news || {})[id];
   if (!n || !n.title || n.section === "video" || n.section === "shorts") return null;
-  return { id, section: n.section, title: n.title, summary: n.summary || "", full: n.full || "", image: n.image || "", order: Number(n.order) || 0 };
+  return { id, section: n.section, title: n.title, summary: n.summary || "", full: n.full || "", by: String(n.by || "").slice(0, 80), image: n.image || "", order: Number(n.order) || 0 };
 }
 function bytes(dataUri) {
   const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUri || "");
@@ -79,6 +79,7 @@ ${iso ? `<time datetime="${iso}">${esc(dateAr(it.order))}</time>` : ""}
 ${hasImg ? `<img src="/n/${encodeURIComponent(it.id)}.jpg" alt="${esc(it.title)}" width="900" height="600">` : ""}
 ${it.summary ? `<p class="sum">${esc(it.summary)}</p>` : ""}
 ${paras}
+${it.by ? `<p class="by" style="font-weight:700;border-top:1px solid #ccc;padding-top:12px">بقلم: ${esc(it.by)}</p>` : ""}
 </article>
 <a class="more" href="/">المزيد من الأخبار على نبضة</a></main></body></html>`;
 }

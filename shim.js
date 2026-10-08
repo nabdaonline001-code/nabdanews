@@ -213,12 +213,76 @@
     ov.appendChild(bx); document.body.appendChild(ov); refresh(); nu.focus();
     ov.addEventListener("keydown",function(e){ if(e.key==="Escape") ov.remove(); });
   }
+  /* ---------- statistics panel (owner only) ---------- */
+  function openStats(){
+    var ov=h("div","position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px");
+    var bx=h("div","background:#fff;color:#2b3a33;max-width:640px;width:100%;max-height:90vh;overflow:auto;padding:22px;border-top:8px solid #5a7567;font:15px/1.8 'Noto Kufi Arabic',Tahoma,sans-serif");
+    bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","الإحصائيات");
+    bx.appendChild(h("h2","margin:0 0 6px;font-size:1.2rem;color:#5a7567","إحصائيات الموقع"));
+    var body=h("div",null), close=h("button","margin-top:12px;padding:4px 12px;border:1px solid #5a7567;background:#fff;color:#5a7567;font:inherit;font-size:.85rem;cursor:pointer","إغلاق"); close.type="button"; close.onclick=function(){ ov.remove(); };
+    body.appendChild(h("p","color:#777","جارٍ التحميل..."));
+    bx.appendChild(body); bx.appendChild(close); ov.appendChild(bx); document.body.appendChild(ov);
+    ov.addEventListener("keydown",function(e){ if(e.key==="Escape") ov.remove(); }); close.focus();
+    function sum(days,k){ return days.reduce(function(a,d){ return a+(d[k]||0); },0); }
+    function num(n){ return Number(n||0).toLocaleString("en-US"); }
+    function card(t,days){
+      var c=h("div","flex:1 1 170px;border:1px solid #dde4e0;padding:10px 12px;background:#EEF3F0");
+      c.appendChild(h("div","font-weight:700;color:#5a7567",t));
+      [["زوّار","uv"],["المشاهدات","pv"],["قراءات الأخبار","rd"]].forEach(function(x){ var r=h("div","display:flex;justify-content:space-between;gap:8px"); r.appendChild(h("span",null,x[0])); r.appendChild(h("strong",null,num(sum(days,x[1])))); c.appendChild(r); });
+      return c;
+    }
+    function topList(t,list){
+      var w=h("div","flex:1 1 280px;min-width:0"); w.appendChild(h("h3","margin:10px 0 4px;font-size:1rem;color:#5a7567",t));
+      if(!list.length){ w.appendChild(h("p","color:#777;font-size:.9rem","لا قراءات بعد.")); return w; }
+      list.forEach(function(x,i){ var r=h("div","display:flex;gap:8px;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eef1ef;font-size:.9rem"); r.appendChild(h("span","min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap",(i+1)+". "+x.title)); r.appendChild(h("strong","flex:none",num(x.n))); w.appendChild(r); });
+      return w;
+    }
+    api("stats").then(function(j){
+      body.textContent="";
+      if(!j.enabled){
+        body.appendChild(h("p","margin:6px 0","العدّاد جاهز في الكود لكنه غير مفعّل بعد، يلزمه خطوة واحدة في Cloudflare (مرة واحدة):"));
+        var ol=h("ol","margin:0 0 8px;padding-inline-start:22px");
+        ["افتح Cloudflare ← Workers & Pages ← KV، واضغط Create، وسمّ المساحة nabda-stats.","افتح مشروع الموقع (Pages) ← Settings ← Bindings ← Add ← KV namespace.","اكتب اسم المتغير STATS بالضبط، واختر المساحة nabda-stats، ثم احفظ.","اعمل Deployments ← Retry deployment (أو أي تعديل جديد على الموقع)، ثم افتح هذه الصفحة من جديد."].forEach(function(t){ ol.appendChild(h("li",null,t)); });
+        body.appendChild(ol); return;
+      }
+      var d=j.days;
+      body.appendChild(h("p","margin:0 0 8px;font-size:.88rem;color:#555","الأرقام بتوقيت بيروت. الزائر يُحسب مرة واحدة في اليوم. لا تُحسب زيارات الإدارة ولا محركات البحث والبوتات."));
+      var cards=h("div","display:flex;gap:8px;flex-wrap:wrap");
+      cards.appendChild(card("اليوم",d.slice(-1))); cards.appendChild(card("آخر 7 أيام",d.slice(-7))); cards.appendChild(card("آخر 30 يوماً",d)); body.appendChild(cards);
+      body.appendChild(h("h3","margin:14px 0 4px;font-size:1rem;color:#5a7567","الزوّار في آخر 14 يوماً"));
+      var last=d.slice(-14), mx=Math.max.apply(null,last.map(function(x){ return x.uv; }).concat([1]));
+      var ch=h("div","display:flex;gap:3px;align-items:flex-end;height:110px;direction:ltr;border-bottom:1px solid #5a7567");
+      last.forEach(function(x){ var col=h("div","flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0;font-size:.7rem"); col.title=x.d+": "+x.uv+" زائر، "+x.pv+" مشاهدة، "+x.rd+" قراءة"; col.appendChild(h("span","color:#5a7567",x.uv?String(x.uv):"")); col.appendChild(h("div","width:100%;background:#5a7567;height:"+Math.round(x.uv/mx*80)+"px;min-height:"+(x.uv?"2px":"0"))); ch.appendChild(col); });
+      body.appendChild(ch);
+      var lab=h("div","display:flex;gap:3px;direction:ltr;font-size:.65rem;color:#777"); last.forEach(function(x){ lab.appendChild(h("span","flex:1;text-align:center;min-width:0",x.d.slice(8))); }); body.appendChild(lab);
+      var tops=h("div","display:flex;gap:16px;flex-wrap:wrap"); tops.appendChild(topList("الأكثر قراءة (7 أيام)",j.top7)); tops.appendChild(topList("الأكثر قراءة (30 يوماً)",j.top30)); body.appendChild(tops);
+    }).catch(function(e){ body.textContent=""; body.appendChild(h("p","color:#C8102E",e.message==="forbidden"?"هذه الصفحة للمدير الأساسي فقط.":"تعذّر تحميل الإحصائيات، حاول مرة أخرى.")); });
+  }
+  /* ---------- visitor counter: one tiny request per page load / per news item opened (not for logged-in staff) ---------- */
+  var seenRead={};
+  function hit(b){
+    try{ var s=JSON.stringify(b);
+      if(navigator.sendBeacon) navigator.sendBeacon("/api/hit",new Blob([s],{type:"text/plain"}));
+      else fetch("/api/hit",{method:"POST",body:s,keepalive:true,credentials:"same-origin"}).catch(function(){});
+    }catch(e){}
+  }
+  function trackRoute(first){
+    var hs=location.hash||"", m=/^#news\/([^\/?]+)/.exec(hs), id=hs==="#article"?"lead":(m?decodeURIComponent(m[1]):"");
+    if(first||hs!==trackRoute.last) hit({k:"pv"});
+    trackRoute.last=hs;
+    if(id&&!/^s-/.test(id)&&!seenRead[id]){ seenRead[id]=1; hit({k:"read",id:id}); }
+  }
+  function startCounter(){
+    if(admin||!/^https?:$/.test(location.protocol)||/^(localhost|127\.)/.test(location.hostname)) return;
+    trackRoute(true); window.addEventListener("hashchange",function(){ trackRoute(false); });
+  }
   function adminBar(){
     var b=h("div","position:fixed;inset-inline-start:16px;bottom:12px;z-index:99998;display:flex;gap:8px;align-items:center;background:#5a7567;color:#fff;padding:6px 12px;font:600 13px 'Noto Kufi Arabic',Tahoma,sans-serif");
     b.appendChild(h("span",null,"وضع المدير"));
     var x=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","خروج"); x.type="button";
     x.onclick=function(){ api("logout","POST",{}).catch(function(){}).then(function(){ location.reload(); }); };
-    if(owner){ var u=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","المستخدمون"); u.type="button"; u.onclick=openUsers; b.appendChild(u); }
+    if(owner){ var u=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","المستخدمون"); u.type="button"; u.onclick=openUsers; b.appendChild(u);
+      var sb=h("button","border:1px solid #fff;background:transparent;color:#fff;padding:2px 10px;font:inherit;cursor:pointer","الإحصائيات"); sb.type="button"; sb.onclick=openStats; b.appendChild(sb); }
     /* maintenance mode: label for everyone logged in, switch for the owner */
     var mlab=h("span","background:#C8102E;padding:0 8px","الموقع مغلق للجمهور"); mlab.hidden=true; b.insertBefore(mlab,b.children[1]||null);
     var mb=null, mOn=false;
@@ -247,6 +311,7 @@
   function boot(){
     load().then(function(){
       if(admin) adminBar(); else { footerLink(); if(location.hash==="#admin") openLogin(); }
+      startCounter();
     });
     window.addEventListener("hashchange",function(){ if(!admin&&location.hash==="#admin") openLogin(); });
   }

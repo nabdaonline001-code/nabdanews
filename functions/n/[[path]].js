@@ -1,6 +1,7 @@
 /* Crawlable, share-friendly article pages: /n/<id> (HTML with real <title>, description, Open Graph and NewsArticle data)
    and /n/<id>.jpg (the article photo). Content comes from data/site.json, the same file the site itself reads.
    /n/lead is the current "أهم خبر". The in-page app keeps using #news/<id>; these URLs are for Google and for link previews. */
+import { record } from "../api/_stats.js";
 const CANON = "https://nabdanews.org";
 const SEC = { local: "محلي", world: "دولي", sports: "رياضة", economy: "اقتصاد", culture: "ثقافة", art: "فن", read: "اقرأ" };
 
@@ -104,5 +105,6 @@ export async function onRequestGet(ctx) {
     if (!b) return notFound();
     return new Response(b.data, { headers: { "Content-Type": b.type, "Cache-Control": "public, max-age=3600" } });
   }
+  if (ctx.env.STATS && typeof ctx.waitUntil === "function") ctx.waitUntil(record(ctx.env, ctx.request, "pv").then(() => record(ctx.env, ctx.request, "read", it.id))); /* people arriving from Google or a shared link */
   return new Response(page(it, !!b), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" } });
 }

@@ -526,6 +526,11 @@ footer.ft .fbot,footer.ft small,footer.ft p{color:rgba(255,255,255,.85)}
 .readbox .rd{display:block;color:#fff;padding:9px 0;border-top:1px solid rgba(255,255,255,.35);font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.95rem;line-height:1.6}
 .readbox .rd:hover{text-decoration:underline}
 .readbox p{color:#fff;margin:0}
+.board.toprd{background:#8A1020;border-color:#8A1020;position:relative;overflow:hidden}
+.toprd::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='120' viewBox='0 0 360 120'%3E%3Cpath d='M0 60H110L124 60L136 28L150 98L164 8L178 72L188 60H360' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x 0 50%/360px 120px;opacity:.2;animation:nbpulse 9s linear infinite;pointer-events:none}
+@keyframes nbpulse{to{background-position-x:-360px}}
+@media (prefers-reduced-motion:reduce){.toprd::before{animation:none}}
+.toprd>*{position:relative;z-index:1}
 .toprd .rd{display:flex;gap:10px;align-items:baseline}.toprd .rn{flex:none;font-weight:900;min-width:1.2em;opacity:.85}
 .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin:16px 0;align-items:start}
 .vcard h3{margin:10px 0 4px;font-size:1rem}.vcard p{margin:0;color:var(--muted)}

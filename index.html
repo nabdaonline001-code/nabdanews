@@ -425,8 +425,6 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .hcard>.ldbtn:hover:not(:disabled),.hcard>.ldbtn.done{background:#2F4A3E;color:#fff}
 .artshare .ldbtn{margin:0;height:38px;padding:0 16px 0 14px;font-size:.92rem}.artshare{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .nrow .ldbtn{margin:0;white-space:nowrap}
-.art .byline{margin:26px 0 8px;padding-top:14px;border-top:1px solid var(--line);font:600 1rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;color:#5a7567}
-.art .byline strong{color:#2F4A3E;font-weight:800}
 .about.art .aimg{display:block;width:100%;height:auto;max-height:440px;object-fit:cover;margin:0 0 20px}
 .mkpanel input[type=file]{padding:6px}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -840,11 +838,7 @@ function buildArticle(o){
   var txt=el("div","txt");
   String(o.full||"").split(/\n+/).forEach(function(t){ t=t.trim(); if(t) txt.appendChild(el("p",null,t)); });
   a.appendChild(txt);
-<<<<<<< Updated upstream
   if(o.by){ a.appendChild(el("p","byline","بقلم: "+o.by)); }
-=======
-  if(o.author){ var au=el("p","byline"); au.appendChild(el("span",null,"بقلم: ")); au.appendChild(el("strong",null,o.author)); a.appendChild(au); }
->>>>>>> Stashed changes
   if(o.url&&/^https?:\/\//i.test(o.url)){ var ex=el("a","back","فتح الرابط الأصلي"); ex.href=o.url; ex.target="_blank"; ex.rel="noopener noreferrer"; ex.style.display="block"; ex.style.marginBottom="10px"; a.appendChild(ex); }
   var b=el("a","back","العودة إلى الصفحة الرئيسية"); b.href="#home"; a.appendChild(b);
   ap.appendChild(a);
@@ -1173,11 +1167,7 @@ function renderNewsArticle(id){
   if(!it){ buildArticle({tag:"",title:"الخبر غير موجود",meta:"",sum:"ربما حُذف هذا الخبر أو تغيّر رابطه.",full:""}); return null; }
   var dt=it.nodate?"":pubDate(it.order);
   var isV=(it.section==="video"||it.section==="shorts"), emb=isV?videoEmbed(it.url):null;
-<<<<<<< Updated upstream
   buildArticle({share:newsHref(it.id),tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,by:it.by,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||""),item:it});
-=======
-  buildArticle({share:newsHref(it.id),tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||""),item:it,author:it.author});
->>>>>>> Stashed changes
   return it;
 }
 function route(keep){
@@ -1663,11 +1653,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var col=db.collection("news"), adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
   var panel=document.getElementById("newsadm");
-<<<<<<< Updated upstream
   var fUrl,fSec,fTitle,fSum,fFull,fBy,fSave,fCancel,fSt,fHead,listEl,filt,editing=null,built=false;
-=======
-  var fUrl,fSec,fTitle,fSum,fFull,fAuthor,fAuthW,fSave,fCancel,fSt,fHead,listEl,filt,editing=null,built=false;
->>>>>>> Stashed changes
   function say(t){ if(fSt) fSt.textContent=t||""; }
   async function run(btn,fn,ok){
     btn.disabled=true; say("");
@@ -1676,7 +1662,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     btn.disabled=false;
   }
   var curImg="", fPrev, fFile, fRm, vUpW, vUpF, vUpS;
-  function syncUp(){ if(vUpW) vUpW.hidden=!(fSec&&(fSec.value==="video"||fSec.value==="shorts")); if(fAuthW) fAuthW.hidden=!(fSec&&fSec.value==="read"); }
+  function syncUp(){ if(vUpW) vUpW.hidden=!(fSec&&(fSec.value==="video"||fSec.value==="shorts")); }
   function goodImg(v){ return (typeof v==="string" && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(v) && v.length<130000)?v:""; }
   function shrinkImg(file){
     return new Promise(function(res,rej){
@@ -1712,19 +1698,11 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return sel;
   }
   function resetForm(){
-<<<<<<< Updated upstream
     editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; fBy.value=""; fUrl.value=""; showImg(""); if(vUpF){ vUpF.value=""; vUpS.textContent=""; }
     fSave.textContent="إضافة الخبر"; fCancel.hidden=true; fHead.textContent="إضافة خبر جديد";
   }
   function startEdit(it){
     editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fBy.value=it.by||""; fUrl.value=it.url||""; showImg(it.image); syncUp();
-=======
-    editing=null; fTitle.value=""; fSum.value=""; fFull.value=""; if(fAuthor) fAuthor.value=""; fUrl.value=""; showImg(""); if(vUpF){ vUpF.value=""; vUpS.textContent=""; }
-    fSave.textContent="إضافة الخبر"; fCancel.hidden=true; fHead.textContent="إضافة خبر جديد";
-  }
-  function startEdit(it){
-    editing=it.id; fSec.value=it.section; fTitle.value=it.title; fSum.value=it.summary; fFull.value=it.full; fUrl.value=it.url||""; if(fAuthor) fAuthor.value=it.author||""; showImg(it.image); syncUp();
->>>>>>> Stashed changes
     fSave.textContent="حفظ التعديل"; fCancel.hidden=false; fHead.textContent="تعديل الخبر"; say("");
     fTitle.focus();
   }
@@ -1800,12 +1778,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     fSec.addEventListener("change",syncUp); syncUp();
     box.appendChild(field("الملخص (سطر أو سطران)",fSum));
     box.appendChild(field("النص الكامل (اترك سطراً فارغاً بين الفقرات)",fFull));
-<<<<<<< Updated upstream
     box.appendChild(field("اسم الكاتب (اختياري، يظهر في نهاية المقال، مثل مقالات قسم «اقرأ»)",fBy));
-=======
-    fAuthor=document.createElement("input"); fAuthor.type="text"; fAuthor.maxLength=80;
-    fAuthW=field("اسم الكاتب (يظهر في نهاية المقال، لقسم «اقرأ»)",fAuthor); box.appendChild(fAuthW); syncUp();
->>>>>>> Stashed changes
     var btns=el("div","btns");
     fSave=el("button",null,"إضافة الخبر"); fSave.type="button";
     fCancel=el("button","ghost","إلغاء التعديل"); fCancel.type="button"; fCancel.hidden=true;
@@ -1813,11 +1786,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     fSave.onclick=function(){
       var t=fTitle.value.trim(); if(!t){ say("اكتب عنوان الخبر أولاً."); fTitle.focus(); return; }
       var uu=fUrl.value.trim(); if(uu&&!/^https?:\/\//i.test(uu)&&!/^\/videos\/[\w.-]+\.(mp4|webm)$/i.test(uu)){ say("الرابط يجب أن يبدأ بـ https://"); fUrl.focus(); return; }
-<<<<<<< Updated upstream
       var data={section:fSec.value,title:t,summary:fSum.value.trim(),full:fFull.value.trim(),by:fBy.value.trim(),url:uu,image:curImg};
-=======
-      var data={section:fSec.value,title:t,summary:fSum.value.trim(),full:fFull.value.trim(),url:uu,image:curImg,author:fSec.value==="read"?fAuthor.value.trim():""};
->>>>>>> Stashed changes
       if(editing){ var id=editing; run(fSave,async function(){ await col.doc(id).update(data); resetForm(); },"تم حفظ التعديل."); }
       else{ data.order=Date.now(); run(fSave,async function(){ await col.add(data); resetForm(); },"تمت إضافة الخبر."); }
     };
@@ -1854,11 +1823,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   col.orderBy("order","desc").onSnapshot(function(snap){
     NEWS=snap.docs.map(function(d){ var x=d.data()||{};
-<<<<<<< Updated upstream
       return {id:d.id,section:String(x.section||""),title:String(x.title||""),summary:String(x.summary||""),full:String(x.full||""),by:String(x.by||"").slice(0,80),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0}; })
-=======
-      return {id:d.id,section:String(x.section||""),title:String(x.title||""),summary:String(x.summary||""),full:String(x.full||""),url:String(x.url||""),author:String(x.author||"").slice(0,80),image:goodImg(x.image),order:Number(x.order)||0}; })
->>>>>>> Stashed changes
       .filter(function(i){ return i.title && SECDEF.hasOwnProperty(i.section); });
     window.refreshViews(); renderList();
   },function(){ /* keep the sample stories if the store is unavailable */ });

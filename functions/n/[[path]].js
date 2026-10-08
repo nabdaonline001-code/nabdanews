@@ -21,11 +21,7 @@ function pick(site, id) {
   }
   const n = (site.news || {})[id];
   if (!n || !n.title || n.section === "video" || n.section === "shorts") return null;
-<<<<<<< Updated upstream
   return { id, section: n.section, title: n.title, summary: n.summary || "", full: n.full || "", by: String(n.by || "").slice(0, 80), image: n.image || "", order: Number(n.order) || 0 };
-=======
-  return { id, section: n.section, title: n.title, summary: n.summary || "", full: n.full || "", image: n.image || "", order: Number(n.order) || 0, author: plain(n.author).slice(0, 80) };
->>>>>>> Stashed changes
 }
 function bytes(dataUri) {
   const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUri || "");
@@ -47,7 +43,7 @@ function page(it, hasImg) {
     "@context": "https://schema.org", "@type": "NewsArticle", headline: cut(it.title, 110), description: desc, inLanguage: "ar",
     mainEntityOfPage: url, image: [img],
     ...(iso ? { datePublished: iso, dateModified: iso } : {}),
-    author: it.author ? { "@type": "Person", name: it.author } : { "@type": "Organization", name: "نبضة | NABDA", url: CANON },
+    author: { "@type": "Organization", name: "نبضة | NABDA", url: CANON },
     publisher: { "@type": "Organization", name: "نبضة | NABDA", url: CANON, logo: { "@type": "ImageObject", url: CANON + "/og-image.png" } },
   };
   const paras = String(it.full || "").split(/\n+/).map(t => t.trim()).filter(Boolean).map(t => "<p>" + esc(t) + "</p>").join("");
@@ -72,7 +68,6 @@ main{max-width:780px;margin:0 auto;padding:26px 20px 60px}
 h1{margin:.4em 0 .2em;font:800 clamp(1.5rem,4vw,2.2rem)/1.5 "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;color:var(--g)}
 time{display:block;color:#6b8478;font:.9rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;margin-bottom:16px}
 img{display:block;width:100%;height:auto;margin:0 0 18px}.sum{font-weight:700}
-.by{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);font:600 1rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;color:var(--g)}.by strong{color:#2F4A3E}
 .more{display:inline-block;margin-top:24px;border:1px solid var(--g);color:var(--g);padding:6px 18px;text-decoration:none;font:700 .95rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
 .more:hover{background:var(--g);color:#fff}
 </style></head><body>
@@ -84,11 +79,7 @@ ${iso ? `<time datetime="${iso}">${esc(dateAr(it.order))}</time>` : ""}
 ${hasImg ? `<img src="/n/${encodeURIComponent(it.id)}.jpg" alt="${esc(it.title)}" width="900" height="600">` : ""}
 ${it.summary ? `<p class="sum">${esc(it.summary)}</p>` : ""}
 ${paras}
-<<<<<<< Updated upstream
 ${it.by ? `<p class="by" style="font-weight:700;border-top:1px solid #ccc;padding-top:12px">بقلم: ${esc(it.by)}</p>` : ""}
-=======
-${it.author ? `<p class="by">بقلم: <strong>${esc(it.author)}</strong></p>` : ""}
->>>>>>> Stashed changes
 </article>
 <a class="more" href="/">المزيد من الأخبار على نبضة</a></main></body></html>`;
 }

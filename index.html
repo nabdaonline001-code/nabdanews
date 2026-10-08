@@ -223,15 +223,15 @@ footer.ft a:focus-visible{outline-color:#5a7567}
 .brkf button[aria-pressed=true]{background:#5a7567;color:#fff}
 .brkf button:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
 @media (max-width:700px){#adm .row,#adm .add{grid-template-columns:1fr 1fr}}
-#adsadm .aadd,#adsadm .arow{display:block}
-#adsadm .aadd{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
-#adsadm .aadd>input,#adsadm .aadd>textarea,#adsadm .arow>input,#adsadm .arow>textarea{margin-bottom:8px}
-#adsadm input[type=file]{padding:6px}
-#adsadm .acts{display:flex;gap:8px;margin-top:8px}
-#adsadm .aprev{display:block;max-width:220px;max-height:120px;object-fit:cover;margin:6px 0}
-#adsadm .arow{padding:14px 0;border-bottom:1px solid var(--line)}
-#adsadm .arow>button.ghost{margin-top:6px}
-#adsadm input[type=datetime-local]{max-width:320px}
+[id^=adsadm] .aadd,[id^=adsadm] .arow{display:block}
+[id^=adsadm] .aadd{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+[id^=adsadm] .aadd>input,[id^=adsadm] .aadd>textarea,[id^=adsadm] .arow>input,[id^=adsadm] .arow>textarea{margin-bottom:8px}
+[id^=adsadm] input[type=file]{padding:6px}
+[id^=adsadm] .acts{display:flex;gap:8px;margin-top:8px}
+[id^=adsadm] .aprev{display:block;max-width:220px;max-height:120px;object-fit:cover;margin:6px 0}
+[id^=adsadm] .arow{padding:14px 0;border-bottom:1px solid var(--line)}
+[id^=adsadm] .arow>button.ghost{margin-top:6px}
+[id^=adsadm] input[type=datetime-local]{max-width:320px}
 .adm .empty{margin:0}
 @media (max-width:700px){.adm .row,.adm .add{grid-template-columns:1fr 1fr}.adm .row input:first-child,.adm .add input:first-child{grid-column:1/-1}}
 .board{background:#5a7567;color:#fff;border-color:#5a7567}
@@ -663,7 +663,8 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 </div>
 <section class="wrap adm" id="newsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار"></section>
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
-<section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلانات"></section>
+<section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان العلوي"></section>
+<section class="wrap adm" id="adsadm2" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان السفلي"></section>
 <main class="wrap" id="home">
   <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
@@ -1869,10 +1870,10 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("ads"), items=[], adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
-  var listEl=document.getElementById("adlist"), pane=document.getElementById("adsadm"), head=document.querySelector("header .bar");
+  var listEl=document.getElementById("adlist");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
-  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,start:Number(x.start)||0,end:Number(x.end)||0}; }
+  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,pos:(x.pos==="bottom"?"bottom":"top"),start:Number(x.start)||0,end:Number(x.end)||0}; }
   function isLive(it,now){ now=now||Date.now(); return (!it.start||now>=it.start)&&(!it.end||now<it.end); }
   function toIn(ms){ if(!ms) return ""; var d=new Date(ms),p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes()); }
   function fromIn(v){ if(!v) return 0; var t=new Date(v).getTime(); return isFinite(t)?t:0; }
@@ -1916,13 +1917,13 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return f;
   }
   function renderAds(){
-    var live=items.filter(function(i){ return isLive(i); });
-    [["adsslot","adlist"],["adsslot2","adlist2"]].forEach(function(p){
+    [["adsslot","adlist","top"],["adsslot2","adlist2","bottom"]].forEach(function(p){
+      var live=items.filter(function(i){ return i.pos===p[2] && isLive(i); });
       var slot=document.getElementById(p[0]), le=document.getElementById(p[1]); if(!le) return;
       le.textContent="";
       if(slot){ slot.hidden=!(live.length||adminOn); if(adminOn) slot.classList.add("isadm"); }
       if(!live.length){
-        if(adminOn){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً — هذه المساحة مخفية عن الزوّار حتى يبدأ إعلان.")); }
+        if(adminOn){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً في هذه المساحة — هي مخفية عن الزوّار حتى يبدأ إعلان.")); }
         return;
       }
       live.forEach(function(it){
@@ -1935,6 +1936,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     });
   }
 
+function mkAdmin(P){
+  var pane=document.getElementById(P.paneId), head=document.querySelector("header .bar");
+  function mine(){ return items.filter(function(i){ return i.pos===P.pos; }); }
   var rowsEl=null, st=null, nT=null, nX=null, nU=null, addBtn=null, built=false;
   function say(t){ if(st) st.textContent=t||""; }
   async function run(btn,fn,ok){
@@ -1948,8 +1952,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function renderRows(){
     if(!rowsEl) return;
     rowsEl.textContent="";
-    if(!items.length){ rowsEl.appendChild(el("p","empty","لا توجد إعلانات بعد. أضف أول إعلان من الأعلى.")); return; }
-    items.forEach(function(it){
+    if(!mine().length){ rowsEl.appendChild(el("p","empty","لا توجد إعلانات بعد. أضف أول إعلان من الأعلى.")); return; }
+    mine().forEach(function(it){
       var r=el("div","arow");
       var t=inp(it.title,"","عنوان الإعلان"), x=area(it.text,"","نص الإعلان"), u=inp(it.url,"","رابط الإعلان (اختياري)",true);
       var curImg=it.image, prev=document.createElement("img"); prev.className="aprev"; prev.alt=""; prev.hidden=!curImg; if(curImg) prev.src=curImg;
@@ -1980,7 +1984,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function build(){
     pane.textContent="";
     var box=el("div","box"); pane.appendChild(box);
-    box.appendChild(el("h2",null,"إدارة الإعلانات"));
+    box.appendChild(el("h2",null,P.title));
     box.appendChild(el("p","hint","مقاس صورة الإعلان المطلوب من المعلن: 970×250 بكسل (JPG أو PNG) — تُعرض كاملة بدون قص، وإذا رُفعت صورة بنسبة مختلفة تُعرض بنسبتها كما هي. الصورة وحدها هي الإعلان، والعنوان للوصف فقط. يظهر الإعلان بين تاريخ البدء وتاريخ الإنهاء، وإذا لم يوجد إعلان فعّال تختفي المساحة عن الزوّار تلقائياً."));
     var add=el("div","aadd");
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https:// رابط الإعلان (اختياري)","رابط الإعلان (اختياري)",true);
@@ -1993,7 +1997,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       var tt=nT.value.trim(); if(!tt){ say("اكتب عنوان الإعلان."); nT.focus(); return; }
       var s2=fromIn(nS.value), e2=fromIn(nE.value);
       if(s2&&e2&&e2<=s2){ say("تاريخ الإنهاء يجب أن يكون بعد تاريخ البدء."); return; }
-      run(addBtn,async function(){ await col.add({title:tt,text:nX.value.trim(),url:nU.value.trim(),image:newImg,order:Date.now(),start:s2,end:e2}); nS.value=""; nE.value=""; nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
+      run(addBtn,async function(){ await col.add({pos:P.pos,title:tt,text:nX.value.trim(),url:nU.value.trim(),image:newImg,order:Date.now(),start:s2,end:e2}); nS.value=""; nE.value=""; nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
     };
     acts.appendChild(addBtn);
     add.appendChild(nT); add.appendChild(nX); add.appendChild(nU); add.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",nS)); add.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",nE)); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
@@ -2002,18 +2006,24 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     built=true; renderRows();
   }
   if(adminOn && pane && head){
-    var btn=el("button","admbtn","إدارة الإعلانات"); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","adsadm");
+    var btn=el("button","admbtn",P.title); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls",P.paneId);
     btn.onclick=function(){
       var open=pane.hidden; pane.hidden=!open; btn.setAttribute("aria-expanded",String(open));
       if(open){ if(!built) build(); nT.focus(); pane.scrollIntoView({behavior:"smooth",block:"start"}); }
     };
     head.appendChild(btn);
-    var sh=document.querySelector("#adsslot .adh");
-    if(sh){ var b2=el("button","mkbtn","إدارة الإعلانات"); b2.type="button"; b2.onclick=function(){ if(pane.hidden) btn.onclick(); else pane.scrollIntoView({behavior:"smooth",block:"start"}); }; sh.appendChild(b2); }
+    var sh=document.querySelector("#"+P.slotId+" .adh");
+    if(sh){ var b2=el("button","mkbtn","إدارة الإعلان"); b2.type="button"; b2.onclick=function(){ if(pane.hidden) btn.onclick(); else pane.scrollIntoView({behavior:"smooth",block:"start"}); }; sh.appendChild(b2); }
   }
+  return {renderRows:renderRows};
+}
+var admins=[
+  mkAdmin({pos:"top",paneId:"adsadm",slotId:"adsslot",title:"إدارة الإعلان العلوي"}),
+  mkAdmin({pos:"bottom",paneId:"adsadm2",slotId:"adsslot2",title:"إدارة الإعلان السفلي"})
+];
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){ return i.title; });
-    renderAds(); renderRows();
+    renderAds(); admins.forEach(function(a){ a.renderRows(); });
   },function(){ /* store unavailable: slot stays hidden */ });
   setInterval(renderAds,30000);
 })();

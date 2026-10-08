@@ -450,6 +450,9 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox[hidden]{display:none!important}
 .adbox{margin:14px 0 6px;padding:18px 12px;background:#EEF3F0;border:0}
 #adsslot2{margin:26px 0 24px}
+.adwrap:empty{display:none}
+.achk{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.95rem;color:#2F4A3E;cursor:pointer}
+.achk input{width:auto;margin:0}
 .adside{display:none}
 .adside:not(.isadm) .adh{display:none}
 .adside .adlist{max-width:300px;margin:0}
@@ -674,12 +677,13 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   <div class="adh"><h2>إعلان جانبي</h2></div>
   <div id="adlistside" class="adlist"></div>
 </aside>
-<main class="wrap" id="home">
+<div class="wrap adwrap" lang="ar" dir="rtl">
   <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
       <div id="adlist" class="adlist"></div>
     </aside>
-
+</div>
+<main class="wrap" id="home">
   <div class="date" id="today"></div>
   <section class="top">
     <article class="lead">
@@ -723,11 +727,6 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   </section>
 
   <div id="secboxes"></div>
-
-  <aside class="adbox" id="adsslot2" aria-label="مساحة إعلانية" hidden>
-      <div class="adh"><h2>إعلانات</h2></div>
-      <div id="adlist2" class="adlist"></div>
-    </aside>
 
 </main>
 <main class="wrap" id="aboutpage" hidden>
@@ -789,6 +788,12 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 </main>
 <main class="wrap" id="secpage" hidden></main>
 <main class="wrap" id="articlepage" hidden></main>
+<div class="wrap adwrap" lang="ar" dir="rtl">
+  <aside class="adbox" id="adsslot2" aria-label="مساحة إعلانية" hidden>
+      <div class="adh"><h2>إعلانات</h2></div>
+      <div id="adlist2" class="adlist"></div>
+    </aside>
+</div>
 <section class="wrap adm" id="socadm" lang="ar" dir="rtl" hidden aria-label="إدارة روابط التواصل"></section>
 <footer class="ft" lang="ar" dir="rtl"><div class="wrap fgrid">
   <div class="fbrand"><a class="flogo" dir="ltr" href="#home" aria-label="NABDA, نبضة">NABDA <span class="sep" aria-hidden="true">|</span> <span class="ar" lang="ar" dir="rtl">نبضة</span></a>
@@ -1882,10 +1887,11 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var listEl=document.getElementById("adlist");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
-  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,pos:(x.pos==="bottom"?"bottom":(x.pos==="side"?"side":"top")),start:Number(x.start)||0,end:Number(x.end)||0}; }
+  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,pos:(x.pos==="bottom"?"bottom":(x.pos==="side"?"side":"top")),all:!!x.all,start:Number(x.start)||0,end:Number(x.end)||0}; }
   function isLive(it,now){ now=now||Date.now(); return (!it.start||now>=it.start)&&(!it.end||now<it.end); }
   function toIn(ms){ if(!ms) return ""; var d=new Date(ms),p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes()); }
   function normUrl(v){ v=String(v||"").trim(); if(!v) return ""; if(/^https?:\/\//i.test(v)) return v; if(/^[a-z][a-z0-9+.-]*:/i.test(v)&&!/^[^\/\s]+\.[a-z]{2,}(:\d+)?(\/|$)/i.test(v)) return null; return /^[^\s\/]+\.[^\s]+$/.test(v)?"https://"+v:null; }
+  function chk(txt,on){ var w=document.createElement("label"); w.className="achk"; var i=document.createElement("input"); i.type="checkbox"; i.checked=!!on; w.appendChild(i); w.appendChild(document.createTextNode(" "+txt)); return {w:w,i:i}; }
   function fromIn(v){ if(!v) return 0; var t=new Date(v).getTime(); return isFinite(t)?t:0; }
   function dtField(val,label){ var i=document.createElement("input"); i.type="datetime-local"; i.value=toIn(val); i.setAttribute("aria-label",label); return i; }
   function lab(txt,node){ var w=document.createElement("div"); var l=document.createElement("label"); l.textContent=txt; w.appendChild(l); w.appendChild(node); return w; }
@@ -1928,12 +1934,14 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function renderAds(){
     [["adsslot","adlist","top"],["adsslot2","adlist2","bottom"],["adsslotside","adlistside","side"]].forEach(function(p){
-      var live=items.filter(function(i){ return i.pos===p[2] && isLive(i); });
+      var hm=document.getElementById("home"), isHome=!(hm&&hm.hidden);
+      var live=items.filter(function(i){ return i.pos===p[2] && isLive(i) && (p[2]==="side"||isHome||i.all); });
       var slot=document.getElementById(p[0]), le=document.getElementById(p[1]); if(!le) return;
       le.textContent="";
-      if(slot){ slot.hidden=!(live.length||adminOn); if(adminOn) slot.classList.add("isadm"); }
+      var showAdm=adminOn&&(p[2]==="side"||isHome);
+      if(slot){ slot.hidden=!(live.length||showAdm); if(adminOn) slot.classList.add("isadm"); }
       if(!live.length){
-        if(adminOn){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً في هذه المساحة — هي مخفية عن الزوّار حتى يبدأ إعلان.")); }
+        if(showAdm){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً في هذه المساحة — هي مخفية عن الزوّار حتى يبدأ إعلان.")); }
         return;
       }
       live.forEach(function(it){
@@ -1971,6 +1979,7 @@ function mkAdmin(P){
       var rmImg=el("button","ghost","حذف الصورة"); rmImg.type="button"; rmImg.onclick=function(){ curImg=""; prev.hidden=true; prev.removeAttribute("src"); ff.value=""; say("تم حذف الصورة. اضغط حفظ لتثبيت ذلك."); };
       var stt=statusOf(it), sb=el("span","astat "+stt[0],stt[1]);
       var sd=dtField(it.start,"بداية الإعلان"), ed=dtField(it.end,"نهاية الإعلان");
+      var ck=P.pos==="side"?null:chk("إظهار هذا الإعلان في جميع الصفحات (وليس الرئيسية فقط)",it.all);
       var acts=el("div","acts");
       var sv=el("button",null,"حفظ"); sv.type="button";
       var del=el("button","ghost","حذف"); del.type="button";
@@ -1979,7 +1988,7 @@ function mkAdmin(P){
         var lk=normUrl(u.value); if(lk===null){ say("الرابط غير صالح. اكتب رابطاً مثل https://example.com"); u.focus(); return; } u.value=lk;
         var s1=fromIn(sd.value), e1=fromIn(ed.value);
         if(s1&&e1&&e1<=s1){ say("تاريخ الإنهاء يجب أن يكون بعد تاريخ البدء."); return; }
-        run(sv,function(){ return col.doc(it.id).update({title:tt,text:x.value.trim(),url:lk,image:curImg||"",start:s1,end:e1}); },"تم الحفظ.");
+        run(sv,function(){ return col.doc(it.id).update({title:tt,text:x.value.trim(),url:lk,image:curImg||"",start:s1,end:e1,all:ck?ck.i.checked:true}); },"تم الحفظ.");
       };
       var armed=false,timer=null;
       function disarm(){ armed=false; del.textContent="حذف"; if(timer){ clearTimeout(timer); timer=null; } }
@@ -1988,7 +1997,7 @@ function mkAdmin(P){
         disarm(); run(del,function(){ return col.doc(it.id).delete(); },"تم الحذف.");
       };
       acts.appendChild(sv); acts.appendChild(del);
-      r.appendChild(sb); r.appendChild(t); r.appendChild(x); r.appendChild(lab("رابط الإعلان (LINK) — يُفتح عند الضغط على الإعلان، اتركه فارغاً لإعلان بلا رابط",u)); r.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",sd)); r.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",ed)); r.appendChild(prev); r.appendChild(ff); r.appendChild(rmImg); r.appendChild(acts);
+      r.appendChild(sb); r.appendChild(t); r.appendChild(x); r.appendChild(lab("رابط الإعلان (LINK) — يُفتح عند الضغط على الإعلان، اتركه فارغاً لإعلان بلا رابط",u)); r.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",sd)); r.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",ed)); if(ck) r.appendChild(ck.w); r.appendChild(prev); r.appendChild(ff); r.appendChild(rmImg); r.appendChild(acts);
       rowsEl.appendChild(r);
     });
   }
@@ -2001,7 +2010,7 @@ function mkAdmin(P){
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https://example.com","رابط الإعلان (LINK)",true);
     var newImg="", nPrev=document.createElement("img"); nPrev.className="aprev"; nPrev.alt=""; nPrev.hidden=true;
     var nF=fileField(function(d){ newImg=d; nPrev.src=d; nPrev.hidden=false; },"صورة الإعلان",say);
-    var nS=dtField(0,"بداية الإعلان"), nE=dtField(0,"نهاية الإعلان");
+    var nS=dtField(0,"بداية الإعلان"), nE=dtField(0,"نهاية الإعلان"), nck=P.pos==="side"?null:chk("إظهار هذا الإعلان في جميع الصفحات (وليس الرئيسية فقط)",false);
     var acts=el("div","acts");
     addBtn=el("button",null,"إضافة"); addBtn.type="button";
     addBtn.onclick=function(){
@@ -2009,10 +2018,10 @@ function mkAdmin(P){
       var lk2=normUrl(nU.value); if(lk2===null){ say("الرابط غير صالح. اكتب رابطاً مثل https://example.com"); nU.focus(); return; }
       var s2=fromIn(nS.value), e2=fromIn(nE.value);
       if(s2&&e2&&e2<=s2){ say("تاريخ الإنهاء يجب أن يكون بعد تاريخ البدء."); return; }
-      run(addBtn,async function(){ await col.add({pos:P.pos,title:tt,text:nX.value.trim(),url:lk2,image:newImg,order:Date.now(),start:s2,end:e2}); nS.value=""; nE.value=""; nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
+      run(addBtn,async function(){ await col.add({pos:P.pos,title:tt,text:nX.value.trim(),url:lk2,image:newImg,order:Date.now(),start:s2,end:e2,all:nck?nck.i.checked:true}); if(nck) nck.i.checked=false; nS.value=""; nE.value=""; nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
     };
     acts.appendChild(addBtn);
-    add.appendChild(nT); add.appendChild(nX); add.appendChild(lab("رابط الإعلان (LINK) — يُفتح عند الضغط على الإعلان، اتركه فارغاً لإعلان بلا رابط",nU)); add.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",nS)); add.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",nE)); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
+    add.appendChild(nT); add.appendChild(nX); add.appendChild(lab("رابط الإعلان (LINK) — يُفتح عند الضغط على الإعلان، اتركه فارغاً لإعلان بلا رابط",nU)); add.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",nS)); add.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",nE)); if(nck) add.appendChild(nck.w); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
     rowsEl=el("div"); st=el("p","st"); st.setAttribute("role","status"); st.setAttribute("aria-live","polite");
     box.appendChild(add); box.appendChild(rowsEl); box.appendChild(st);
     built=true; renderRows();
@@ -2048,6 +2057,8 @@ var admins=[
     sl.style.left=x+"px"; sl.classList.add("fits");
     var ft=document.querySelector("footer"), mt=ft?ft.getBoundingClientRect().top-sl.offsetHeight-12:150; sl.style.top=Math.max(70,Math.min(150,mt))+"px";
   }
+  var lastHome=null; function homeWatch(){ var hm=document.getElementById("home"), h=!(hm&&hm.hidden); if(h!==lastHome){ lastHome=h; renderAds(); } }
+  setInterval(homeWatch,250); window.addEventListener("hashchange",function(){ setTimeout(homeWatch,80); });
   placeSide(); setInterval(placeSide,300); window.addEventListener("resize",placeSide); window.addEventListener("hashchange",function(){ setTimeout(placeSide,60); });
 })();
 

@@ -448,7 +448,7 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox{margin:0 0 18px}
 .adbox{margin-top:10px}
 .adbox[hidden]{display:none!important}
-.adbox{margin:8px 0 26px;padding:12px 16px 16px;background:#fff;border:1px solid var(--line);border-top:3px solid #5a7567}
+.adbox{margin:14px 0 6px;padding:12px 16px 16px;background:#fff;border:1px solid var(--line);border-top:3px solid #5a7567}
 .adbox .adh{margin-bottom:10px}
 .adbox .adh h2{font-size:.85rem;font-weight:600;color:#7a8a82;letter-spacing:0}
 #adlist{align-items:start}
@@ -659,6 +659,11 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
 <section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلانات"></section>
 <main class="wrap" id="home">
+  <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
+      <div class="adh"><h2>إعلانات</h2></div>
+      <div id="adlist"></div>
+    </aside>
+
   <div class="date" id="today"></div>
   <section class="top">
     <article class="lead">
@@ -688,11 +693,6 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
     </aside>
   </div>
   </section>
-
-  <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
-      <div class="adh"><h2>إعلانات</h2></div>
-      <div id="adlist"></div>
-    </aside>
 
   <div class="cols">
     <section class="col" id="s-news" style="--c:var(--local)">

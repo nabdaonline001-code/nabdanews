@@ -453,7 +453,7 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adside{display:none}
 .adside:not(.isadm) .adh{display:none}
 .adside .adlist{max-width:300px;margin:0}
-@media (min-width:2380px){.adside:not([hidden]){display:block;position:fixed;top:150px;left:calc((100vw - 1760px)/2 - 316px);width:300px;z-index:5}}
+.adside.fits:not([hidden]){display:block;position:fixed;top:150px;width:300px;z-index:5}
 .adbox:not(.isadm) .adh{display:none}
 .adbox .adh{margin:0 auto 10px;max-width:970px}
 .adbox .adh{margin-bottom:10px}
@@ -2039,6 +2039,16 @@ var admins=[
     renderAds(); admins.forEach(function(a){ a.renderRows(); });
   },function(){ /* store unavailable: slot stays hidden */ });
   setInterval(renderAds,30000);
+  function placeSide(){
+    var sl=document.getElementById("adsslotside"); if(!sl) return;
+    if(sl.hidden){ sl.classList.remove("fits"); return; }
+    var m=document.querySelector("main.wrap:not([hidden])"); if(!m) return;
+    var a=m.querySelector(".about")||m, x=Math.round(a.getBoundingClientRect().left-316);
+    if(x<8){ sl.classList.remove("fits"); return; }
+    sl.style.left=x+"px"; sl.classList.add("fits");
+    var ft=document.querySelector("footer"), mt=ft?ft.getBoundingClientRect().top-sl.offsetHeight-12:150; sl.style.top=Math.max(70,Math.min(150,mt))+"px";
+  }
+  placeSide(); setInterval(placeSide,300); window.addEventListener("resize",placeSide); window.addEventListener("hashchange",function(){ setTimeout(placeSide,60); });
 })();
 
 (async function(){

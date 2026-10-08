@@ -223,6 +223,15 @@ footer.ft a:focus-visible{outline-color:#5a7567}
 .brkf button[aria-pressed=true]{background:#5a7567;color:#fff}
 .brkf button:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
 @media (max-width:700px){#adm .row,#adm .add{grid-template-columns:1fr 1fr}}
+#adsadm .aadd,#adsadm .arow{display:block}
+#adsadm .aadd{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+#adsadm .aadd>input,#adsadm .aadd>textarea,#adsadm .arow>input,#adsadm .arow>textarea{margin-bottom:8px}
+#adsadm input[type=file]{padding:6px}
+#adsadm .acts{display:flex;gap:8px;margin-top:8px}
+#adsadm .aprev{display:block;max-width:220px;max-height:120px;object-fit:cover;margin:6px 0}
+#adsadm .arow{padding:14px 0;border-bottom:1px solid var(--line)}
+#adsadm .arow>button.ghost{margin-top:6px}
+#adsadm input[type=datetime-local]{max-width:320px}
 .adm .empty{margin:0}
 @media (max-width:700px){.adm .row,.adm .add{grid-template-columns:1fr 1fr}.adm .row input:first-child,.adm .add input:first-child{grid-column:1/-1}}
 .board{background:#5a7567;color:#fff;border-color:#5a7567}
@@ -648,6 +657,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 </div>
 <section class="wrap adm" id="newsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار"></section>
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
+<section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلانات"></section>
 <main class="wrap" id="home">
   <div class="date" id="today"></div>
   <section class="top">
@@ -682,7 +692,6 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
       <div id="adlist"></div>
-      <div id="adadm" class="mkpanel" hidden></div>
     </aside>
 
   <div class="cols">
@@ -1849,7 +1858,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("ads"), items=[], adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
-  var listEl=document.getElementById("adlist"), pane=document.getElementById("adadm"), head=document.querySelector(".adh");
+  var listEl=document.getElementById("adlist"), pane=document.getElementById("adsadm"), head=document.querySelector("header .bar");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
   function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,start:Number(x.start)||0,end:Number(x.end)||0}; }
@@ -1957,7 +1966,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function build(){
     pane.textContent="";
-    pane.appendChild(el("h3",null,"إدارة الإعلانات"));
+    var box=el("div","box"); pane.appendChild(box);
+    box.appendChild(el("h2",null,"إدارة الإعلانات"));
+    box.appendChild(el("p","hint","كل إعلان يظهر في الشريط الإعلاني بين تاريخ البدء وتاريخ الإنهاء. إذا لم يكن هناك إعلان فعّال تختفي المساحة عن الزوّار تلقائياً."));
     var add=el("div","aadd");
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https:// رابط الإعلان (اختياري)","رابط الإعلان (اختياري)",true);
     var newImg="", nPrev=document.createElement("img"); nPrev.className="aprev"; nPrev.alt=""; nPrev.hidden=true;
@@ -1974,14 +1985,14 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     acts.appendChild(addBtn);
     add.appendChild(nT); add.appendChild(nX); add.appendChild(nU); add.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",nS)); add.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",nE)); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
     rowsEl=el("div"); st=el("p","st"); st.setAttribute("role","status"); st.setAttribute("aria-live","polite");
-    pane.appendChild(add); pane.appendChild(rowsEl); pane.appendChild(st);
+    box.appendChild(add); box.appendChild(rowsEl); box.appendChild(st);
     built=true; renderRows();
   }
   if(adminOn && pane && head){
-    var btn=el("button","mkbtn","إدارة"); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","adadm");
+    var btn=el("button","admbtn","إدارة الإعلانات"); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","adsadm");
     btn.onclick=function(){
       var open=pane.hidden; pane.hidden=!open; btn.setAttribute("aria-expanded",String(open));
-      if(open){ if(!built) build(); nT.focus(); }
+      if(open){ if(!built) build(); nT.focus(); pane.scrollIntoView({behavior:"smooth",block:"start"}); }
     };
     head.appendChild(btn);
   }

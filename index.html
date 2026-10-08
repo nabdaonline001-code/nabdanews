@@ -438,12 +438,17 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox{margin:10px 0 28px}
 .adbox{margin:0 0 18px}
 .adbox{margin-top:10px}
+.adbox[hidden]{display:none!important}
 .adbox{margin:8px 0 26px;padding:12px 16px 16px;background:#fff;border:1px solid var(--line);border-top:3px solid #5a7567}
 .adbox .adh{margin-bottom:10px}
 .adbox .adh h2{font-size:.85rem;font-weight:600;color:#7a8a82;letter-spacing:0}
 #adlist{align-items:start}
 #adlist .ad{border-color:var(--line);background:#fff}
 #adlist .ad img{height:150px;max-height:none}
+#adlist .adnote{border:1.5px dashed #9db3a7;background:#F7FAF8;padding:14px;text-align:center;color:#5a7567;font-size:.95rem}
+.astat{display:inline-block;font-size:.8rem;padding:2px 8px;border:1px solid var(--line);margin:4px 0;color:#2F4A3E}
+.astat.on{background:#EEF3F0}.astat.off{color:#C8102E;border-color:#C8102E}
+.arow label,.aadd label{display:block;font-size:.85rem;margin:6px 0 2px}
 #adlist .adfree{border:1.5px dashed #9db3a7;text-align:center;padding:22px 14px;background:#F7FAF8}
 #adlist .adfree b{color:#2F4A3E}
 .side[hidden],.board[hidden]{display:none!important}
@@ -674,9 +679,9 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
   </div>
   </section>
 
-  <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية">
+  <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
-      <div id="adlist"><a class="ad adfree" href="#ads"><b>مساحة إعلانية متاحة</b><span>أعلن معنا لتصل إلى قرّاء الموقع.</span></a></div>
+      <div id="adlist"></div>
       <div id="adadm" class="mkpanel" hidden></div>
     </aside>
 
@@ -1847,7 +1852,13 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var listEl=document.getElementById("adlist"), pane=document.getElementById("adadm"), head=document.querySelector(".adh");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
-  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0}; }
+  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,start:Number(x.start)||0,end:Number(x.end)||0}; }
+  function isLive(it,now){ now=now||Date.now(); return (!it.start||now>=it.start)&&(!it.end||now<it.end); }
+  function toIn(ms){ if(!ms) return ""; var d=new Date(ms),p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes()); }
+  function fromIn(v){ if(!v) return 0; var t=new Date(v).getTime(); return isFinite(t)?t:0; }
+  function dtField(val,label){ var i=document.createElement("input"); i.type="datetime-local"; i.value=toIn(val); i.setAttribute("aria-label",label); return i; }
+  function lab(txt,node){ var w=document.createElement("div"); var l=document.createElement("label"); l.textContent=txt; w.appendChild(l); w.appendChild(node); return w; }
+  function statusOf(it){ var n=Date.now(); if(it.end&&n>=it.end) return ["off","منتهٍ"]; if(it.start&&n<it.start) return ["off","مجدول – لم يبدأ بعد"]; return ["on","قيد العرض الآن"]; }
   function shrinkImg(file){
     return new Promise(function(res,rej){
       var fr=new FileReader();
@@ -1886,10 +1897,13 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function renderAds(){
     listEl.textContent="";
-    if(!items.length){
-      var ph=el("a","ad adfree"); ph.href="#ads"; ph.appendChild(el("b",null,"مساحة إعلانية متاحة")); ph.appendChild(el("span",null,"أعلن معنا لتصل إلى قرّاء الموقع.")); listEl.appendChild(ph); return;
+    var live=items.filter(function(i){ return isLive(i); }), slot=document.getElementById("adsslot");
+    if(slot) slot.hidden=!(live.length||adminOn);
+    if(!live.length){
+      if(adminOn){ listEl.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً — هذه المساحة مخفية عن الزوّار حتى يبدأ إعلان.")); }
+      return;
     }
-    items.forEach(function(it){
+    live.forEach(function(it){
       var u=safeUrl(it.url), n=el(u?"a":"div","ad");
       if(u){ n.href=u; n.target="_blank"; n.rel="noopener noreferrer sponsored"; }
       if(it.image){ var im=document.createElement("img"); im.src=it.image; im.alt=it.title; im.loading="lazy"; n.appendChild(im); }
@@ -1919,12 +1933,16 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       var curImg=it.image, prev=document.createElement("img"); prev.className="aprev"; prev.alt=""; prev.hidden=!curImg; if(curImg) prev.src=curImg;
       var ff=fileField(function(d){ curImg=d; prev.src=d; prev.hidden=false; },"صورة الإعلان");
       var rmImg=el("button","ghost","حذف الصورة"); rmImg.type="button"; rmImg.onclick=function(){ curImg=""; prev.hidden=true; prev.removeAttribute("src"); ff.value=""; say("تم حذف الصورة. اضغط حفظ لتثبيت ذلك."); };
+      var stt=statusOf(it), sb=el("span","astat "+stt[0],stt[1]);
+      var sd=dtField(it.start,"بداية الإعلان"), ed=dtField(it.end,"نهاية الإعلان");
       var acts=el("div","acts");
       var sv=el("button",null,"حفظ"); sv.type="button";
       var del=el("button","ghost","حذف"); del.type="button";
       sv.onclick=function(){
         var tt=t.value.trim(); if(!tt){ say("اكتب عنوان الإعلان."); return; }
-        run(sv,function(){ return col.doc(it.id).update({title:tt,text:x.value.trim(),url:u.value.trim(),image:curImg||""}); },"تم الحفظ.");
+        var s1=fromIn(sd.value), e1=fromIn(ed.value);
+        if(s1&&e1&&e1<=s1){ say("تاريخ الإنهاء يجب أن يكون بعد تاريخ البدء."); return; }
+        run(sv,function(){ return col.doc(it.id).update({title:tt,text:x.value.trim(),url:u.value.trim(),image:curImg||"",start:s1,end:e1}); },"تم الحفظ.");
       };
       var armed=false,timer=null;
       function disarm(){ armed=false; del.textContent="حذف"; if(timer){ clearTimeout(timer); timer=null; } }
@@ -1933,7 +1951,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
         disarm(); run(del,function(){ return col.doc(it.id).delete(); },"تم الحذف.");
       };
       acts.appendChild(sv); acts.appendChild(del);
-      r.appendChild(t); r.appendChild(x); r.appendChild(u); r.appendChild(prev); r.appendChild(ff); r.appendChild(rmImg); r.appendChild(acts);
+      r.appendChild(sb); r.appendChild(t); r.appendChild(x); r.appendChild(u); r.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",sd)); r.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",ed)); r.appendChild(prev); r.appendChild(ff); r.appendChild(rmImg); r.appendChild(acts);
       rowsEl.appendChild(r);
     });
   }
@@ -1944,14 +1962,17 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https:// رابط الإعلان (اختياري)","رابط الإعلان (اختياري)",true);
     var newImg="", nPrev=document.createElement("img"); nPrev.className="aprev"; nPrev.alt=""; nPrev.hidden=true;
     var nF=fileField(function(d){ newImg=d; nPrev.src=d; nPrev.hidden=false; },"صورة الإعلان");
+    var nS=dtField(0,"بداية الإعلان"), nE=dtField(0,"نهاية الإعلان");
     var acts=el("div","acts");
     addBtn=el("button",null,"إضافة"); addBtn.type="button";
     addBtn.onclick=function(){
       var tt=nT.value.trim(); if(!tt){ say("اكتب عنوان الإعلان."); nT.focus(); return; }
-      run(addBtn,async function(){ await col.add({title:tt,text:nX.value.trim(),url:nU.value.trim(),image:newImg,order:Date.now()}); nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
+      var s2=fromIn(nS.value), e2=fromIn(nE.value);
+      if(s2&&e2&&e2<=s2){ say("تاريخ الإنهاء يجب أن يكون بعد تاريخ البدء."); return; }
+      run(addBtn,async function(){ await col.add({title:tt,text:nX.value.trim(),url:nU.value.trim(),image:newImg,order:Date.now(),start:s2,end:e2}); nS.value=""; nE.value=""; nT.value=""; nX.value=""; nU.value=""; newImg=""; nF.value=""; nPrev.hidden=true; nPrev.removeAttribute("src"); },"تمت الإضافة.");
     };
     acts.appendChild(addBtn);
-    add.appendChild(nT); add.appendChild(nX); add.appendChild(nU); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
+    add.appendChild(nT); add.appendChild(nX); add.appendChild(nU); add.appendChild(lab("يبدأ في (التاريخ والساعة) — فارغ = فوراً",nS)); add.appendChild(lab("ينتهي في (التاريخ والساعة) — فارغ = بلا نهاية",nE)); add.appendChild(nPrev); add.appendChild(nF); add.appendChild(acts);
     rowsEl=el("div"); st=el("p","st"); st.setAttribute("role","status"); st.setAttribute("aria-live","polite");
     pane.appendChild(add); pane.appendChild(rowsEl); pane.appendChild(st);
     built=true; renderRows();
@@ -1967,7 +1988,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){ return i.title; });
     renderAds(); renderRows();
-  },function(){ /* keep the placeholder if the store is unavailable */ });
+  },function(){ /* store unavailable: slot stays hidden */ });
+  setInterval(renderAds,30000);
 })();
 
 (async function(){

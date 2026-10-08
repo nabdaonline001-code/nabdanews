@@ -52,7 +52,7 @@
     return fetch("data/site.json?v="+Math.floor(Date.now()/60000),{cache:"no-cache"}).then(function(r){ if(!r.ok) throw new Error("data"); return r.json(); });
   }
   /* re-read the data (used when a menu link is clicked) and redraw everything that listens; skipped while the admin has unsaved changes */
-  var lastRefresh=0;
+  var lastRefresh=0, hasNav=!!(window.navigation&&window.navigation.addEventListener);
   function refresh(){
     if(!ready||queue.length||Date.now()-lastRefresh<4000) return Promise.resolve(false);
     lastRefresh=Date.now();
@@ -65,7 +65,17 @@
     var a=e.target&&e.target.closest?e.target.closest("header a[href^='#']"):null; if(!a) return;
     var href=a.getAttribute("href"); if(!href||href==="#") return;
     var same=href===(location.hash||"#home")||(href==="#home"&&!location.hash);
+    if(same&&hasNav) return; /* the Navigation API handler below does it */
     refresh().then(function(){ if(same){ window.dispatchEvent(new HashChangeEvent("hashchange")); window.scrollTo(0,0); } });
+  });
+  /* going to another #page (menu, address bar, back/forward) also re-reads the data */
+  window.addEventListener("hashchange",function(){ refresh(); });
+  /* pressing Enter on the same address in the address bar (or clicking the same link) = same-page navigation: refresh as well */
+  if(hasNav) window.navigation.addEventListener("navigate",function(e){
+    try{
+      if(!e.destination||!e.destination.sameDocument||e.destination.url!==location.href||e.navigationType==="reload") return;
+      refresh().then(function(){ window.dispatchEvent(new HashChangeEvent("hashchange")); window.scrollTo(0,0); });
+    }catch(x){}
   });
   function load(){
     if(ready) return ready;

@@ -991,7 +991,7 @@ function renderHome(){
   var sbx=document.getElementById("secboxes");
   if(sbx){
     sbx.textContent="";
-    ["sports","culture","art","economy"].forEach(function(k){
+    ["economy","sports","culture","art"].forEach(function(k){
       var list=NEWS.filter(function(n){ return n.section===k; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
       if(!list.length&&!(window.NEWSCAN&&window.NEWSCAN(k))) return;
       var sec=el("section","hsec"); sec.id="hs-"+k; sec.setAttribute("aria-label",SECDEF[k].t);

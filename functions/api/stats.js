@@ -20,17 +20,17 @@ export async function onRequestGet({ request, env }) {
     const days = []; for (let i = 29; i >= 0; i--) days.push(beirutDay(Date.now() - i * 86400000));
     const idx = {}; days.forEach((d, i) => idx[d] = i);
     const rows = days.map(d => ({ d, pv: 0, uv: 0, rd: 0 }));
-    const day7 = new Set(days.slice(-7)), art7 = {}, art30 = {};
+    const day7 = new Set(days.slice(-7)), today = days[days.length - 1], art1 = {}, art7 = {}, art30 = {};
     const [cs, as] = await Promise.all([listAll(env.STATS, "c:"), listAll(env.STATS, "a:")]);
     for (const k of cs) { const p = k.name.split(":"); const i = idx[p[1]]; if (i == null || !(["pv", "uv", "rd"].includes(p[2]))) continue; rows[i][p[2]] += Number(k.metadata && k.metadata.n) || 0; }
     for (const k of as) {
       const p = k.name.split(":"); if (idx[p[1]] == null) continue;
       const id = p.slice(2, -1).join(":"), n = Number(k.metadata && k.metadata.n) || 0;
-      art30[id] = (art30[id] || 0) + n; if (day7.has(p[1])) art7[id] = (art7[id] || 0) + n;
+      art30[id] = (art30[id] || 0) + n; if (p[1] === today) art1[id] = (art1[id] || 0) + n; if (day7.has(p[1])) art7[id] = (art7[id] || 0) + n;
     }
     let news = {}, lead = null;
     try { const r = await env.ASSETS.fetch(new URL("/data/site.json", request.url)); const j = r.ok ? await r.json() : {}; news = j.news || {}; lead = j.lead && j.lead.main && j.lead.main.title; } catch (e) {}
     const top = m => Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, n]) => ({ id, n, title: id === "lead" ? (lead ? "الخبر الرئيسي: " + lead : "الخبر الرئيسي") : ((news[id] && news[id].title) || "(خبر محذوف)") }));
-    return json({ enabled: true, days: rows, top7: top(art7), top30: top(art30) });
+    return json({ enabled: true, days: rows, top1: top(art1), top7: top(art7), top30: top(art30) });
   } catch (e) { return json({ error: String(e.message || e) }, 502); }
 }

@@ -256,6 +256,14 @@
       body.appendChild(ch);
       var lab=h("div","display:flex;gap:3px;direction:ltr;font-size:.65rem;color:#777"); last.forEach(function(x){ lab.appendChild(h("span","flex:1;text-align:center;min-width:0",x.d.slice(8))); }); body.appendChild(lab);
       var tops=h("div","display:flex;gap:16px;flex-wrap:wrap"); tops.appendChild(topList("الأكثر قراءة اليوم",j.top1||[])); tops.appendChild(topList("الأكثر قراءة (7 أيام)",j.top7)); tops.appendChild(topList("الأكثر قراءة (30 يوماً)",j.top30)); body.appendChild(tops);
+      var rd=j.read;
+      if(rd){
+        body.appendChild(h("h3","margin:18px 0 4px;font-size:1rem;color:#5a7567;border-top:2px solid #5a7567;padding-top:10px","مقالات «اقرأ»"));
+        var rc=h("div","display:flex;gap:8px;flex-wrap:wrap");
+        [["اليوم",rd.n1],["آخر 7 أيام",rd.n7],["آخر 30 يوماً",rd.n30]].forEach(function(x){ var c=h("div","flex:1 1 150px;border:1px solid #dde4e0;padding:8px 12px;background:#EEF3F0;display:flex;justify-content:space-between;gap:8px"); c.appendChild(h("span",null,"قراءات "+x[0])); c.appendChild(h("strong",null,num(x[1]))); rc.appendChild(c); });
+        body.appendChild(rc);
+        var rt=h("div","display:flex;gap:16px;flex-wrap:wrap"); rt.appendChild(topList("الأكثر قراءة اليوم",rd.top1||[])); rt.appendChild(topList("الأكثر قراءة (7 أيام)",rd.top7||[])); rt.appendChild(topList("الأكثر قراءة (30 يوماً)",rd.top30||[])); body.appendChild(rt);
+      }
     }).catch(function(e){ body.textContent=""; body.appendChild(h("p","color:#C8102E",e.message==="forbidden"?"هذه الصفحة للمدير الأساسي فقط.":"تعذّر تحميل الإحصائيات، حاول مرة أخرى.")); });
   }
   /* ---------- visitor counter: one tiny request per page load / per news item opened (not for logged-in staff) ---------- */

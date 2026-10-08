@@ -31,6 +31,10 @@ export async function onRequestGet({ request, env }) {
     let news = {}, lead = null;
     try { const r = await env.ASSETS.fetch(new URL("/data/site.json", request.url)); const j = r.ok ? await r.json() : {}; news = j.news || {}; lead = j.lead && j.lead.main && j.lead.main.title; } catch (e) {}
     const top = m => Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, n]) => ({ id, n, title: id === "lead" ? (lead ? "الخبر الرئيسي: " + lead : "الخبر الرئيسي") : ((news[id] && news[id].title) || "(خبر محذوف)") }));
-    return json({ enabled: true, days: rows, top1: top(art1), top7: top(art7), top30: top(art30) });
+    const onlyRead = m => Object.fromEntries(Object.entries(m).filter(([id]) => news[id] && news[id].section === "read"));
+    const total = m => Object.values(m).reduce((a, n) => a + n, 0);
+    const r1 = onlyRead(art1), r7 = onlyRead(art7), r30 = onlyRead(art30);
+    return json({ enabled: true, days: rows, top1: top(art1), top7: top(art7), top30: top(art30),
+      read: { n1: total(r1), n7: total(r7), n30: total(r30), top1: top(r1), top7: top(r7), top30: top(r30) } });
   } catch (e) { return json({ error: String(e.message || e) }, 502); }
 }

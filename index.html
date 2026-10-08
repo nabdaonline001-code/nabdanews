@@ -280,7 +280,7 @@ footer.ft a:focus-visible{outline-color:#5a7567}
 .adm .nhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
 .adm .nhead h3{margin:0;font-size:1.05rem;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
 .adm .nhead select{width:auto}
-.adm .nrow{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.adm .nrow{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .adm .nrow .bd{font-size:.85rem;border:1px solid #5a7567;padding:0 8px;white-space:nowrap}
 .adm .nrow .nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:700px){.adm .nrow{grid-template-columns:auto 1fr}.adm .nrow .nt{grid-column:1/-1;white-space:normal}}
@@ -404,6 +404,14 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .hcard .pdate{color:rgba(255,255,255,.82);margin-top:8px;text-shadow:0 1px 8px rgba(0,0,0,.6);position:relative;z-index:2}
 .hcard .pdate::before{display:none}
 .scard .pdate{margin-top:2px}.shorts .pdate{color:#5b7367}
+.ldbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid #2F4A3E;background:#fff;color:#2F4A3E;border-radius:999px;padding:3px 12px 3px 10px;font:700 .8rem/1.5 "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;cursor:pointer;margin-top:8px}
+.ldbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+.ldbtn:hover:not(:disabled){background:#2F4A3E;color:#fff}.ldbtn:focus-visible{outline:3px solid #2F4A3E;outline-offset:2px}
+.ldbtn:disabled{opacity:.75;cursor:default}.ldbtn.done{background:#2F4A3E;color:#fff}
+.hcard>.ldbtn{position:absolute;inset-inline-start:8px;top:8px;z-index:3;margin:0;background:rgba(255,255,255,.92)}
+.hcard>.ldbtn:hover:not(:disabled),.hcard>.ldbtn.done{background:#2F4A3E;color:#fff}
+.artshare .ldbtn{margin:0;height:38px;padding:0 16px 0 14px;font-size:.92rem}.artshare{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.nrow .ldbtn{margin:0;white-space:nowrap}
 .about.art .aimg{display:block;width:100%;height:auto;max-height:440px;object-fit:cover;margin:0 0 20px}
 .mkpanel input[type=file]{padding:6px}
 .mkpanel .row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -804,7 +812,7 @@ function buildArticle(o){
   if(o.tag) a.appendChild(el("span","tag",o.tag));
   a.appendChild(el("h1",null,o.title));
   if(o.meta) a.appendChild(el("p","meta",o.meta));
-  if(o.share){ var as=el("div","artshare"); as.appendChild(shareBtn(o.title,o.share,"مشاركة")); a.appendChild(as); }
+  if(o.share){ var as=el("div","artshare"); as.appendChild(shareBtn(o.title,o.share,"مشاركة")); var alb=leadBtn(o.item); if(alb) as.appendChild(alb); a.appendChild(as); }
   if(o.img&&/^data:image\//.test(o.img)){ var im=el("img","aimg"); im.src=o.img; im.alt=o.alt||""; a.appendChild(im); }
   if(o.embed){ var ew=el("div","vwrap"+(o.vert?" vert":"")); ew.appendChild(o.embed); a.appendChild(ew); }
   if(o.sum) a.appendChild(el("p","sum",o.sum));
@@ -830,6 +838,20 @@ function pubDate(ts){
   }catch(e){ return ""; }
 }
 function newsHref(id){ return "#news/"+encodeURIComponent(id); }
+/* admin only: one click makes a news item the homepage lead ("أهم خبر") */
+function leadBtn(it,cls){
+  if(!it||!(window.NEWSADMIN&&window.setLeadFromNews)||it.section==="video"||it.section==="shorts"||it.nodate) return null;
+  var b=el("button","ldbtn"+(cls?" "+cls:"")); b.type="button";
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span>اجعله أهم خبر</span>';
+  b.title="إضافته إلى أهم خبر في الصفحة الرئيسية"; b.setAttribute("aria-label","إضافة هذا الخبر إلى أهم خبر: "+it.title);
+  b.addEventListener("click",function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    if(b.disabled) return; b.disabled=true; var lab=b.querySelector("span"); lab.textContent="جارٍ الإضافة…";
+    window.setLeadFromNews(it).then(function(){ lab.textContent="✓ صار أهم خبر"; b.classList.add("done"); },function(){ lab.textContent="تعذّرت الإضافة"; })
+      .then(function(){ setTimeout(function(){ lab.textContent="اجعله أهم خبر"; b.classList.remove("done"); b.disabled=false; },3500); });
+  });
+  return b;
+}
 function storyEl(it,lbl){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
@@ -837,6 +859,7 @@ function storyEl(it,lbl){
   if(it.summary) d.appendChild(el("p",null,it.summary));
   var pd=it.nodate?"":pubDate(it.order);
   if(pd){ var tm=el("time","pdate",pd); try{ tm.setAttribute("datetime",new Date(it.order).toISOString()); }catch(e){} d.appendChild(tm); }
+  var lb=leadBtn(it); if(lb) d.appendChild(lb);
   d.appendChild(shareBtn(it.title,newsHref(it.id)));
   return d;
 }
@@ -916,6 +939,7 @@ function renderHome(){
         var c=el("article","hcard"), ok=/^data:image\//.test(it.image||"");
         if(ok){ var w=el("div","himg"), im=document.createElement("img"); im.src=it.image; im.alt=""; im.loading="lazy"; w.appendChild(im); c.appendChild(w); } else c.classList.add("noimg");
         var h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id); h.appendChild(a); c.appendChild(h);
+        var hlb=leadBtn(it,"onimg"); if(hlb) c.appendChild(hlb);
         c.appendChild(shareBtn(it.title,newsHref(it.id)));
         gr.appendChild(c);
       });
@@ -1123,7 +1147,7 @@ function renderNewsArticle(id){
   if(!it){ buildArticle({tag:"",title:"الخبر غير موجود",meta:"",sum:"ربما حُذف هذا الخبر أو تغيّر رابطه.",full:""}); return null; }
   var dt=it.nodate?"":pubDate(it.order);
   var isV=(it.section==="video"||it.section==="shorts"), emb=isV?videoEmbed(it.url):null;
-  buildArticle({share:newsHref(it.id),tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||"")});
+  buildArticle({share:newsHref(it.id),tag:SECDEF[it.section]?SECDEF[it.section].t:"",title:it.title,meta:dt,sum:it.summary,full:it.full,img:it.image,alt:it.title,url:isV?"":it.url,embed:emb,vert:/youtube\.com\/shorts\//i.test(it.url||""),item:it});
   return it;
 }
 function route(keep){
@@ -1582,6 +1606,15 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       fr.readAsDataURL(file);
     });
   }
+  /* admin: make an existing news item the lead story (title, summary, full text, photo) */
+  if(adminOn){
+    window.setLeadFromNews=async function(it){
+      var good=(typeof it.image==="string"&&/^data:image\/jpeg;base64,/.test(it.image)&&it.image.length<=190000);
+      await ref.set({title:String(it.title||"").slice(0,160),body:String(it.summary||"").slice(0,600),full:String(it.full||"").slice(0,8000),by:LEAD.by||"",imageAlt:String(it.title||"").slice(0,140)});
+      if(good) await imgRef.set({data:it.image}); else await imgRef.delete();
+    };
+    if(window.refreshViews) window.refreshViews();
+  }
   imgRef.onSnapshot(function(snap){
     var d=snap.exists?(snap.data()||{}):{};
     LEAD.image=(typeof d.data==="string")?d.data:"";
@@ -1663,6 +1696,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       r.appendChild(el("span","bd",SECDEF[it.section].t));
       r.appendChild(el("span","nt",it.title));
       var ed=el("button","ghost","تعديل"); ed.type="button"; ed.onclick=function(){ startEdit(it); };
+      var rlb=leadBtn(it,"inrow");
       var del=el("button","ghost","حذف"); del.type="button";
       var armed=false,timer=null;
       function disarm(){ armed=false; del.textContent="حذف"; if(timer){ clearTimeout(timer); timer=null; } }
@@ -1671,6 +1705,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
         disarm();
         run(del,async function(){ await col.doc(it.id).delete(); if(editing===it.id) resetForm(); },"تم الحذف.");
       };
+      if(rlb) r.appendChild(rlb);
       r.appendChild(ed); r.appendChild(del);
       listEl.appendChild(r);
     });

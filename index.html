@@ -2372,7 +2372,7 @@ if(DEFS.length&&wrapEl&&hdrBar){
 </script>
 <script>
 (function(){
-  /* "الأكثر قراءة اليوم": top news of the Beirut day, from /api/top (empty until the statistics counter is switched on) */
+  /* "الأكثر قراءة اليوم": visible to the logged-in admin only (/api/top answers 401 to everyone else). Shown even when empty so it is clear it exists. */
   var box=document.getElementById("topbox"), list=document.getElementById("toplist"); if(!box||!list) return;
   function draw(items){
     list.textContent=""; var n=0;
@@ -2382,10 +2382,13 @@ if(DEFS.length&&wrapEl&&hdrBar){
       var r=document.createElement("span"); r.className="rn"; r.textContent=n; var t=document.createElement("span"); t.textContent=x.title;
       a.appendChild(r); a.appendChild(t); list.appendChild(a);
     });
-    box.hidden=!n;
+    if(!n){ var p=document.createElement("p"); p.textContent="لا قراءات اليوم حتى الآن."; list.appendChild(p); }
+    box.hidden=false;
   }
-  function load(){ fetch("/api/top",{credentials:"same-origin"}).then(function(r){ return r.ok?r.json():null; }).then(function(j){ if(j) draw(j.list); }).catch(function(){}); }
-  if(/^https?:$/.test(location.protocol)){ load(); setInterval(load,300000); }
+  function load(){ fetch("/api/top",{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(j){ if(j) draw(j.list); }).catch(function(){}); }
+  if(/^https?:$/.test(location.protocol)&&window.claude){
+    window.claude.use("user").then(function(u){ return u&&u.canEdit(); }).then(function(ok){ if(ok){ load(); setInterval(load,300000); } }).catch(function(){});
+  }
 })();
 </script>
 <script>

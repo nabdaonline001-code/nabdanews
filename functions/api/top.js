@@ -1,9 +1,10 @@
-/* GET /api/top (public) -> { list:[{id,title}] }: the most-read news of today (Beirut day), at most 5. Empty while statistics are off. */
-import { json } from "./_shared.js";
+/* GET /api/top (logged-in admin only) -> { list:[{id,title}] }: the most-read news of today (Beirut day), at most 5. Empty while statistics are off. */
+import { json, session } from "./_shared.js";
 import { beirutDay } from "./_stats.js";
 
 export async function onRequestGet({ request, env }) {
-  const hdr = { "Cache-Control": "public, max-age=120" };
+  const hdr = { "Cache-Control": "private, no-store" };
+  if (!(await session(request, env))) return json({ error: "auth" }, 401);
   if (!env.STATS) return json({ list: [] }, 200, hdr);
   try {
     const day = beirutDay(), tally = {}; let cursor;

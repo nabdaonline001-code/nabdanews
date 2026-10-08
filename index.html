@@ -2211,9 +2211,19 @@ if(DEFS.length&&wrapEl&&hdrBar){
 
 (function(){
   var EMAIL=/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+  /* a copy of every message also goes to the owner's mailbox through Web3Forms (public key in config.js, sent from the browser) */
+  function mailCopy(b){
+    var K=(window.NABDA_CONFIG||{}).web3formsKey; if(!K||b.website) return Promise.resolve(false);
+    var who=b.name||"زائر", ad=b.k==="ad", lines=["الاسم: "+who]; if(b.phone) lines.push("الهاتف: "+b.phone); if(b.email) lines.push("البريد: "+b.email); if(b.message) lines.push("",b.message);
+    var pl={access_key:K,subject:(ad?"طلب إعلان":"رسالة من الموقع")+" - "+who,from_name:"NABDA",name:who,message:lines.join("\n")}; if(b.email) pl.email=b.email;
+    return fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(pl)})
+      .then(function(r){ return r.json(); }).then(function(j){ return !!(j&&j.success); }).catch(function(){ return false; });
+  }
   function post(body){
+    var mail=mailCopy(body);
     return fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
-      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error||"send"); return j; }); });
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error||"send"); return j; }); })
+      .catch(function(err){ return mail.then(function(ok){ if(ok) return {}; throw err; }); });
   }
   /* contact form */
   var form=document.getElementById("msgform");

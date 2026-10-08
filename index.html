@@ -969,14 +969,14 @@ function renderHome(){
     rl.textContent="";
     var rn=NEWS.filter(function(n){ return n.section==="read"; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
     if(!rn.length) rl.appendChild(el("p",null,"لا توجد مواد بعد."));
-    var rb=rl.closest(".readbox"); if(rb) rb.hidden=!rn.length&&!window.NEWSADMIN;
+    var rb=rl.closest(".readbox"); if(rb) rb.hidden=!rn.length&&!(window.NEWSCAN&&window.NEWSCAN("read"));
     rn.forEach(function(it){ var row=el("div","rdrow"), a=el("a","rd",it.title); a.href=newsHref(it.id); row.appendChild(a); row.appendChild(shareBtn(it.title,newsHref(it.id))); rl.appendChild(row); });
   }
   var sb=document.getElementById("shortsbox"), sg=document.getElementById("sgrid");
   if(sb&&sg){
     sg.textContent="";
     var allShorts=NEWS.filter(function(n){ return n.section==="shorts"||n.section==="video"; }).sort(function(x,y){ return y.order-x.order; }), sl=allShorts.slice(0,3);
-    sb.hidden=!sl.length&&!window.NEWSADMIN;
+    sb.hidden=!sl.length&&!(window.NEWSCAN&&window.NEWSCAN("shorts"));
     if(!sl.length) sg.appendChild(el("p",null,"لا توجد SHORTS بعد."));
     sl.forEach(function(it){
       var c=el("div","scard");
@@ -985,21 +985,21 @@ function renderHome(){
       c.appendChild(shareBtn(it.title,newsHref(it.id)));
       sg.appendChild(c);
     });
-    if(window.NEWSADMIN&&window.openNewsAdmin&&!sb.querySelector(".admbtn")){ var sab=el("button","admbtn","إدارة"); sab.type="button"; sab.onclick=function(){ window.openNewsAdmin("shorts"); }; sb.querySelector(".shh").appendChild(sab); }
+    if(window.NEWSCAN&&window.NEWSCAN("shorts")&&window.openNewsAdmin&&!sb.querySelector(".admbtn")){ var sab=el("button","admbtn","إدارة"); sab.type="button"; sab.onclick=function(){ window.openNewsAdmin("shorts"); }; sb.querySelector(".shh").appendChild(sab); }
   }
   var sbx=document.getElementById("secboxes");
   if(sbx){
     sbx.textContent="";
     ["sports","culture","economy"].forEach(function(k){
       var list=NEWS.filter(function(n){ return n.section===k; }).sort(function(x,y){ return y.order-x.order; }).slice(0,4);
-      if(!list.length&&!window.NEWSADMIN) return;
+      if(!list.length&&!(window.NEWSCAN&&window.NEWSCAN(k))) return;
       var sec=el("section","hsec"); sec.id="hs-"+k; sec.setAttribute("aria-label",SECDEF[k].t);
       var hd=el("div","shh"), h2=el("h2"), ha=el("a",null,SECDEF[k].t); ha.href="#"+k; h2.appendChild(ha); hd.appendChild(h2);
       var mo=el("a","more2"); mo.href="#"+k; mo.setAttribute("aria-label","عرض المزيد من أخبار "+SECDEF[k].t);
       mo.appendChild(el("span",null,"عرض المزيد"));
       var ic=el("span","ar2"); ic.setAttribute("aria-hidden","true"); ic.innerHTML='<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>'; mo.appendChild(ic);
       hd.appendChild(mo);
-      if(window.NEWSADMIN&&window.openNewsAdmin){ var ab=el("button","admbtn","إدارة"); ab.type="button"; ab.onclick=function(){ window.openNewsAdmin(k); }; hd.appendChild(ab); }
+      if(window.NEWSCAN&&window.NEWSCAN(k)&&window.openNewsAdmin){ var ab=el("button","admbtn","إدارة"); ab.type="button"; ab.onclick=function(){ window.openNewsAdmin(k); }; hd.appendChild(ab); }
       sec.appendChild(hd);
       var gr=el("div","hgrid");
       if(!list.length) gr.appendChild(el("p",null,"لا توجد أخبار بعد."));
@@ -1206,7 +1206,7 @@ function renderSection(k,sp){
     if(!list.length) a.appendChild(el("p",null,"لا توجد أخبار في هذا القسم بعد."));
     list.forEach(function(it){ a.appendChild(storyEl(it)); });
   }
-  if((k==="video"||k==="shorts")&&window.NEWSADMIN&&window.openNewsAdmin){ var ab=el("button","admbtn",k==="shorts"?"إدارة SHORTS":"إدارة الفيديو"); ab.type="button"; ab.onclick=function(){ window.openNewsAdmin(k); }; h.after(ab); }
+  if((k==="video"||k==="shorts")&&window.NEWSCAN&&window.NEWSCAN(k)&&window.openNewsAdmin){ var ab=el("button","admbtn",k==="shorts"?"إدارة SHORTS":"إدارة الفيديو"); ab.type="button"; ab.onclick=function(){ window.openNewsAdmin(k); }; h.after(ab); }
   var b=el("a","back","العودة إلى الصفحة الرئيسية"); b.href="#home"; a.appendChild(b);
   sp.appendChild(a);
 }
@@ -1703,7 +1703,11 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("news"), adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
-  try{ if(adminOn&&user.has) adminOn=await user.has("news"); }catch(e){ adminOn=false; }
+  var okSec={};
+  try{ if(adminOn&&user.has){ for(var si=0;si<SECKEYS.length;si++) okSec[SECKEYS[si]]=await user.has("news_"+SECKEYS[si]); } }catch(e){}
+  adminOn=SECKEYS.some(function(k){ return okSec[k]; });
+  function secOk(k){ return !!okSec[k]; }
+  window.NEWSCAN=function(k){ return !!adminOn&&secOk(k); };
   var panel=document.getElementById("newsadm");
   var fUrl,fSec,fTitle,fSum,fFull,fBy,fSave,fCancel,fSt,fHead,listEl,filt,editing=null,built=false;
   function say(t){ if(fSt) fSt.textContent=t||""; }
@@ -1745,8 +1749,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function field(label,node){ var w=el("label","f"); w.appendChild(el("span",null,label)); w.appendChild(node); return w; }
   function secSelect(withAll){
     var sel=document.createElement("select");
-    if(withAll){ var o0=document.createElement("option"); o0.value=""; o0.textContent="كل الأقسام"; sel.appendChild(o0); }
-    SECKEYS.forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=SECDEF[k].t; sel.appendChild(o); });
+    if(withAll){ var o0=document.createElement("option"); o0.value=""; o0.textContent=SECKEYS.every(secOk)?"كل الأقسام":"كل أقسامي"; sel.appendChild(o0); }
+    SECKEYS.filter(secOk).forEach(function(k){ var o=document.createElement("option"); o.value=k; o.textContent=SECDEF[k].t; sel.appendChild(o); });
     return sel;
   }
   function resetForm(){
@@ -1761,7 +1765,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function renderList(){
     if(!listEl) return;
     listEl.textContent="";
-    var f=filt.value, rows=NEWS.filter(function(n){ return !f||n.section===f; });
+    var f=filt.value, rows=NEWS.filter(function(n){ return secOk(n.section)&&(!f||n.section===f); });
     if(!rows.length){ listEl.appendChild(el("p",null,"لا توجد أخبار في هذا القسم بعد.")); return; }
     rows.forEach(function(it){
       var r=el("div","nrow");
@@ -1861,13 +1865,14 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     bar.appendChild(btn);
     window.NEWSADMIN=true;
     window.openNewsAdmin=function(sec){
+      if(!secOk(sec)) return;
       if(panel.hidden) btn.onclick();
       if(!built) build();
       resetForm(); fSec.value=sec; syncUp(); filt.value=sec; renderList();
       panel.scrollIntoView({behavior:"smooth",block:"start"}); fTitle.focus();
     };
     var rh=document.getElementById("readh");
-    if(rh){
+    if(rh&&secOk("read")){
       var rbtn=el("button","admbtn","إدارة"); rbtn.type="button"; rbtn.setAttribute("aria-controls","newsadm");
       rbtn.onclick=function(){ window.openNewsAdmin("read"); };
       rh.appendChild(rbtn);

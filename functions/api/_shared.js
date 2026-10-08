@@ -3,11 +3,19 @@ const enc = new TextEncoder();
 const COLLECTIONS = ["breaking", "markets", "lead", "news", "ads", "social", "jobs"];
 /* Staff permissions: one per admin area. Owners have all of them. A staff account without a "perms" list (created before
    permissions existed) keeps full access until the owner sets its permissions. */
-export const PERMS = ["breaking", "news", "lead", "markets", "social", "jobs", "ads_top", "ads_bottom", "ads_side"];
+export const NEWS_SECTIONS = ["local", "world", "sports", "economy", "culture", "read", "video", "shorts"];
+export const PERMS = ["breaking", ...NEWS_SECTIONS.map(k => "news_" + k), "lead", "markets", "social", "jobs", "ads_top", "ads_bottom", "ads_side"];
 export function cleanPerms(v) { return Array.isArray(v) ? [...new Set(v.filter(x => PERMS.includes(x)))] : null; }
 export function permsOf(s) { return !s ? [] : s.owner ? PERMS.slice() : (s.perms || PERMS.slice()); }
 /* Which permission does one write op need? Ads depend on the slot ("pos") of the ad, before and after the change. */
 function opPerms(root, o) {
+  if (o.c === "news") {
+    const need = new Set(), old = root && root.news && root.news[o.id], pm = sec => "news_" + (NEWS_SECTIONS.includes(sec) ? sec : "other");
+    if (old) need.add(pm(old.section));
+    if (o.t !== "del") { const sec = o.d && o.d.section; if (o.t === "set" || sec !== undefined) need.add(pm(sec)); }
+    if (!need.size) need.add("news_other");
+    return [...need];
+  }
   if (o.c !== "ads") return [o.c];
   const need = new Set(), old = root && root.ads && root.ads[o.id];
   if (old) need.add("ads_" + (["bottom", "side"].includes(old.pos) ? old.pos : "top"));

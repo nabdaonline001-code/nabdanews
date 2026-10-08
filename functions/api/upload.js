@@ -6,7 +6,7 @@ export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "origin" }, 403);
   const sess = await session(request, env);
   if (!sess) return json({ error: "auth" }, 401);
-  if (!permsOf(sess).includes("news")) return json({ error: "forbidden" }, 403);
+  if (!permsOf(sess).some(p => p === "news_video" || p === "news_shorts")) return json({ error: "forbidden" }, 403);
   const who = sess.name;
   if (!env.GITHUB_TOKEN) return json({ error: "not-configured" }, 500);
   const ext = new URL(request.url).searchParams.get("ext");

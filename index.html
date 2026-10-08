@@ -438,7 +438,14 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox{margin:10px 0 28px}
 .adbox{margin:0 0 18px}
 .adbox{margin-top:10px}
-.adbox{display:none!important}
+.adbox{margin:8px 0 26px;padding:12px 16px 16px;background:#fff;border:1px solid var(--line);border-top:3px solid #5a7567}
+.adbox .adh{margin-bottom:10px}
+.adbox .adh h2{font-size:.85rem;font-weight:600;color:#7a8a82;letter-spacing:0}
+#adlist{align-items:start}
+#adlist .ad{border-color:var(--line);background:#fff}
+#adlist .ad img{height:150px;max-height:none}
+#adlist .adfree{border:1.5px dashed #9db3a7;text-align:center;padding:22px 14px;background:#F7FAF8}
+#adlist .adfree b{color:#2F4A3E}
 .side[hidden],.board[hidden]{display:none!important}
 .top.solo{grid-template-columns:1fr}
 @media (max-width:520px){
@@ -638,11 +645,6 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
 <main class="wrap" id="home">
   <div class="date" id="today"></div>
-  <aside class="adbox" aria-label="إعلانات" hidden>
-      <div class="adh"><h2>إعلانات</h2></div>
-      <div id="adlist"><a class="ad" href="#ads"><b>مساحة إعلانية متاحة</b><span>أعلن معنا لتصل إلى قرّاء الموقع.</span></a></div>
-      <div id="adadm" class="mkpanel" hidden></div>
-    </aside>
   <section class="top">
     <article class="lead">
       <a class="leadimg" id="leadImgWrap" href="#article" hidden><img id="leadImg" alt=""></a>
@@ -671,6 +673,12 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
     </aside>
   </div>
   </section>
+
+  <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية">
+      <div class="adh"><h2>إعلانات</h2></div>
+      <div id="adlist"><a class="ad adfree" href="#ads"><b>مساحة إعلانية متاحة</b><span>أعلن معنا لتصل إلى قرّاء الموقع.</span></a></div>
+      <div id="adadm" class="mkpanel" hidden></div>
+    </aside>
 
   <div class="cols">
     <section class="col" id="s-news" style="--c:var(--local)">
@@ -1879,7 +1887,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function renderAds(){
     listEl.textContent="";
     if(!items.length){
-      var ph=el("a","ad"); ph.href="#ads"; ph.appendChild(el("b",null,"مساحة إعلانية متاحة")); ph.appendChild(el("span",null,"أعلن معنا لتصل إلى قرّاء الموقع.")); listEl.appendChild(ph); return;
+      var ph=el("a","ad adfree"); ph.href="#ads"; ph.appendChild(el("b",null,"مساحة إعلانية متاحة")); ph.appendChild(el("span",null,"أعلن معنا لتصل إلى قرّاء الموقع.")); listEl.appendChild(ph); return;
     }
     items.forEach(function(it){
       var u=safeUrl(it.url), n=el(u?"a":"div","ad");

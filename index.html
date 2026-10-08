@@ -450,6 +450,10 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .adbox[hidden]{display:none!important}
 .adbox{margin:14px 0 6px;padding:18px 12px;background:#EEF3F0;border:0}
 #adsslot2{margin:26px 0 24px}
+.adside{display:none}
+.adside:not(.isadm) .adh{display:none}
+.adside .adlist{max-width:300px;margin:0}
+@media (min-width:2380px){.adside:not([hidden]){display:block;position:fixed;top:150px;left:calc((100vw - 1760px)/2 - 316px);width:300px;z-index:5}}
 .adbox:not(.isadm) .adh{display:none}
 .adbox .adh{margin:0 auto 10px;max-width:970px}
 .adbox .adh{margin-bottom:10px}
@@ -665,6 +669,11 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
 <section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان العلوي"></section>
 <section class="wrap adm" id="adsadm2" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان السفلي"></section>
+<section class="wrap adm" id="adsadm3" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلان الجانبي"></section>
+<aside class="adside" id="adsslotside" aria-label="مساحة إعلانية جانبية" hidden>
+  <div class="adh"><h2>إعلان جانبي</h2></div>
+  <div id="adlistside" class="adlist"></div>
+</aside>
 <main class="wrap" id="home">
   <aside class="adbox" id="adsslot" aria-label="مساحة إعلانية" hidden>
       <div class="adh"><h2>إعلانات</h2></div>
@@ -1873,7 +1882,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var listEl=document.getElementById("adlist");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
-  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,pos:(x.pos==="bottom"?"bottom":"top"),start:Number(x.start)||0,end:Number(x.end)||0}; }
+  function readItem(d){ var x=d.data()||{}; return {id:d.id,title:String(x.title||""),text:String(x.text||""),url:String(x.url||""),image:goodImg(x.image),order:Number(x.order)||0,pos:(x.pos==="bottom"?"bottom":(x.pos==="side"?"side":"top")),start:Number(x.start)||0,end:Number(x.end)||0}; }
   function isLive(it,now){ now=now||Date.now(); return (!it.start||now>=it.start)&&(!it.end||now<it.end); }
   function toIn(ms){ if(!ms) return ""; var d=new Date(ms),p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes()); }
   function fromIn(v){ if(!v) return 0; var t=new Date(v).getTime(); return isFinite(t)?t:0; }
@@ -1917,7 +1926,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     return f;
   }
   function renderAds(){
-    [["adsslot","adlist","top"],["adsslot2","adlist2","bottom"]].forEach(function(p){
+    [["adsslot","adlist","top"],["adsslot2","adlist2","bottom"],["adsslotside","adlistside","side"]].forEach(function(p){
       var live=items.filter(function(i){ return i.pos===p[2] && isLive(i); });
       var slot=document.getElementById(p[0]), le=document.getElementById(p[1]); if(!le) return;
       le.textContent="";
@@ -1985,7 +1994,7 @@ function mkAdmin(P){
     pane.textContent="";
     var box=el("div","box"); pane.appendChild(box);
     box.appendChild(el("h2",null,P.title));
-    box.appendChild(el("p","hint","مقاس صورة الإعلان المطلوب من المعلن: 970×250 بكسل (JPG أو PNG) — تُعرض كاملة بدون قص، وإذا رُفعت صورة بنسبة مختلفة تُعرض بنسبتها كما هي. الصورة وحدها هي الإعلان، والعنوان للوصف فقط. يظهر الإعلان بين تاريخ البدء وتاريخ الإنهاء، وإذا لم يوجد إعلان فعّال تختفي المساحة عن الزوّار تلقائياً."));
+    box.appendChild(el("p","hint","مقاس صورة الإعلان المطلوب من المعلن: "+P.size+" بكسل (JPG أو PNG) — تُعرض كاملة بدون قص، وإذا رُفعت صورة بنسبة مختلفة تُعرض بنسبتها كما هي. الصورة وحدها هي الإعلان، والعنوان للوصف فقط. يظهر الإعلان بين تاريخ البدء وتاريخ الإنهاء، وإذا لم يوجد إعلان فعّال تختفي المساحة عن الزوّار تلقائياً."));
     var add=el("div","aadd");
     nT=inp("","عنوان الإعلان","عنوان الإعلان"); nX=area("","نص الإعلان (اختياري)","نص الإعلان"); nU=inp("","https:// رابط الإعلان (اختياري)","رابط الإعلان (اختياري)",true);
     var newImg="", nPrev=document.createElement("img"); nPrev.className="aprev"; nPrev.alt=""; nPrev.hidden=true;
@@ -2018,8 +2027,9 @@ function mkAdmin(P){
   return {renderRows:renderRows};
 }
 var admins=[
-  mkAdmin({pos:"top",paneId:"adsadm",slotId:"adsslot",title:"إدارة الإعلان العلوي"}),
-  mkAdmin({pos:"bottom",paneId:"adsadm2",slotId:"adsslot2",title:"إدارة الإعلان السفلي"})
+  mkAdmin({pos:"top",paneId:"adsadm",slotId:"adsslot",title:"إدارة الإعلان العلوي",size:"970×250"}),
+  mkAdmin({pos:"bottom",paneId:"adsadm2",slotId:"adsslot2",title:"إدارة الإعلان السفلي",size:"970×250"}),
+  mkAdmin({pos:"side",paneId:"adsadm3",slotId:"adsslotside",title:"إدارة الإعلان الجانبي",size:"300×600"})
 ];
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){ return i.title; });

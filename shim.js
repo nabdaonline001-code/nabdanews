@@ -10,7 +10,7 @@
   function ndDone(){ de.classList.remove("nd-load"); }
   setTimeout(ndDone,4000);
   var CFG=Object.assign({repo:"nabdaonline001-code/nabdanews",branch:"main",path:"data/site.json",email:"",web3formsKey:""},window.NABDA_CONFIG||{});
-  var admin=false, owner=false;
+  var admin=false, owner=false, perms=null;
   var store={}, listeners=[], ready=null, queue=[], timer=null, waiters=[];
 
   /* ---------- small UI helpers ---------- */
@@ -36,6 +36,7 @@
     api("save","POST",{ops:ops}).then(function(){ toast("تم الحفظ، ويظهر للزوار خلال دقيقة تقريباً."); ws.forEach(function(w){ w.res(); }); })
       .catch(function(e){
         if(e.status===401){ admin=false; toast("انتهت جلسة المدير. حدّث الصفحة وادخل من جديد.",true); }
+        else if(e.status===403) toast("ليست لديك صلاحية لهذه الإدارة. لم يُحفظ التعديل، حدّث الصفحة.",true);
         else toast("تعذّر الحفظ. حدّث الصفحة وحاول مرة أخرى.",true);
         ws.forEach(function(w){ w.rej(e); });
       });
@@ -53,7 +54,7 @@
   function load(){
     if(ready) return ready;
     ready=api("me").catch(function(){ return {admin:false}; }).then(function(m){
-      admin=!!(m&&m.admin); owner=!!(m&&m.owner);
+      admin=!!(m&&m.admin); owner=!!(m&&m.owner); perms=(m&&Array.isArray(m.perms))?m.perms:null;
       return admin?api("data").catch(function(){ return loadPublic(); }):loadPublic();
     }).then(function(j){ ingest(j); return true; }).catch(function(){ return false; });
     ready.then(function(){ setTimeout(ndDone,450); });
@@ -122,6 +123,7 @@
   var user={
     canEdit:function(){ return load().then(function(){ return admin; }); },
     isOwner:function(){ return load().then(function(){ return admin; }); },
+    has:function(p){ return load().then(function(){ return !!admin&&(owner||!perms||perms.indexOf(p)>=0); }); },
     id:function(){ return Promise.resolve((CFG.web3formsKey||CFG.email)?vid:null); }
   };
   window.claude={use:function(n){
@@ -161,13 +163,20 @@
     inp.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
   }
   /* ---------- staff accounts panel (owner only) ---------- */
-  var UERR={"bad-username":"اسم المستخدم: حروف إنجليزية صغيرة وأرقام فقط (2 إلى 30).","weak-password":"كلمة السر قصيرة، لازم 8 أحرف على الأقل.","reserved":"هذا الاسم محجوز لحساب مدير.","exists":"هذا الاسم موجود مسبقاً.","missing":"الحساب غير موجود.",auth:"انتهت الجلسة، حدّث الصفحة وادخل من جديد.",forbidden:"هذه الصفحة للمدير الأساسي فقط."};
+  var UERR={"bad-username":"اسم المستخدم: حروف إنجليزية صغيرة وأرقام فقط (2 إلى 30).","weak-password":"كلمة السر قصيرة، لازم 8 أحرف على الأقل.","reserved":"هذا الاسم محجوز لحساب مدير.","exists":"هذا الاسم موجود مسبقاً.","missing":"الحساب غير موجود.",auth:"انتهت الجلسة، حدّث الصفحة وادخل من جديد.",forbidden:"هذه الصفحة للمدير الأساسي فقط.","bad-request":"طلب غير صالح."};
+  var PLAB=[["breaking","الأخبار العاجلة"],["news","الأخبار (كل الأقسام والفيديو)"],["lead","الخبر الرئيسي (أهم خبر)"],["markets","الأسواق"],["social","روابط التواصل وبيانات الإعلان"],["jobs","الوظائف"],["ads_top","الإعلان العلوي"],["ads_bottom","الإعلان السفلي"],["ads_side","الإعلان الجانبي"]];
+  function permGroup(checked){
+    var g=h("div","display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;flex-basis:100%;margin:4px 0 6px;font-size:.88rem"), boxes={};
+    PLAB.forEach(function(x){ var l=h("label","display:flex;gap:6px;align-items:center;cursor:pointer"), c=document.createElement("input"); c.type="checkbox"; c.checked=!!(checked&&checked.indexOf(x[0])>=0); c.style.cssText="width:auto;margin:0"; boxes[x[0]]=c; l.appendChild(c); l.appendChild(document.createTextNode(x[1])); g.appendChild(l); });
+    g.get=function(){ return PLAB.filter(function(x){ return boxes[x[0]].checked; }).map(function(x){ return x[0]; }); };
+    return g;
+  }
   function openUsers(){
     var ov=h("div","position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px");
     var bx=h("div","background:#fff;color:#2b3a33;max-width:520px;width:100%;max-height:90vh;overflow:auto;padding:22px;border-top:8px solid #5a7567;font:15px/1.8 'Noto Kufi Arabic',Tahoma,sans-serif");
     bx.setAttribute("dir","rtl"); bx.setAttribute("lang","ar"); bx.setAttribute("role","dialog"); bx.setAttribute("aria-label","المستخدمون");
     bx.appendChild(h("h2","margin:0 0 6px;font-size:1.2rem;color:#5a7567","المستخدمون (الموظفين)"));
-    bx.appendChild(h("p","margin:0 0 10px;font-size:.9rem;color:#555","كل موظف يدخل باسمه وكلمة سره من زر Log in، ويقدر يضيف ويعدّل الأخبار. وحدك تشوف هذه الصفحة."));
+    bx.appendChild(h("p","margin:0 0 10px;font-size:.9rem;color:#555","كل موظف يدخل باسمه وكلمة سره من زر Log in، ويشتغل فقط على الإدارات التي تحددها له أدناه، ولا يرى غيرها. وحدك تشوف هذه الصفحة."));
     var list=h("div","margin:0 0 12px"), st=h("p","min-height:1.6em;margin:6px 0;color:#C8102E;font-size:.9rem"); st.setAttribute("role","status");
     function btn(t,bg){ var b=h("button","padding:4px 12px;border:1px solid #5a7567;background:"+(bg?"#5a7567":"#fff")+";color:"+(bg?"#fff":"#5a7567")+";font:inherit;font-size:.85rem;cursor:pointer",t); b.type="button"; return b; }
     function inp(ph,type){ var i=h("input","padding:8px;border:1px solid #5a7567;font:inherit;direction:ltr;min-width:0;flex:1"); i.type=type||"text"; i.placeholder=ph; i.autocomplete="off"; i.setAttribute("aria-label",ph); return i; }
@@ -187,15 +196,18 @@
           var pw=btn("تغيير كلمة السر"), del=btn("حذف");
           pw.onclick=function(){ var p=window.prompt("كلمة السر الجديدة لـ "+u.username+" (8 أحرف على الأقل):"); if(p) call({action:"password",username:u.username,password:p},"تم تغيير كلمة السر."); };
           del.onclick=function(){ if(window.confirm("حذف حساب "+u.username+"؟")) call({action:"delete",username:u.username},"تم حذف الحساب."); };
-          act.appendChild(pw); act.appendChild(del); row.appendChild(act); list.appendChild(row);
+          act.appendChild(pw); act.appendChild(del); row.appendChild(act);
+          var pb=h("div","flex-basis:100%"); pb.appendChild(h("div","font-size:.85rem;color:#5a7567;font-weight:700","الإدارات المسموحة لهذا الموظف:"+(u.legacy?" (حساب قديم: كل الصلاحيات حتى تحفظ اختيارك)":"")));
+          var grp=permGroup(u.perms), sp=btn("حفظ الصلاحيات",true); sp.onclick=function(){ call({action:"perms",username:u.username,perms:grp.get()},"تم حفظ صلاحيات "+u.username+". تُطبَّق فوراً."); };
+          pb.appendChild(grp); pb.appendChild(sp); row.appendChild(pb); list.appendChild(row);
         });
       }).catch(function(e){ st.style.color="#C8102E"; st.textContent=UERR[e.message]||"تعذّر تحميل القائمة."; });
     }
     bx.appendChild(list);
     bx.appendChild(h("h3","margin:8px 0 4px;font-size:1rem;color:#5a7567","إضافة موظف"));
     var add=h("form","display:flex;gap:8px;flex-wrap:wrap"), nu=inp("اسم المستخدم (إنجليزي)"), np=inp("كلمة السر (8 أحرف+)","text"), go=btn("إضافة",true); go.type="submit";
-    add.appendChild(nu); add.appendChild(np); add.appendChild(go);
-    add.addEventListener("submit",function(ev){ ev.preventDefault(); call({action:"add",username:nu.value,password:np.value},"تمت إضافة الموظف. يقدر يدخل الآن.").then(function(){ if(st.style.color!=="rgb(200, 16, 46)"){ nu.value=""; np.value=""; } }); });
+    var addPerms=permGroup([]); add.appendChild(nu); add.appendChild(np); add.appendChild(h("div","flex-basis:100%;font-size:.85rem;color:#5a7567;font-weight:700","الإدارات المسموحة لهذا الموظف:")); add.appendChild(addPerms); add.appendChild(go);
+    add.addEventListener("submit",function(ev){ ev.preventDefault(); call({action:"add",username:nu.value,password:np.value,perms:addPerms.get()},"تمت إضافة الموظف. يقدر يدخل الآن.").then(function(){ if(st.style.color!=="rgb(200, 16, 46)"){ nu.value=""; np.value=""; } }); });
     bx.appendChild(add); bx.appendChild(st);
     var close=btn("إغلاق"); close.style.marginTop="8px"; close.onclick=function(){ ov.remove(); }; bx.appendChild(close);
     ov.appendChild(bx); document.body.appendChild(ov); refresh(); nu.focus();

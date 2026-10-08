@@ -1,11 +1,13 @@
 /* Admin-only upload of a short video (mp4 / webm, up to 20 MB). The file is committed to videos/ in the repository and
    served as a static file once Cloudflare Pages has redeployed (about a minute). */
-import { json, adminUser, sameOrigin, putFile } from "./_shared.js";
+import { json, session, permsOf, sameOrigin, putFile } from "./_shared.js";
 const MAX = 20 * 1024 * 1024;
 export async function onRequestPost({ request, env }) {
   if (!sameOrigin(request)) return json({ error: "origin" }, 403);
-  const who = await adminUser(request, env);
-  if (!who) return json({ error: "auth" }, 401);
+  const sess = await session(request, env);
+  if (!sess) return json({ error: "auth" }, 401);
+  if (!permsOf(sess).includes("news")) return json({ error: "forbidden" }, 403);
+  const who = sess.name;
   if (!env.GITHUB_TOKEN) return json({ error: "not-configured" }, 500);
   const ext = new URL(request.url).searchParams.get("ext");
   if (ext !== "mp4" && ext !== "webm") return json({ error: "bad-type" }, 400);

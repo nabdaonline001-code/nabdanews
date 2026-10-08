@@ -1296,6 +1296,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   function catOf(c){ return c==="economy"||c==="sports"?c:"politics"; }
   function catName(c){ return CATS.filter(function(x){return x[0]===c;})[0][1]; }
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("breaking"); }catch(e){ adminOn=false; }
 
   function safeUrl(u){ u=String(u||"").trim(); return /^(https?:\/\/|#)/i.test(u)?u:"#"; }
   function mkLink(it,hidden){
@@ -1451,6 +1452,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("markets"), items=[], adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("markets"); }catch(e){ adminOn=false; }
   var rowsEl=document.getElementById("mkrows"), pane=document.getElementById("mkadm"), head=document.querySelector(".mkh");
   if(!rowsEl) return;
   var DIRS=[["up","ارتفاع ▲"],["down","انخفاض ▼"],["flat","ثابت"]];
@@ -1570,6 +1572,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("lead"); }catch(e){ adminOn=false; }
   var T=document.getElementById("leadTa"), B=document.getElementById("leadB"), BY=document.getElementById("leadBy"),
       head=document.getElementById("leadH"), pane=document.getElementById("leadadm");
   if(!T||!B||!BY) return;
@@ -1700,6 +1703,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("news"), adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("news"); }catch(e){ adminOn=false; }
   var panel=document.getElementById("newsadm");
   var fUrl,fSec,fTitle,fSum,fFull,fBy,fSave,fCancel,fSt,fHead,listEl,filt,editing=null,built=false;
   function say(t){ if(fSt) fSt.textContent=t||""; }
@@ -1884,6 +1888,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("ads"), items=[], adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  var canPos={top:false,bottom:false,side:false};
+  try{ if(adminOn&&user.has){ for(var k in canPos) canPos[k]=await user.has("ads_"+k); } }catch(e){}
+  adminOn=canPos.top||canPos.bottom||canPos.side;
   var listEl=document.getElementById("adlist");
   if(!listEl) return;
   function safeUrl(u){ u=String(u||"").trim(); return /^https?:\/\//i.test(u)?u:""; }
@@ -1938,8 +1945,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       var live=items.filter(function(i){ return i.pos===p[2] && isLive(i) && (p[2]==="side"||isHome||i.all); });
       var slot=document.getElementById(p[0]), le=document.getElementById(p[1]); if(!le) return;
       le.textContent="";
-      var showAdm=adminOn&&(p[2]==="side"||isHome);
-      if(slot){ slot.hidden=!(live.length||showAdm); if(adminOn) slot.classList.add("isadm"); }
+      var showAdm=canPos[p[2]]&&(p[2]==="side"||isHome);
+      if(slot){ slot.hidden=!(live.length||showAdm); if(canPos[p[2]]) slot.classList.add("isadm"); }
       if(!live.length){
         if(showAdm){ le.appendChild(el("div","adnote","لا يوجد إعلان نشط حالياً في هذه المساحة — هي مخفية عن الزوّار حتى يبدأ إعلان.")); }
         return;
@@ -2026,7 +2033,7 @@ function mkAdmin(P){
     box.appendChild(add); box.appendChild(rowsEl); box.appendChild(st);
     built=true; renderRows();
   }
-  if(adminOn && pane && head){
+  if(canPos[P.pos] && pane && head){
     var btn=el("button","admbtn",P.title); btn.type="button"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls",P.paneId);
     btn.onclick=function(){
       var open=pane.hidden; pane.hidden=!open; btn.setAttribute("aria-expanded",String(open));
@@ -2079,6 +2086,7 @@ var admins=[
   try{ user=await claude.use("user"); }catch(e){}
   var ref=db.doc("social/links"), cur={}, adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("social"); }catch(e){ adminOn=false; }
   function clean(k,v){
     v=String(v||"").trim(); if(!v) return "";
     if(k==="wa" && /^\+?[0-9 ()-]{6,20}$/.test(v)) return "https://wa.me/"+v.replace(/[^0-9]/g,"");
@@ -2234,6 +2242,7 @@ var admins=[
   try{ user=await claude.use("user"); }catch(e){}
   var col=db.collection("jobs"), items=[], adminOn=false;
   try{ adminOn=!!(user && await user.canEdit()); }catch(e){}
+  try{ if(adminOn&&user.has) adminOn=await user.has("jobs"); }catch(e){ adminOn=false; }
   function applyHref(v){
     v=String(v||"").trim(); if(!v) return "";
     if(/^https:\/\//i.test(v)) return v;

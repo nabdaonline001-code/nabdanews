@@ -1,6 +1,26 @@
 /* Shared helpers for the admin API (Cloudflare Pages Functions). This file exports no onRequest* handler, so it is not a route. */
 const enc = new TextEncoder();
 const COLLECTIONS = ["breaking", "markets", "lead", "news", "ads", "social", "jobs"];
+/* Staff permissions: one per admin area. Owners have all of them. A staff account without a "perms" list (created before
+   permissions existed) keeps full access until the owner sets its permissions. */
+export const PERMS = ["breaking", "news", "lead", "markets", "social", "jobs", "ads_top", "ads_bottom", "ads_side"];
+export function cleanPerms(v) { return Array.isArray(v) ? [...new Set(v.filter(x => PERMS.includes(x)))] : null; }
+export function permsOf(s) { return !s ? [] : s.owner ? PERMS.slice() : (s.perms || PERMS.slice()); }
+/* Which permission does one write op need? Ads depend on the slot ("pos") of the ad, before and after the change. */
+function opPerms(root, o) {
+  if (o.c !== "ads") return [o.c];
+  const need = new Set(), old = root && root.ads && root.ads[o.id];
+  if (old) need.add("ads_" + (["bottom", "side"].includes(old.pos) ? old.pos : "top"));
+  if (o.t !== "del") { const p = o.d && o.d.pos; if (o.t === "set" || p !== undefined) need.add("ads_" + (["bottom", "side"].includes(p) ? p : "top")); }
+  if (!need.size) need.add("ads_top");
+  return [...need];
+}
+export function missingPerm(root, ops, s) {
+  if (s && s.owner) return null;
+  const have = new Set(permsOf(s));
+  for (const o of ops) for (const p of opPerms(root, o)) if (!have.has(p)) return p;
+  return null;
+}
 
 export function json(obj, status = 200, headers = {}) {
   return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers } });
@@ -123,7 +143,7 @@ export async function session(request, env) {
   if (!m || Number(m[2]) < Date.now()) return null;
   let u; try { u = new TextDecoder().decode(Uint8Array.from(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0))); } catch (e) { return null; }
   const f = await findUser(env, u); if (!f) return null;
-  return timingEq(await hmac(sessionKey(env, u, f.secret), "admin." + m[1] + "." + m[2]), m[3]) ? { name: u, owner: f.owner } : null;
+  return timingEq(await hmac(sessionKey(env, u, f.secret), "admin." + m[1] + "." + m[2]), m[3]) ? { name: u, owner: f.owner, perms: f.owner ? null : cleanPerms(f.rec.perms) } : null;
 }
 export async function adminUser(request, env) { const s = await session(request, env); return s ? s.name : null; }
 export async function isAdmin(request, env) { return !!(await session(request, env)); }
@@ -164,10 +184,11 @@ export function validOps(ops) {
     typeof o.id === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(o.id) &&
     (o.t === "del" || (o.d && typeof o.d === "object" && !Array.isArray(o.d))));
 }
-export async function commitOps(env, ops, who) {
+export async function commitOps(env, ops, who, sess) {
   const c = cfg(env);
   for (let attempt = 0; attempt < 3; attempt++) {
     const [root, sha] = await Promise.all([fetchData(env), fetchSha(env)]);
+    if (sess && missingPerm(root, ops, sess)) throw new Error("forbidden");
     ops.forEach(o => applyOp(root, o));
     const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${c.path}`, {
       method: "PUT", headers: { ...gh(env), "Content-Type": "application/json" },

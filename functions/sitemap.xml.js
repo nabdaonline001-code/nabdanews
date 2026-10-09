@@ -8,6 +8,7 @@ export async function onRequestGet(ctx) {
   try { const r = await ctx.env.ASSETS.fetch(new URL("/data/site.json", url.origin)); if (r.ok) site = await r.json(); } catch (e) {}
   const rows = [];
   rows.push({ loc: CANON + "/", last: null, freq: "hourly", pr: "1.0" });
+  rows.push({ loc: CANON + "/privacy", last: null, freq: "yearly", pr: "0.3" });
   if (((site.lead || {}).main || {}).title) rows.push({ loc: CANON + "/n/lead", last: null, freq: "daily", pr: "0.9" });
   Object.entries(site.news || {})
     .map(([id, n]) => ({ id, n }))

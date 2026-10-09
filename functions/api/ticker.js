@@ -254,6 +254,7 @@ function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slic
    bar) and shown first (field pri:1; the page sorts by it before time) */
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
 const LEB_MAX = 16;
+const CATCAP = { politics: 15, economy: 5, sports: 5 };
 const TARGET = 25;     /* headlines in the bar (about one hour's worth) */
 const PER_SOURCE = 5;  /* at most this many from any one channel */
 export async function build(now = Date.now()) {
@@ -276,16 +277,22 @@ export async function build(now = Date.now()) {
   let windowMin = 60, picked = [];
   for (const w of [60, 120, 240, 720, 1440]) {
     windowMin = w; picked = [];
-    const per = {}, seen = new Set();
+    const per = {}, seen = new Set(), nc = {};
     let nleb = 0;
-    for (const c of cand.slice().sort((a, b) => (b.leb - a.leb) || (b.ts - a.ts))) {
-      if (now - c.ts > w * 60000) continue;
-      if (c.leb && nleb >= LEB_MAX) continue;
-      const k = norm(c.text), k2 = k.slice(0, 28);
-      if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
-      if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
-      seen.add(k); seen.add(k2); picked.push(c); if (c.leb) nleb++;
-      if (picked.length >= TARGET) break;
+    const order = cand.slice().sort((a, b) => (b.leb - a.leb) || (b.ts - a.ts));
+    /* phase 1 keeps room for every section of the bar (general ≤15, economy ≤5, sport ≤5); phase 2 fills what is left */
+    for (const phase of [1, 2]) {
+      for (const c of order) {
+        if (picked.length >= TARGET) break;
+        if (picked.includes(c) || now - c.ts > w * 60000) continue;
+        if (c.leb && nleb >= LEB_MAX) continue;
+        const cc = c.sport ? "sports" : catOf(c.text);
+        if (phase === 1 && (nc[cc] || 0) >= CATCAP[cc]) continue;
+        const k = norm(c.text), k2 = k.slice(0, 28);
+        if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
+        if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
+        seen.add(k); seen.add(k2); picked.push(c); nc[cc] = (nc[cc] || 0) + 1; if (c.leb) nleb++;
+      }
     }
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;

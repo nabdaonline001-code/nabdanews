@@ -1348,7 +1348,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   /* ticker = manual items (last 60 min) + automatic channel headlines from /api/ticker */
   var AUTO=[], AUTOWIN=60, lastSig=null, autoDone=false;
-  try{ var _c=JSON.parse(localStorage.getItem("nabda_auto4")||"null"); if(_c&&Array.isArray(_c.items)&&_c.items.length){ AUTO=_c.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(_c.win)||60; } }catch(e){}
+  try{ var _c=JSON.parse(localStorage.getItem("nabda_auto5")||"null"); if(_c&&Array.isArray(_c.items)&&_c.items.length){ AUTO=_c.items.filter(function(a){ return a&&a.text&&a.ts&&!/مراسل/.test(a.text); }); AUTOWIN=Number(_c.win)||60; } }catch(e){}
   function normTx(s){ return String(s||"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
   function liveItems(){
     var now=Date.now(), seen={};
@@ -1370,7 +1370,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
   function loadAuto(){
     fetch("/api/ticker",{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
-      .then(function(j){ if(j&&Array.isArray(j.items)&&j.items.length){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts; }); AUTOWIN=Number(j.windowMin)||60; try{ localStorage.setItem("nabda_auto4",JSON.stringify({items:AUTO,win:AUTOWIN})); }catch(e){} } })
+      .then(function(j){ if(j&&Array.isArray(j.items)&&j.items.length){ AUTO=j.items.filter(function(a){ return a&&a.text&&a.ts&&!/مراسل/.test(a.text); }); AUTOWIN=Number(j.windowMin)||60; try{ localStorage.setItem("nabda_auto5",JSON.stringify({items:AUTO,win:AUTOWIN})); }catch(e){} } })
       .catch(function(){}).then(function(){ autoDone=true; renderTicker(); });
   }
   function renderTicker(){

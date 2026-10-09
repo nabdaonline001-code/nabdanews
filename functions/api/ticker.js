@@ -333,7 +333,7 @@ export async function build(now = Date.now()) {
 
 export async function onRequestGet({ request, waitUntil }) {
   const cache = typeof caches !== "undefined" ? caches.default : null;
-  const key = new Request(new URL(request.url).origin + "/api/ticker?v=4"); /* bump v to drop every cached copy after a logic change */
+  const key = new Request(new URL(request.url).origin + "/api/ticker?v=5"); /* bump v to drop every cached copy after a logic change */
   if (cache && !new URL(request.url).searchParams.has("fresh")) { const hit = await cache.match(key); if (hit) return hit; }
   const data = await build();
   const res = new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": data.items.length ? "public, max-age=300" : "public, max-age=60" } });

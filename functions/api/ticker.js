@@ -266,8 +266,10 @@ function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slic
 /* "Lebanese news" for the badge and the priority: it names Lebanon or a Lebanese place/party, or it comes from a Lebanese
    channel and is not about another country (the broad LEB list above also matches «الجنوب» / «صور» and is only for the word policy) */
 const LEB_STRICT = /لبنان|اللبنان|بيروت|الضاحية الجنوبية|بنت جبيل|النبطية|مرجعيون|حاصبيا|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|كفرشوبا|شبعا|عيترون|الليطاني|حزب الله/;
-const FOREIGN = /إيران|الإيراني|طهران|واشنطن|ترامب|روسيا|أوكرانيا|غزة|فلسطين|الفلسطيني|سوريا|السوري|دمشق|اليمن|اليمني|العراق|العراقي|بغداد|السودان|مصر|القاهرة|ليبيا|الصين|أوروبا|الأوروبي|الولايات المتحدة|الأمريكي|بريطانيا|فرنسا|ألمانيا|تركيا|السعودية|الخليج|الدوحة|قطر|الإمارات|الأردن|عمان/;
-const isLeb = (srcId, text) => LEB_STRICT.test(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text));
+const FOREIGN = /إيران|الإيراني|طهران|واشنطن|ترامب|روسيا|أوكرانيا|غزة|فلسطين|الفلسطيني|سوريا|السوري|دمشق|اليمن|اليمني|العراق|العراقي|بغداد|السودان|مصر|القاهرة|ليبيا|الصين|أوروبا|الأوروبي|الولايات المتحدة|الأمريكي|بريطانيا|فرنسا|ألمانيا|تركيا|السعودية|الخليج|الدوحة|قطر|الإمارات|الأردن|عمان|أمريكا|الأمريكية|الأميركي|الأميركية|الروسي|الروسية|الصيني|الصينية|الخزانة|البيت الأبيض|الكونغرس|الأوروبية|الهند|اليابان|كوريا|العالمي|عالمي|الأسواق|الاتحاد/;
+/* a Lebanese channel's headline gets the badge only with a local marker (not just "not foreign") */
+const LOCAL = /مجلس النواب|مجلس الوزراء|رئيس الحكومة|رئيس الجمهورية|رئيس مجلس النواب|نبيه بري|جوزاف عون|نواف سلام|الحكومة اللبنانية|قوى الأمن|الأمن العام|الدفاع المدني|المحافظ|البلدية|بلدة|قضاء|النائب|النواب|مصرف لبنان|كهرباء لبنان|ساعات التغذية|وزير الطاقة|وزير الصحة|وزير الأشغال|وزير الداخلية|وزير المال|وزير التربية|وزير العدل|وزير الاقتصاد|الجنوب|الجيش/;
+const isLeb = (srcId, text) => LEB_STRICT.test(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text) && LOCAL.test(text));
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
 const LEB_MAX = 16;
 const CATCAP = { politics: 15, economy: 5, sports: 5 };

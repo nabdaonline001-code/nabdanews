@@ -900,7 +900,13 @@ html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.d
 </footer>
 <script>
 try{document.getElementById("cyr").textContent=new Date().getFullYear();}catch(e){}
-try{document.getElementById("today").textContent=new Date().toLocaleDateString("ar",{weekday:"long",year:"numeric",month:"long",day:"numeric"});}catch(e){}
+/* today's date (Beirut time): set on load and re-checked every minute and when the tab comes back, so a page left open past midnight rolls over */
+(function(){
+  function upd(){ try{ var t=document.getElementById("today"); if(!t) return; var v=new Date().toLocaleDateString("ar",{weekday:"long",year:"numeric",month:"long",day:"numeric",timeZone:"Asia/Beirut"}); if(t.textContent!==v) t.textContent=v; }catch(e){ try{ document.getElementById("today").textContent=new Date().toLocaleDateString("ar",{weekday:"long",year:"numeric",month:"long",day:"numeric"}); }catch(x){} } }
+  upd(); setInterval(upd,60000);
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) upd(); });
+  window.addEventListener("focus",upd); window.addEventListener("pageshow",upd);
+})();
 
 var SEC={
 local:{t:"محلي",c:"--local",i:[["المجلس البلدي يقرّ مسارات جديدة للحافلات","تبدأ الأعمال في الربيع المقبل ويُتوقع أن تقلّ مدة التنقّل اليومية."],["نقل سوق المزارعين إلى ساحة المحطة القديمة","يتسع الموقع الجديد لضعف عدد البسطات."],["إغلاق شارعين هذا الأسبوع لإصلاح شبكة المياه","يتوقع الفنيون إعادة فتحهما مساء الجمعة."],["تأجيل التصويت على التقويم المدرسي الجديد","طلب أولياء الأمور وقتاً أطول لمراجعة المقترح."]]},

@@ -1,6 +1,7 @@
 /* Automatic breaking-news ticker: reads each channel's RSS (or Google News RSS for sites without one), applies the
    house rules (word policy, no questions / "watch the video" teasers / petty crime), keeps only recent items (60 min,
    widened up to 4 h when the news is quiet), and is edge-cached for 5 minutes. Public, read-only. */
+import { isLebName } from "./_leb.js";
 const BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/rss+xml,application/xml,text/xml,*/*", "Accept-Language": "ar,en;q=0.8" };
 const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("site:" + site)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
@@ -269,7 +270,7 @@ const LEB_STRICT = /لبنان|اللبنان|بيروت|الضاحية الجن
 const FOREIGN = /إيران|الإيراني|طهران|واشنطن|ترامب|روسيا|أوكرانيا|غزة|فلسطين|الفلسطيني|سوريا|السوري|دمشق|اليمن|اليمني|العراق|العراقي|بغداد|السودان|مصر|القاهرة|ليبيا|الصين|أوروبا|الأوروبي|الولايات المتحدة|الأمريكي|بريطانيا|فرنسا|ألمانيا|تركيا|السعودية|الخليج|الدوحة|قطر|الإمارات|الأردن|عمان|أمريكا|الأمريكية|الأميركي|الأميركية|الروسي|الروسية|الصيني|الصينية|الخزانة|البيت الأبيض|الكونغرس|الأوروبية|الهند|اليابان|كوريا|العالمي|عالمي|الأسواق|الاتحاد|بنما|المكسيك|البرازيل|الأرجنتين|كندا|أستراليا|نيوزيلندا|إندونيسيا|باكستان|أفغانستان|بنغلاديش|ماليزيا|الفلبين|تايوان|فيتنام|تايلاند|إسبانيا|إيطاليا|اليونان|بولندا|هولندا|بلجيكا|سويسرا|السويد|النرويج|الدنمارك|فنلندا|إسرائيلي(?=.{0,40}(?:سوريا|غزة|إيران|اليمن))|المغرب|الجزائر|تونس|موريتانيا|الصومال|إثيوبيا|نيجيريا|جنوب أفريقيا|الكويت|البحرين|لندن|باريس|برلين|موسكو|بكين|طوكيو|نيويورك|فلوريدا|كاليفورنيا|تكساس|أمريكي|ناسا|الأطلسي|الناتو/;
 /* a Lebanese channel's headline gets the badge only with a local marker (not just "not foreign") */
 const LOCAL = /اليونيفيل|اليونيفل|الحشيمي|ميقاتي|جعجع|جنبلاط|باسيل|فرنجية|الراعي|قبلان|عويدات|مجلس الشيوخ اللبناني|رئيس البلدية|اتحاد البلديات|الاحتلال الإسرائيلي|الجيش الإسرائيلي|غارة|غارات|مسيّرة|مسيرة|الحدود|مجلس النواب|مجلس الوزراء|رئيس الحكومة|رئيس الجمهورية|رئيس مجلس النواب|نبيه بري|جوزاف عون|نواف سلام|الحكومة اللبنانية|قوى الأمن|الأمن العام|الدفاع المدني|المحافظ|البلدية|بلدة|قضاء|النائب|النواب|مصرف لبنان|كهرباء لبنان|ساعات التغذية|الجنوب|الجيش/;
-const isLeb = (srcId, text) => LEB_STRICT.test(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text) && LOCAL.test(text));
+const isLeb = (srcId, text) => LEB_STRICT.test(text) || isLebName(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text) && LOCAL.test(text));
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
 const LEB_MAX = 16;
 const CATCAP = { politics: 15, economy: 5, sports: 5 };

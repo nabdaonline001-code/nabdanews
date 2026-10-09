@@ -42,7 +42,7 @@ export const SOURCES = [
   { id: "asharq", urls: [gnews("asharq.com")] },
   { id: "ikhbariya_sumaria", cap: 8, urls: [gnewsAny(["alikhbariah.com", "alsumaria.tv"])] },
   { id: "egypt", cap: 8, urls: [gnewsAny(["youm7.com", "ahram.org.eg"])] },
-  { id: "sana", agency: "سانا", noLebWar: true, urls: ["https://sana.sy/feed/", gnews("sana.sy")] },
+  { id: "sana", agency: "سانا", lebActivityOnly: true, urls: ["https://sana.sy/feed/", gnews("sana.sy")] },
   { id: "wafa", agency: "وفا", urls: [gnews("wafa.ps")] },
   { id: "suna", agency: "سونا", urls: [gnews("suna-sd.net")] },
   { id: "saba", agency: "سبأ", urls: [gnews("sabanew.net")] },
@@ -283,6 +283,7 @@ const FOREIGN = /إيران|الإيراني|طهران|واشنطن|ترامب|
 const LOCAL = /اليونيفيل|اليونيفل|الحشيمي|ميقاتي|جعجع|جنبلاط|باسيل|فرنجية|الراعي|قبلان|عويدات|مجلس الشيوخ اللبناني|رئيس البلدية|اتحاد البلديات|الاحتلال الإسرائيلي|الجيش الإسرائيلي|غارة|غارات|مسيّرة|مسيرة|الحدود|مجلس النواب|مجلس الوزراء|رئيس الحكومة|رئيس الجمهورية|رئيس مجلس النواب|نبيه بري|جوزاف عون|نواف سلام|الحكومة اللبنانية|قوى الأمن|الأمن العام|الدفاع المدني|المحافظ|البلدية|بلدة|قضاء|النائب|النواب|مصرف لبنان|كهرباء لبنان|ساعات التغذية|الجنوب|الجيش/;
 const isLeb = (srcId, text) => LEB_STRICT.test(text) || isLebName(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text) && LOCAL.test(text));
 const WAR = /قصف|غارة|غارات|استهداف|استهدف|مسيّرة|مسيرة|صاروخ|صواريخ|اشتباك|هجوم|تفجير|انفجار|شهداء|شهيد|جرحى|إصابة|قتلى/;
+const ACTIVITY = /زيارة|يزور|زار|تزور|وفد|وفود|يستقبل|تستقبل|استقبل|يلتقي|تلتقي|التقى|لقاء|اجتماع|يجتمع|مباحثات|محادثات|يبحث|تبحث|بحث|السفير|سفير|ممثل|ممثلي|المبعوث|مبعوث|توقيع|يوقع|اتفاقية|مذكرة تفاهم|تعاون|مؤتمر|منتدى|معرض|مهرجان|يشارك|مشاركة/;
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
 const LEB_MAX = 16;
 const CATCAP = { politics: 15, economy: 5, sports: 5 };
@@ -299,7 +300,7 @@ export async function build(now = Date.now()) {
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
-      if (text && s.noLebWar && isLeb(s.id, text) && WAR.test(text)) continue;   /* war news about Lebanon is not taken from SANA */
+      if (text && s.lebActivityOnly && isLeb(s.id, text) && (WAR.test(text) || !ACTIVITY.test(text))) continue;   /* from SANA only Lebanon-related activities (visits, delegations, meetings), never war news */
       if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
@@ -335,7 +336,7 @@ export async function build(now = Date.now()) {
 
 export async function onRequestGet({ request, waitUntil }) {
   const cache = typeof caches !== "undefined" ? caches.default : null;
-  const key = new Request(new URL(request.url).origin + "/api/ticker?v=6"); /* bump v to drop every cached copy after a logic change */
+  const key = new Request(new URL(request.url).origin + "/api/ticker?v=7"); /* bump v to drop every cached copy after a logic change */
   if (cache && !new URL(request.url).searchParams.has("fresh")) { const hit = await cache.match(key); if (hit) return hit; }
   const data = await build();
   const res = new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": data.items.length ? "public, max-age=300" : "public, max-age=60" } });

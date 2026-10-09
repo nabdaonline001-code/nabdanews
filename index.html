@@ -4,6 +4,8 @@
 <script src="config.js?v=4"></script>
 <script src="shim.js?v=7"></script>
 <meta charset="utf-8">
+<script>try{var _t=localStorage.getItem("nabda_theme");if(_t==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
+<meta name="color-scheme" content="light dark">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1431212484406317" crossorigin="anonymous"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NABDA | نبضة — أخبار محلية ودولية ورياضة واقتصاد</title>
@@ -666,6 +668,61 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
 .crow{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;color:#5a7567}
 .cval{font-weight:700;user-select:all}
 .cbtn{font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.8rem;border:1px solid #5a7567;background:#fff;color:#5a7567;padding:1px 10px;border-radius:0;cursor:pointer}
+
+/* ---------- dark mode (button #thm; choice kept in localStorage nabda_theme) ---------- */
+.thm .sn{display:none}
+html[data-theme=dark] .thm .mn{display:none}
+html[data-theme=dark] .thm .sn{display:block}
+html[data-theme=dark]{color-scheme:dark;--bg:#0e1612;--panel:#141f19;--ink:#D6E3DB;--muted:#A5BBAF;--line:#2a3a32;--local:#8DB09E;--pol:#8DB09E;--sport:#8DB09E;--econ:#8DB09E;--up:#8DB09E;--down:#8DB09E}
+html[data-theme=dark] body{background:#0e1612;color:#D6E3DB}
+html[data-theme=dark] header{background:#1b2a22;color:#E8F0EB;border-bottom:1px solid #2a3a32}
+html[data-theme=dark] header .ar,html[data-theme=dark] header .logo,html[data-theme=dark] header .logo .sep{color:#E8F0EB}
+html[data-theme=dark] header .ddp{background:#22352c;border-color:#2f453a}
+html[data-theme=dark] .brk{background:#141f19;color:#A9C3B5;border-block:1px solid #2a3a32}
+html[data-theme=dark] .brk b{background:#C8102E;color:#fff}
+html[data-theme=dark] .tk .ct.c-leb{color:#A9C3B5}
+html[data-theme=dark] .brk a:focus-visible{outline-color:#8DB09E}
+html[data-theme=dark] .date,html[data-theme=dark] .by,html[data-theme=dark] .story p{color:#A5BBAF}
+html[data-theme=dark] .lead,html[data-theme=dark] .board{background:#2c4137;border-color:#2c4137}
+html[data-theme=dark] .lead{border-right-color:#8DB09E}
+html[data-theme=dark] .col,html[data-theme=dark] .about,html[data-theme=dark] .lead,html[data-theme=dark] .story{border-color:#2a3a32}
+html[data-theme=dark] .col{background:#141f19;border-top-color:#8DB09E}
+html[data-theme=dark] .about{background:#141f19;border-right-color:#8DB09E}
+html[data-theme=dark] .col h2,html[data-theme=dark] .hsec .shh h2 a,html[data-theme=dark] .more2,html[data-theme=dark] #s-news h2,html[data-theme=dark] #s-news .nws h2 a{color:#A9C3B5}
+html[data-theme=dark] #s-news h2{border-bottom-color:#8DB09E}
+html[data-theme=dark] .more2 .ar2{background:#3d5a4b;color:#fff}
+html[data-theme=dark] .cols #s-news,html[data-theme=dark] .shorts{background:#17251e;border-color:#2a3a32}
+html[data-theme=dark] #s-news .story h3,html[data-theme=dark] #s-news .story h3 a,html[data-theme=dark] .shorts .scard h3,html[data-theme=dark] .shorts .scard h3 a,html[data-theme=dark] #s-news .more2,html[data-theme=dark] .shorts .more2{color:#D6E3DB}
+html[data-theme=dark] #s-news .more2 .ar2,html[data-theme=dark] .shorts .more2 .ar2{background:#3d5a4b}
+html[data-theme=dark] #s-news .story .shr,html[data-theme=dark] .shorts .scard>.shr,html[data-theme=dark] .shr{color:#A9C3B5}
+html[data-theme=dark] .pdate,html[data-theme=dark] #s-news .pdate,html[data-theme=dark] .shorts .pdate{color:#8FA89A}
+html[data-theme=dark] .ldbtn{background:transparent;color:#A9C3B5;border-color:#6f8f7e}
+html[data-theme=dark] .ldbtn:hover:not(:disabled),html[data-theme=dark] .ldbtn.done{background:#3d5a4b;color:#fff}
+html[data-theme=dark] footer.ft{background:#1b2a22;color:#E8F0EB;border-top:1px solid #2a3a32}
+html[data-theme=dark] footer.ft a,html[data-theme=dark] .fcopy{color:#E8F0EB}
+html[data-theme=dark] .adbox,html[data-theme=dark] .adlist .ad,html[data-theme=dark] .adm .box,html[data-theme=dark] .mkpanel,html[data-theme=dark] .ddp{background:#141f19;color:#D6E3DB}
+html[data-theme=dark] .adbox{background:#17251e}
+html[data-theme=dark] .adlist .adnote,html[data-theme=dark] .adlist .adfree,html[data-theme=dark] .astat.on{background:#17251e;border-color:#3d5a4b;color:#A9C3B5}
+html[data-theme=dark] .ad,html[data-theme=dark] .adlist .adnote,html[data-theme=dark] .abox h3,html[data-theme=dark] .astat,html[data-theme=dark] .achk,html[data-theme=dark] .adlist .adfree b{color:#D6E3DB}
+html[data-theme=dark] input,html[data-theme=dark] select,html[data-theme=dark] textarea,html[data-theme=dark] .sbox input,html[data-theme=dark] .adm input,html[data-theme=dark] .adm select,html[data-theme=dark] .adm textarea,html[data-theme=dark] .mkpanel input,html[data-theme=dark] .mkpanel select,html[data-theme=dark] .mkpanel textarea{background:#0e1612;color:#D6E3DB;border-color:#6f8f7e}
+html[data-theme=dark] ::placeholder{color:#8FA89A!important;opacity:.8}
+html[data-theme=dark] .adm button.ghost,html[data-theme=dark] .mkpanel button.ghost,html[data-theme=dark] .tabs button,html[data-theme=dark] #adsadm .adtab,html[data-theme=dark] .brkf button,html[data-theme=dark] #msgadm>button{background:#141f19;color:#A9C3B5;border-color:#6f8f7e}
+html[data-theme=dark] .tabs button.on,html[data-theme=dark] #adsadm .adtab.on,html[data-theme=dark] .admbtn[aria-expanded="true"]{background:#3d5a4b;color:#fff}
+html[data-theme=dark] .admbtn,html[data-theme=dark] .lbl,html[data-theme=dark] .soc a{color:#A9C3B5;border-color:#6f8f7e}
+html[data-theme=dark] footer.ft .soc a{color:#E8F0EB;border-color:#6f8f7e}
+html[data-theme=dark] .sbtn,html[data-theme=dark] header .sbtn{color:#E8F0EB}
+html[data-theme=dark] .sr,html[data-theme=dark] .snone,html[data-theme=dark] .mrow a{color:#A9C3B5}
+html[data-theme=dark] a:focus-visible{outline-color:#8DB09E}
+html[data-theme=dark] nav a.tl{color:#E8F0EB}
+html[data-theme=dark] .game,html[data-theme=dark] .mk{border-color:#3d5a4b}
+html[data-theme=dark] img{filter:brightness(.92)}
+html[data-theme=dark] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),html[data-theme=dark] textarea,html[data-theme=dark] select{background:#0e1612!important;color:#D6E3DB!important;border-color:#6f8f7e!important}
+html[data-theme=dark] .f span,html[data-theme=dark] label{color:#A5BBAF}
+html[data-theme=dark] .about h3,html[data-theme=dark] .about h2,html[data-theme=dark] .abox h3{color:#A9C3B5}
+html[data-theme=dark] .shh h2 a,html[data-theme=dark] .astat.off{color:#FF7C8A}
+html[data-theme=dark] .astat.off{border-color:#FF7C8A}
+html[data-theme=dark] .board .mk span.down{color:#FF9AA5}
+html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.down,html[data-theme=dark] .board .mk span.flat{background:#E8F0EB}
 </style>
 </head>
 <body>
@@ -690,6 +747,7 @@ nav a.tl[href="#shorts"]{font-weight:800!important;letter-spacing:.03em}
       <a class="tl" href="#shorts">SHORTS</a>
     </nav>
     <span class="livebtn" id="livebtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg><span>بث تجريبي</span></span>
+    <button class="sbtn thm" id="thm" type="button" aria-label="الوضع الليلي" aria-pressed="false" title="الوضع الليلي / النهاري"><svg class="mn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="sn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg></button>
     <button class="sbtn" id="sbtn" type="button" aria-label="بحث" aria-expanded="false" aria-controls="srch"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button>
   </div>
 </header>
@@ -2428,6 +2486,21 @@ if(DEFS.length&&wrapEl&&hdrBar){
       if(p&&!p.hidden){ p.classList.remove("glow"); void p.offsetWidth; p.classList.add("glow"); setTimeout(function(){ p.classList.remove("glow"); },1600); }
     },90);
   },true);
+})();
+</script>
+<script>
+(function(){
+  var b=document.getElementById("thm"); if(!b) return;
+  var root=document.documentElement;
+  function dark(){ return root.getAttribute("data-theme")==="dark"; }
+  function sync(){ var d=dark(); b.setAttribute("aria-pressed",String(d)); b.setAttribute("aria-label",d?"الوضع النهاري":"الوضع الليلي"); b.title=d?"الوضع النهاري":"الوضع الليلي";
+    var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute("content",d?"#1b2a22":"#5a7567"); }
+  b.addEventListener("click",function(){
+    if(dark()) root.removeAttribute("data-theme"); else root.setAttribute("data-theme","dark");
+    try{ localStorage.setItem("nabda_theme",dark()?"dark":"light"); }catch(e){}
+    sync();
+  });
+  sync();
 })();
 </script>
 </body>

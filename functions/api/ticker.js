@@ -250,6 +250,10 @@ async function fetchFeed(src) {
 }
 function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slice(0, i) : t; }
 
+/* Lebanese news has priority: Lebanese channels and any headline about Lebanon are picked first (up to LEB_MAX of the
+   bar) and shown first (field pri:1; the page sorts by it before time) */
+const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
+const LEB_MAX = 16;
 const TARGET = 25;     /* headlines in the bar (about one hour's worth) */
 const PER_SOURCE = 5;  /* at most this many from any one channel */
 export async function build(now = Date.now()) {
@@ -263,7 +267,7 @@ export async function build(now = Date.now()) {
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
-      if (text) mine.push({ text, ts: it.ts, src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
+      if (text) mine.push({ text, ts: it.ts, leb: LEB_SRC.has(s.id) || LEB.test(text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };
@@ -273,18 +277,20 @@ export async function build(now = Date.now()) {
   for (const w of [60, 120, 240, 720, 1440]) {
     windowMin = w; picked = [];
     const per = {}, seen = new Set();
-    for (const c of cand.slice().sort((a, b) => b.ts - a.ts)) {
+    let nleb = 0;
+    for (const c of cand.slice().sort((a, b) => (b.leb - a.leb) || (b.ts - a.ts))) {
       if (now - c.ts > w * 60000) continue;
+      if (c.leb && nleb >= LEB_MAX) continue;
       const k = norm(c.text), k2 = k.slice(0, 28);
       if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
       if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
-      seen.add(k); seen.add(k2); picked.push(c);
+      seen.add(k); seen.add(k2); picked.push(c); if (c.leb) nleb++;
       if (picked.length >= TARGET) break;
     }
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts, pri: c.leb ? 1 : 0 }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 

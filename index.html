@@ -1351,8 +1351,9 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var man=items.filter(function(i){ return i.order>1e12 && now-i.order<=3600000; });
     man.forEach(function(i){ seen[normTx(i.text)]=1; });
     var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)]; })
-      .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });
-    var out=man.concat(au).sort(function(x,y){ return y.order-x.order; });
+      .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts,pri:a.pri?1:0}; });
+    man.forEach(function(i){ i.pri=1; });
+    var out=man.concat(au).sort(function(x,y){ return ((y.pri||0)-(x.pri||0))||(y.order-x.order); });
     if(!out.length){
       /* never leave the bar empty: fall back to the latest known headlines of any age, then to a fixed line */
       out=AUTO.slice().sort(function(x,y){ return y.ts-x.ts; }).slice(0,8).map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts}; });

@@ -263,6 +263,11 @@ function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slic
 
 /* Lebanese news has priority: Lebanese channels and any headline about Lebanon are picked first (up to LEB_MAX of the
    bar) and shown first (field pri:1; the page sorts by it before time) */
+/* "Lebanese news" for the badge and the priority: it names Lebanon or a Lebanese place/party, or it comes from a Lebanese
+   channel and is not about another country (the broad LEB list above also matches «الجنوب» / «صور» and is only for the word policy) */
+const LEB_STRICT = /لبنان|اللبنان|بيروت|الضاحية الجنوبية|بنت جبيل|النبطية|مرجعيون|حاصبيا|البقاع|بعلبك|الهرمل|ميفدون|الخيام|الناقورة|مارون الراس|كفرشوبا|شبعا|عيترون|الليطاني|حزب الله/;
+const FOREIGN = /إيران|الإيراني|طهران|واشنطن|ترامب|روسيا|أوكرانيا|غزة|فلسطين|الفلسطيني|سوريا|السوري|دمشق|اليمن|اليمني|العراق|العراقي|بغداد|السودان|مصر|القاهرة|ليبيا|الصين|أوروبا|الأوروبي|الولايات المتحدة|الأمريكي|بريطانيا|فرنسا|ألمانيا|تركيا|السعودية|الخليج|الدوحة|قطر|الإمارات|الأردن|عمان/;
+const isLeb = (srcId, text) => LEB_STRICT.test(text) || (LEB_SRC.has(srcId) && !FOREIGN.test(text));
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
 const LEB_MAX = 16;
 const CATCAP = { politics: 15, economy: 5, sports: 5 };
@@ -279,7 +284,7 @@ export async function build(now = Date.now()) {
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
-      if (text) mine.push({ text, ts: it.ts, leb: LEB_SRC.has(s.id) || LEB.test(text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
+      if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };

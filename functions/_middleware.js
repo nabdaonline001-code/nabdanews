@@ -147,6 +147,14 @@ export async function onRequest(ctx) {
   const { request, env, next } = ctx;
   if (request.method !== "GET" && request.method !== "HEAD") return next();
   const url = new URL(request.url);
+  /* A just-uploaded image can be requested (by an admin viewing live data) before the deploy that contains it
+     finishes. Never let that temporary 404 be cached under the long "immutable" /img/* header. */
+  if (url.pathname.startsWith("/img/")) {
+    const r = await next();
+    if (r.status !== 404) return r;
+    const h = new Headers(r.headers); h.set("Cache-Control", "no-store");
+    return new Response(r.body, { status: 404, headers: h });
+  }
   if (!isPage(url.pathname)) return next();
   let on = false;
   try {

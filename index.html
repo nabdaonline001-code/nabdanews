@@ -723,6 +723,49 @@ html[data-theme=dark] .shh h2 a,html[data-theme=dark] .astat.off{color:#FF7C8A}
 html[data-theme=dark] .astat.off{border-color:#FF7C8A}
 html[data-theme=dark] .board .mk span.down{color:#FF9AA5}
 html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.down,html[data-theme=dark] .board .mk span.flat{background:#E8F0EB}
+
+/* ---------- weather box (under the art section) ---------- */
+.wx{margin:6px 0 34px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(100deg,#EEF3F0 0%,#F7FAF8 55%,#E3ECE7 100%);color:#2F4A3E;overflow:hidden}
+.wx-in{display:flex;align-items:center;gap:22px;padding:10px 20px;min-height:68px;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
+.wx-pick{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.wx-tl{font-weight:800;font-size:1.15rem;color:#2F4A3E;letter-spacing:0}
+.wx-sel{position:relative;display:block}
+.wx-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wx-sel select{appearance:none;-webkit-appearance:none;font:inherit;font-size:.95rem;font-weight:700;color:#2F4A3E;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232F4A3E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat left 10px center/16px;border:1px solid #9DB5A8;border-radius:999px;padding:6px 14px 6px 34px;min-width:190px;max-width:260px;cursor:pointer}
+.wx-sel select:focus-visible{outline:3px solid #5a7567;outline-offset:2px}
+.wx-now{display:flex;align-items:center;gap:12px;flex:1 1 auto;justify-content:center;min-width:0}
+.wx-ic{width:46px;height:46px;flex:0 0 46px;display:block}
+.wx-ic svg{width:100%;height:100%;display:block}
+.wx-t{display:inline-flex;align-items:baseline;gap:3px;direction:ltr;color:#2F4A3E}
+.wx-t b{font-size:2.3rem;font-weight:800;line-height:1;letter-spacing:-.02em}
+.wx-t i{font-style:normal;font-size:1rem;font-weight:700;direction:rtl}
+.wx-cd{font-weight:700;font-size:1.05rem;color:#5a7567;white-space:nowrap}
+.wx-st{list-style:none;margin:0;padding:0;display:flex;gap:6px;flex:0 0 auto}
+.wx-st li{display:flex;flex-direction:column;align-items:center;gap:0;min-width:74px;padding:3px 10px;border-inline-start:1px solid #C5D4CB;line-height:1.35}
+.wx-st li:first-child{border-inline-start:0}
+.wx-st span{font-size:.78rem;color:#5a7567;font-weight:600}
+.wx-st b{font-size:.98rem;font-weight:800;color:#2F4A3E;direction:ltr;white-space:nowrap}
+.wx-ft{display:flex;gap:14px;justify-content:space-between;align-items:center;padding:3px 20px 6px;font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.72rem;color:#6d8579;border-top:1px dashed #C5D4CB}
+.wx-ft a{text-decoration:underline}
+.wx-ft button{font:inherit;border:1px solid #5a7567;background:#fff;color:#2F4A3E;border-radius:999px;padding:0 10px;cursor:pointer}
+.wx[data-st=load] .wx-t b,.wx[data-st=load] .wx-st b{opacity:.35}
+.wx[data-st=err] .wx-t b,.wx[data-st=err] .wx-st b{opacity:.3}
+@media (max-width:860px){
+  .wx-in{flex-wrap:wrap;gap:8px 14px;padding:10px 14px}
+  .wx-pick{flex:1 1 100%;justify-content:space-between}
+  .wx-sel{flex:1 1 auto}.wx-sel select{width:100%;max-width:none}
+  .wx-now{flex:1 1 auto;justify-content:flex-start}
+  .wx-st{flex:1 1 100%;justify-content:space-between}
+  .wx-st li{flex:1 1 0;min-width:0;padding:2px 4px}
+  .wx-ft{padding:3px 14px 6px}
+}
+html[data-theme=dark] .wx{background:linear-gradient(100deg,#141f19 0%,#18261f 55%,#1b2a22 100%);border-color:#2a3a32;color:#D6E3DB}
+html[data-theme=dark] .wx-tl,html[data-theme=dark] .wx-t,html[data-theme=dark] .wx-st b{color:#E8F0EB}
+html[data-theme=dark] .wx-cd,html[data-theme=dark] .wx-st span{color:#A9C3B5}
+html[data-theme=dark] .wx-st li,html[data-theme=dark] .wx-ft{border-color:#2a3a32}
+html[data-theme=dark] .wx-ft{color:#8DB09E}
+html[data-theme=dark] .wx-sel select{background:#0e1612 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9C3B5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat left 10px center/16px!important;color:#E8F0EB!important;border-color:#3b5246!important}
+html[data-theme=dark] .wx-ft button{background:#0e1612;color:#E8F0EB;border-color:#3b5246}
 </style>
 </head>
 <body>
@@ -823,6 +866,27 @@ html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.d
   </section>
 
   <div id="secboxes"></div>
+
+  <section class="wx" id="wx" aria-label="حالة الطقس في العواصم" data-st="load">
+    <div class="wx-in">
+      <div class="wx-pick">
+        <span class="wx-tl">الطقس</span>
+        <label class="wx-sel"><span class="wx-vh">اختر العاصمة</span><select id="wxsel" aria-label="اختر العاصمة"><option value="beirut">بيروت — لبنان</option></select></label>
+      </div>
+      <div class="wx-now" aria-live="polite">
+        <span class="wx-ic" id="wxic" aria-hidden="true"></span>
+        <span class="wx-t"><b id="wxt">--</b><i>°م</i></span>
+        <span class="wx-cd" id="wxcd">جارٍ التحميل…</span>
+      </div>
+      <ul class="wx-st">
+        <li><span>العظمى</span><b id="wxmax">--</b></li>
+        <li><span>الصغرى</span><b id="wxmin">--</b></li>
+        <li><span>الرطوبة</span><b id="wxhum">--</b></li>
+        <li><span>الرياح</span><b id="wxwind">--</b></li>
+      </ul>
+    </div>
+    <div class="wx-ft"><span id="wxup"></span><span>بيانات الطقس: <a href="https://www.met.no/" target="_blank" rel="noopener noreferrer">MET Norway</a></span><button type="button" id="wxretry" hidden>إعادة المحاولة</button></div>
+  </section>
 
 </main>
 <main class="wrap" id="aboutpage" hidden>
@@ -2510,6 +2574,82 @@ if(DEFS.length&&wrapEl&&hdrBar){
     sync();
   });
   sync();
+})();
+</script>
+<script>
+/* Weather box: /api/weather?c=<id>; choice kept in localStorage nabda_wx; refresh every 30 min */
+(function(){
+  var box=document.getElementById("wx"); if(!box) return;
+  var $=function(i){ return document.getElementById(i); };
+  var sel=$("wxsel"), CAPS=[], cur="beirut", timer=0, last=0, seq=0;
+  try{ var sv=localStorage.getItem("nabda_wx"); if(sv) cur=sv; }catch(e){}
+  var COL={sun:"#E8A317",moon:"#C9D6CF",cloud:"#8FA89B",cloud2:"#B9CBC1",rain:"#4F86A8",snow:"#9CC3DA",bolt:"#E8A317"};
+  function cloudP(dx,dy,f){ return '<path transform="translate('+dx+' '+dy+')" fill="'+f+'" d="M14 36a8 8 0 0 1-.6-16A11 11 0 0 1 34.5 17.6 8.4 8.4 0 0 1 34 36z"/>'; }
+  function icon(code,night){
+    var k, c=String(code||"");
+    var sunMoon = night ? '<path fill="'+COL.moon+'" d="M22 6a14 14 0 1 0 14 17A11 11 0 0 1 22 6z"/>' : '<g stroke="'+COL.sun+'" stroke-width="2.6" stroke-linecap="round"><path d="M24 4v5M24 39v5M4 24h5M39 24h5M9.9 9.9l3.5 3.5M34.6 34.6l3.5 3.5M9.9 38.1l3.5-3.5M34.6 13.4l3.5-3.5"/></g><circle cx="24" cy="24" r="9" fill="'+COL.sun+'"/>';
+    var svg;
+    if(/thunder/.test(c)) svg=cloudP(0,-6,COL.cloud)+'<path fill="'+COL.bolt+'" d="M25 28l-7 11h5l-2 8 9-13h-5l3-6z"/>';
+    else if(/snow/.test(c)) svg=cloudP(0,-6,COL.cloud)+'<g stroke="'+COL.snow+'" stroke-width="2.6" stroke-linecap="round"><path d="M16 34v6M13 37h6M26 36v6M23 39h6M35 34v6M32 37h6"/></g>';
+    else if(/sleet/.test(c)) svg=cloudP(0,-6,COL.cloud)+'<g stroke-width="2.6" stroke-linecap="round"><path stroke="'+COL.rain+'" d="M16 34l-2 6M33 34l-2 6"/><path stroke="'+COL.snow+'" d="M24 35v6M21 38h6"/></g>';
+    else if(/rain/.test(c)) svg=cloudP(0,-6,COL.cloud)+'<g stroke="'+COL.rain+'" stroke-width="2.8" stroke-linecap="round"><path d="M15 34l-2.5 7M25 34l-2.5 7M35 34l-2.5 7"/></g>';
+    else if(/fog/.test(c)) svg=cloudP(0,-8,COL.cloud2)+'<g stroke="'+COL.cloud+'" stroke-width="2.8" stroke-linecap="round"><path d="M9 35h30M13 41h24"/></g>';
+    else if(c==="cloudy") svg=cloudP(0,2,COL.cloud);
+    else if(c==="partlycloudy") svg='<g transform="translate(-7 -9) scale(.78)">'+sunMoon+'</g>'+cloudP(4,4,COL.cloud);
+    else if(c==="fair") svg='<g transform="translate(-2 -3) scale(.9)">'+sunMoon+'</g>'+'<g transform="translate(18 20) scale(.5)">'+cloudP(0,0,COL.cloud2)+'</g>';
+    else svg=sunMoon;
+    return '<svg viewBox="0 0 48 48" focusable="false">'+svg+'</svg>';
+  }
+  function cond(code,night){
+    var c=String(code||"");
+    var th=/thunder/.test(c)?"مع رعد ":"", st="";
+    if(/thunder/.test(c)) return "عاصفة رعدية";
+    var hv=/heavy/.test(c)?" غزير":(/light/.test(c)?" خفيف":"");
+    if(/snow/.test(c)) return /showers/.test(c)?"زخات ثلج":"ثلوج"+hv;
+    if(/sleet/.test(c)) return "مطر مثلج";
+    if(/rain/.test(c)) return /showers/.test(c)?"زخات مطر"+hv:"مطر"+hv;
+    if(/fog/.test(c)) return "ضباب";
+    if(c==="cloudy") return "غائم";
+    if(c==="partlycloudy") return "غائم جزئياً";
+    if(c==="fair") return night?"صافٍ غالباً":"مشمس غالباً";
+    return night?"سماء صافية":"مشمس";
+  }
+  function n(v,u){ return v==null?"--":(Math.round(v)+u); }
+  function setState(st){ box.setAttribute("data-st",st); $("wxretry").hidden=st!=="err"; }
+  function show(d){
+    $("wxic").innerHTML=icon(d.code,d.night);
+    $("wxt").textContent=Math.round(d.t);
+    $("wxcd").textContent=cond(d.code,d.night);
+    $("wxmax").textContent=n(d.max,"°");
+    $("wxmin").textContent=n(d.min,"°");
+    $("wxhum").textContent=d.hum==null?"--":d.hum+"%";
+    $("wxwind").textContent=d.wind==null?"--":d.wind+" كم/س";
+    var up=""; try{ var dt=new Date(d.updated); up="آخر تحديث: "+dt.toLocaleTimeString("ar-LB-u-nu-latn",{hour:"2-digit",minute:"2-digit"}); }catch(e){}
+    $("wxup").textContent=up;
+    setState("ok");
+  }
+  function load(){
+    var my=++seq; clearTimeout(timer); setState("load"); $("wxcd").textContent="جارٍ التحميل…";
+    fetch("/api/weather?c="+encodeURIComponent(cur)).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+      if(my!==seq) return; last=Date.now(); show(d);
+    }).catch(function(){
+      if(my!==seq) return; $("wxcd").textContent="تعذّر تحميل الطقس"; $("wxup").textContent=""; setState("err");
+    }).then(function(){ if(my===seq) timer=setTimeout(load,30*60*1000); });
+  }
+  function fill(list){
+    CAPS=list; sel.textContent="";
+    var gr=null, lg=null;
+    list.forEach(function(x){
+      if(x.g!==lg){ gr=document.createElement("optgroup"); gr.label=x.g; sel.appendChild(gr); lg=x.g; }
+      var o=document.createElement("option"); o.value=x.id; o.textContent=(x.k&&x.k!==x.c)?x.c+" — "+x.k:x.c; gr.appendChild(o);
+    });
+    if(!list.some(function(x){ return x.id===cur; })) cur=list[0]?list[0].id:"beirut";
+    sel.value=cur;
+  }
+  sel.addEventListener("change",function(){ cur=sel.value; try{ localStorage.setItem("nabda_wx",cur); }catch(e){} load(); });
+  $("wxretry").addEventListener("click",load);
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden&&last&&Date.now()-last>30*60*1000) load(); });
+  fetch("/data/capitals.json").then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(fill).catch(function(){}).then(load);
 })();
 </script>
 </body>

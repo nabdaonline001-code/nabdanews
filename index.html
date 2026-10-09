@@ -219,6 +219,7 @@ footer.ft a:focus-visible{outline-color:#5a7567}
 .tk .ct{font-style:normal;font-size:.72rem;padding:1px 8px;margin-inline-end:8px;color:#fff;background:#C8102E;vertical-align:1px}
 .tk .ct.c-economy{background:#5a7567}
 .tk .ct.c-sports{background:#1f4e79}
+.tk .ct.c-leb{background:none;color:#C8102E;padding:0;font-weight:700;font-size:.8rem}
 .brkf{display:none!important}
 .brkf button{font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:.8rem;border:1px solid #5a7567;background:#fff;color:#5a7567;padding:2px 14px;cursor:pointer;border-radius:0;flex:none}
 .brkf button[aria-pressed=true]{background:#5a7567;color:#fff}
@@ -1339,6 +1340,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var a=document.createElement("span");
     a.className="tk";
     if(it.cat!=="politics"){ var tag=document.createElement("i"); tag.className="ct c-"+it.cat; tag.textContent=catName(it.cat); a.appendChild(tag); }
+    else if(it.leb){ var lt=document.createElement("i"); lt.className="ct c-leb"; lt.textContent="لبنان"; a.appendChild(lt); }
     a.appendChild(document.createTextNode(it.text||""));
     return a;
   }
@@ -1351,7 +1353,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var man=items.filter(function(i){ return i.order>1e12 && now-i.order<=3600000; });
     man.forEach(function(i){ seen[normTx(i.text)]=1; });
     var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)]; })
-      .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts,pri:a.pri?1:0}; });
+      .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts,pri:a.pri?1:0,leb:a.pri?1:0}; });
     man.forEach(function(i){ i.pri=1; });
     /* one line, in sections: general (Lebanon first), then economy, then sport; newest first inside each */
     var RK={politics:0,economy:1,sports:2};

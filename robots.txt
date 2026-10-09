@@ -1,4 +1,21 @@
+# نبضة | NABDA — محركات البحث ومساعدو الذكاء الاصطناعي مرحّب بهم في كل المحتوى العام
+# (الأسطر المتتالية من User-agent تشترك في القواعد نفسها)
 User-agent: *
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: Bingbot
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+User-agent: Amazonbot
 Allow: /
 Disallow: /api/
 Disallow: /private/

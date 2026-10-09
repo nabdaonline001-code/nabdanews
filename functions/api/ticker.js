@@ -101,12 +101,23 @@ const NEWS = /نوبل|غارة|غارات|قصف|هجوم|هجمات|استهد
 /* a sport headline counts as "breaking" only when it reports a result, a decision or a move, not a feature or opinion */
 const SPORT_HARD = /فوز|يفوز|تفوز|فاز|تغلب|يتغلب|تتغلب|يسحق|تسحق|يهزم|تهزم|هزيمة|خسارة|يخسر|تخسر|تعادل|يتأهل|تتأهل|تأهل|يتوج|تتوج|تتويج|لقب|تعيين|يعين|تعين|إقالة|يقيل|تقيل|استقالة|يستقيل|إنهاء عقد|ينهي عقد|تنهي عقد|تجديد عقد|ينتقل|انتقال|صفقة|يضم|تضم|إصابة|إصابته|يغيب|تغيب|عقوبة|إيقاف|يوقف|توقف|غرامة|يودع|تودع|يتصدر|تتصدر|رسميا|رسميًا|الفيفا|الاتحاد الدولي|الاتحاد الأوروبي|الاتحاد الآسيوي|الاتحاد الأفريقي|قرعة|ترتيب|المتأهلين|ثنائية|ثلاثية|ركلة/;
 const SPORT_SOFT = /يتوقع نهاية|يتوقع استقالة|نهاية صادمة|موعد|القنوات الناقلة|القناة الناقلة|بث مباشر|قميص|تختفي|يسخر|تسخر|ذكريات|رسالة تحد|رحلة|يرفض الاعتزال|أكبر حكم|يشعل|تشعل|يعلق على|ترد على|يرد على|فيديو|كواليس|طرائف|أغرب|أجمل|أفضل \d|قائمة المرشحين|المرشحين لجائزة/;
+/* reporter attributions are dropped: «مراسل الجديد: …» / «مراسلنا في الجنوب: …» / «… بحسب مراسلنا» / «مراسل X يفيد بـ…» */
+const REP = "(?:ال)?مراسل(?:ة|ون|و|نا|تنا)?";
+export function noReporter(t) {
+  const W = "[^\\s:،]+";
+  t = t.replace(new RegExp("^(?:(?:بحسب|وفق|وفقاً ل|حسب|نقلاً عن|نقلا عن)\\s+)?" + REP + "(?:\\s+" + W + "){0,4}\\s*[:،]\\s*", "u"), "");
+  t = t.replace(new RegExp("^" + REP + "(?:\\s+" + W + "){0,4}\\s+(?:يفيد|يؤكد|يشير|يقول|يتحدث عن|أفاد|أفادت|تفيد|تؤكد)\\s+(?:ب|عن)?(?:أن\\s+)?", "u"), "");
+  t = t.replace(new RegExp("\\s*[،\\-–—]?\\s*(?:بحسب|وفق|وفقاً ل|حسب|نقلاً عن|نقلا عن)\\s+" + REP + "(?:\\s+" + W + "){0,3}\\s*$", "u"), "");
+  return t.trim();
+}
 export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
   // "خاص"/"حصري" items and programme titles (نافذة…, مباشر مع…, "A | B") are not breaking news
   if (/^(خاص|حصري)(?!\p{L})/u.test(t) || /^(نافذة|مباشر مع|حلقة|بودكاست)(?!\p{L})/u.test(t) || /\s\|\s/.test(t)) return null;
   t = t.replace(/^عاجل\s*[|:\-–—]?\s*/, "");
+  t = noReporter(t);
+  if (!t || /مراسل/.test(t)) return null;   /* the bar carries the news itself, never "our reporter says…" */
   t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
   if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
   if (t.length < 18 || t.length > 190) return null;

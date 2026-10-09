@@ -61,6 +61,7 @@ function page(it, hasImg) {
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(it.title)} | نبضة</title>
 <meta name="description" content="${esc(desc)}">
+<script>try{if(localStorage.getItem("nabda_theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script><meta name="color-scheme" content="light dark">
 <link rel="canonical" href="${esc(url)}">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:type" content="article"><meta property="og:site_name" content="نبضة | NABDA"><meta property="og:locale" content="ar_AR">
@@ -71,7 +72,7 @@ ${iso ? `<meta property="article:published_time" content="${iso}">` : ""}
 <style>
 :root{--g:#5a7567;--ink:#2b3a33;--line:#cfd9d4}
 *{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:18px/1.9 "Noto Naskh Arabic","Source Serif 4",Georgia,serif}
-header{border-bottom:1px solid var(--line);padding:14px 20px}header a{color:var(--g);font:800 1.4rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;text-decoration:none}
+header{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--g)}header a{color:var(--g);font:800 1.4rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;text-decoration:none}
 main{max-width:780px;margin:0 auto;padding:26px 20px 60px}
 .tag{display:inline-block;border:1px solid var(--g);color:var(--g);padding:0 10px;font:.85rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
 h1{margin:.4em 0 .2em;font:800 clamp(1.5rem,4vw,2.2rem)/1.5 "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;color:var(--g)}
@@ -79,8 +80,18 @@ time{display:block;color:#6b8478;font:.9rem "Noto Kufi Arabic","Segoe UI",Tahoma
 img{display:block;width:100%;height:auto;margin:0 0 18px}.sum{font-weight:700}
 .more{display:inline-block;margin-top:24px;border:1px solid var(--g);color:var(--g);padding:6px 18px;text-decoration:none;font:700 .95rem "Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif}
 .more:hover{background:var(--g);color:#fff}
+.thm{background:none;border:0;color:inherit;cursor:pointer;padding:6px 10px;display:inline-flex;align-items:center}.thm:focus-visible{outline:3px solid currentColor;outline-offset:2px}.thm .sn{display:none}html[data-theme=dark] .thm .mn{display:none}html[data-theme=dark] .thm .sn{display:block}
+html[data-theme=dark]{color-scheme:dark;--g:#A9C3B5;--ink:#D6E3DB;--line:#2a3a32}
+html[data-theme=dark] body{background:#0e1612}
+html[data-theme=dark] header{background:#1b2a22;border-bottom-color:#2a3a32}
+html[data-theme=dark] h1{color:#E8F0EB}
+html[data-theme=dark] time{color:#8FA89A}
+html[data-theme=dark] .more:hover{background:#3d5a4b;color:#fff}
+html[data-theme=dark] .by{border-top-color:#2a3a32!important}
+html[data-theme=dark] img{filter:brightness(.92)}
+
 </style></head><body>
-<header><a href="/">نبضة | NABDA</a></header>
+<header><a href="/">نبضة | NABDA</a><button id="thm" class="thm" type="button" aria-label="الوضع الليلي" aria-pressed="false" title="الوضع الليلي / النهاري"><svg class="mn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="sn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg></button></header>
 <main><article>
 ${tag ? `<span class="tag">${esc(tag)}</span>` : ""}
 <h1>${esc(it.title)}</h1>
@@ -90,7 +101,7 @@ ${it.summary ? `<p class="sum">${esc(it.summary)}</p>` : ""}
 ${paras}
 ${it.by ? `<p class="by" style="font-weight:700;border-top:1px solid #ccc;padding-top:12px">بقلم: ${esc(it.by)}</p>` : ""}
 </article>
-<a class="more" href="/">المزيد من الأخبار على نبضة</a></main></body></html>`;
+<a class="more" href="/">المزيد من الأخبار على نبضة</a></main><script>(function(){var b=document.getElementById("thm");if(!b)return;var r=document.documentElement;function d(){return r.getAttribute("data-theme")==="dark"}function s(){b.setAttribute("aria-pressed",String(d()));b.setAttribute("aria-label",d()?"الوضع النهاري":"الوضع الليلي");b.title=d()?"الوضع النهاري":"الوضع الليلي"}b.addEventListener("click",function(){if(d())r.removeAttribute("data-theme");else r.setAttribute("data-theme","dark");try{localStorage.setItem("nabda_theme",d()?"dark":"light")}catch(e){}s()});s()})();</script></body></html>`;
 }
 
 function notFound() {

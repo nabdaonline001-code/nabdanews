@@ -2,6 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script>try{if(localStorage.getItem("nabda_theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
+<meta name="color-scheme" content="light dark">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>سياسة الخصوصية | نبضة</title>
 <meta name="description" content="سياسة الخصوصية لموقع «نبضة | NABDA»: ما نجمعه من بيانات، وكيف نستخدمها، وملفات الارتباط والإعلانات، وحقوقك.">
@@ -30,10 +32,22 @@ ul{padding-inline-start:1.3em}
 a{color:var(--dk);font-weight:700}
 .box{background:var(--mist);padding:14px 18px;border-inline-start:4px solid var(--g);margin:1.2em 0}
 footer{border-top:1px solid var(--line);padding:18px 20px;text-align:center;color:var(--g);font-size:.9rem}
+.thm{background:none;border:0;color:inherit;cursor:pointer;padding:6px 10px;display:inline-flex;align-items:center}.thm:focus-visible{outline:3px solid currentColor;outline-offset:2px}.thm .sn{display:none}html[data-theme=dark] .thm .mn{display:none}html[data-theme=dark] .thm .sn{display:block}
+header .thm{color:#fff;border:1px solid rgba(255,255,255,.6)}
+header .rt{display:flex;align-items:center;gap:10px}
+html[data-theme=dark]{color-scheme:dark}
+html[data-theme=dark],html[data-theme=dark] body{background:#0e1612;color:#D6E3DB}
+html[data-theme=dark] header{background:#1b2a22}
+html[data-theme=dark] h1,html[data-theme=dark] h2{color:#E8F0EB}
+html[data-theme=dark] h2{border-inline-start-color:#8DB09E}
+html[data-theme=dark] .upd,html[data-theme=dark] footer{color:#A5BBAF}
+html[data-theme=dark] a{color:#A9C3B5}
+html[data-theme=dark] .box{background:#17251e;border-inline-start-color:#8DB09E}
+html[data-theme=dark] footer{border-top-color:#2a3a32}
 </style>
 </head>
 <body>
-<header><div class="in"><a class="logo" href="/" aria-label="NABDA | نبضة">NABDA<span>|</span>نبضة</a><a class="home" href="/">العودة إلى الموقع</a></div></header>
+<header><div class="in"><a class="logo" href="/" aria-label="NABDA | نبضة">NABDA<span>|</span>نبضة</a><span class="rt"><a class="home" href="/">العودة إلى الموقع</a><button id="thm" class="thm" type="button" aria-label="الوضع الليلي" aria-pressed="false" title="الوضع الليلي / النهاري"><svg class="mn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="sn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg></button></span></div></header>
 <main>
 <h1>سياسة الخصوصية</h1>
 <p class="upd">آخر تحديث: 9 تشرين الأول 2026</p>
@@ -72,5 +86,6 @@ footer{border-top:1px solid var(--line);padding:18px 20px;text-align:center;colo
 <div class="box">لأي سؤال عن الخصوصية أو لطلب حذف بياناتك: <a href="mailto:nabdaonline001@gmail.com" dir="ltr">nabdaonline001@gmail.com</a> أو عبر صفحة <a href="/#contact">تواصل معنا</a>.</div>
 </main>
 <footer>© 2026 نبضة | NABDA جميع الحقوق محفوظة.</footer>
+<script>(function(){var b=document.getElementById("thm");if(!b)return;var r=document.documentElement;function d(){return r.getAttribute("data-theme")==="dark"}function s(){b.setAttribute("aria-pressed",String(d()));b.setAttribute("aria-label",d()?"الوضع النهاري":"الوضع الليلي");b.title=d()?"الوضع النهاري":"الوضع الليلي"}b.addEventListener("click",function(){if(d())r.removeAttribute("data-theme");else r.setAttribute("data-theme","dark");try{localStorage.setItem("nabda_theme",d()?"dark":"light")}catch(e){}s()});s()})();</script>
 </body>
 </html>

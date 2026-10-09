@@ -10,6 +10,15 @@ const gnewsAny = sites => `https://news.google.com/rss/search?q=${encodeURICompo
 let used = 0;
 const LIMIT = 46;
 const tf = (u, o) => (++used > LIMIT ? Promise.reject(new Error("budget")) : fetch(u, o));
+/* Sanaa-side (Houthi) outlets: the news is taken from them but their loaded vocabulary is not (no "Saudi aggression",
+   "aggression coalition", "mercenaries", "Zionist entity"…); a headline that still carries such a word is dropped */
+export const houthiFix = t => {
+  t = t.replace(/(?:ال)?تحالف\s+(?:ال)?عدوان(?:\s+(?:ال)?(?:سعودي|أمريكي|امريكي|إسرائيلي|بريطاني)){0,3}/g, "التحالف");
+  t = t.replace(/(?:ال)?عدوان\s+(?:ال)?(?:أمريكي\s+(?:ال)?)?سعودي(?:\s+(?:ال)?(?:أمريكي|امريكي))?/g, "السعودية");
+  t = t.replace(/للكيان\s+(?:ال)?صهيوني/g, "لإسرائيل").replace(/([وبف]?)(?:ال)?كيان\s+(?:ال)?صهيوني/g, "$1إسرائيل");
+  t = t.replace(/(?:ال)?صهيوني(?:ة)?/g, m => /ة$/.test(m) ? "الإسرائيلية" : "الإسرائيلي").replace(/(?:ال)?عدو\s+(?=(?:ال)?إسرائيل)/g, "");
+  return /عدوان|مرتزق|الغزاة|عملاء|خونة|الخونة|الأعداء|(?<!\p{L})(?:لل|ال|ب|ل|و)?عدو(?!\p{L})/u.test(t) ? "" : t;
+};
 /* `agency`: official news agencies are named in front of their headlines («سانا: …»); every other outlet is never named.
    `cap`: most headlines taken from this source (several sites share one query in the grouped sources) */
 export const SOURCES = [
@@ -37,6 +46,8 @@ export const SOURCES = [
   { id: "suna", agency: "سونا", urls: [gnews("suna-sd.net")] },
   { id: "saba", agency: "سبأ", urls: [gnews("sabanew.net")] },
   { id: "irna", agency: "إرنا", urls: [gnews("ar.irna.ir")] },
+  { id: "masirah", cap: 6, fix: houthiFix, urls: [gnews("almasirah.net.ye"), bing("almasirah.net.ye")] },
+  { id: "saba_sanaa", agency: "سبأ (صنعاء)", cap: 5, fix: houthiFix, urls: [gnews("saba.ye"), bing("saba.ye")] },
   { id: "econ_ar", cap: 6, urls: [gnewsAny(["cnbcarabia.com", "asharqbusiness.com"])] },
   { id: "sport_ar", sport: true, cap: 8, urls: [gnewsAny(["beinsports.com/ar", "arabia.sport360.com", "filgoal.com"])] }
 ];

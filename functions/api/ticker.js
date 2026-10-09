@@ -4,6 +4,14 @@
 const BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/rss+xml,application/xml,text/xml,*/*", "Accept-Language": "ar,en;q=0.8" };
 const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("site:" + site)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
+const gnewsAny = sites => `https://news.google.com/rss/search?q=${encodeURIComponent("(" + sites.map(x => "site:" + x).join(" OR ") + ") when:2d")}&hl=ar&gl=LB&ceid=LB:ar`;
+/* Pages Functions allow ~50 subrequests per call: count every fetch and refuse beyond the limit (first tries always
+   go out before any fallback, so fallbacks are what gets dropped when many feeds are down) */
+let used = 0;
+const LIMIT = 46;
+const tf = (u, o) => (++used > LIMIT ? Promise.reject(new Error("budget")) : fetch(u, o));
+/* `agency`: official news agencies are named in front of their headlines («سانا: …»); every other outlet is never named.
+   `cap`: most headlines taken from this source (several sites share one query in the grouped sources) */
 export const SOURCES = [
   { id: "jazeera", urls: ["https://www.aljazeera.net/rss"], skipLink: /\/(opinions|lifestyle|blogs|culture|features|health|programs)\// },
   { id: "jazeera_sport", sport: true, html: { url: "https://www.aljazeera.net/sport", parse: (h, now) => parseJazeeraSport(h, now) }, urls: [] },
@@ -17,7 +25,20 @@ export const SOURCES = [
   { id: "france24", urls: ["https://www.france24.com/ar/rss", gnews("france24.com/ar"), bing("france24.com/ar")], skipLink: /\/(culture|sport|video|tv-shows|programmes|reportage|magazine)\//i },
   { id: "alaraby", urls: ["https://www.alaraby.com/rss", gnews("alaraby.com")], skipLink: /\/(opinion|culture|lifestyle|sport|programs|tv-guide)\//i },
   { id: "axiosar", urls: ["https://www.axiosar.com/feed", "https://axiosar.com/feed/", gnews("axiosar.com"), bing("axiosar.com")] },
-  { id: "shams", custom: () => fetchYouTube("@Shamsnewstv"), urls: [], fix: t => t.replace(/\s*[|｜]\s*(?:قناة\s*)?شمس.*$/i, "").replace(/#\S+/g, "").trim() }
+  { id: "shams", custom: () => fetchYouTube("@Shamsnewstv"), urls: [], fix: t => t.replace(/\s*[|｜]\s*(?:قناة\s*)?شمس.*$/i, "").replace(/#\S+/g, "").trim() },
+  { id: "skynews", urls: [gnews("skynewsarabia.com"), bing("skynewsarabia.com")], skipLink: /\/(varieties|lifestyle|sport|video|programs)\//i },
+  { id: "mayadeen_alalam", cap: 8, urls: [gnewsAny(["almayadeen.net", "alalam.ir"]), bing("almayadeen.net")] },
+  { id: "rt", urls: ["https://arabic.rt.com/rss/", gnews("arabic.rt.com")] },
+  { id: "asharq", urls: [gnews("asharq.com")] },
+  { id: "ikhbariya_sumaria", cap: 8, urls: [gnewsAny(["alikhbariah.com", "alsumaria.tv"])] },
+  { id: "egypt", cap: 8, urls: [gnewsAny(["youm7.com", "ahram.org.eg"])] },
+  { id: "sana", agency: "سانا", urls: ["https://sana.sy/feed/", gnews("sana.sy")] },
+  { id: "wafa", agency: "وفا", urls: [gnews("wafa.ps")] },
+  { id: "suna", agency: "سونا", urls: [gnews("suna-sd.net")] },
+  { id: "saba", agency: "سبأ", urls: [gnews("sabanew.net")] },
+  { id: "irna", agency: "إرنا", urls: [gnews("ar.irna.ir")] },
+  { id: "econ_ar", cap: 6, urls: [gnewsAny(["cnbcarabia.com", "asharqbusiness.com"])] },
+  { id: "sport_ar", sport: true, cap: 8, urls: [gnewsAny(["beinsports.com/ar", "arabia.sport360.com", "filgoal.com"])] }
 ];
 
 /* ---------- parsing ---------- */
@@ -95,7 +116,7 @@ const NUM_OK_BEFORE = /^(إلى|الى|نحو|حوالي|قرابة|بنسبة|�
 export function tidy(t) {
   t = t.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g, " ").replace(/\s+/g, " ").trim();
   t = t.replace(/^[\-–—•·|:؛,،\s]+|[\-–—•·|\s]+$/g, "");                       // stray bullets / dashes at the edges
-  t = t.replace(/\s*[|｜]\s*(?:قناة\s*)?(?:الجزيرة|العربية|الحدث|الجديد|إل بي سي|ام تي في|MTV|LBCI|النهار|الوكالة الوطنية للإعلام)\s*$/u, ""); // source suffix
+  t = t.replace(/\s*[|｜]\s*(?:قناة\s*)?(?:الجزيرة|العربية|الحدث|الجديد|إل بي سي|ام تي في|MTV|LBCI|النهار|الوكالة الوطنية للإعلام|سكاي نيوز عربية|الميادين|العالم|RT|روسيا اليوم|الشرق|الشرق للأخبار|الإخبارية السورية|السومرية|اليوم السابع|الأهرام|CNBC عربية|الشرق بلومبرغ|beIN SPORTS|سبورت 360|في الجول|العربي الجديد|فرانس 24)\s*$/u, ""); // source suffix
   t = t.replace(/"([^"]{2,}?)"/g, "«$1»").replace(/“([^”]{2,}?)”/g, "«$1»");    // ASCII / curly quotes → «»
   if (/»/.test(t) && !/«/.test(t.split("»")[0])) t = "«" + t;                  // closing « » quote with a lost opening one
   t = t.replace(/\s+([:،؛.!])/g, "$1").replace(/([:،؛])(?=[^\s\d])/g, "$1 ");   // spacing around punctuation
@@ -183,7 +204,7 @@ export function parseNnaDay(xml) {
   return out;
 }
 async function fetchNna(now) {
-  const get = async u => { const r = await fetch(u, { headers: { ...BROWSER, Accept: "application/xml,text/xml,*/*" }, signal: AbortSignal.timeout(9000) }); if (!r.ok) throw new Error("http-" + r.status); return r.text(); };
+  const get = async u => { const r = await tf(u, { headers: { ...BROWSER, Accept: "application/xml,text/xml,*/*" }, signal: AbortSignal.timeout(9000) }); if (!r.ok) throw new Error("http-" + r.status); return r.text(); };
   const idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml");
   const cats = [...idx.matchAll(/\/sitemap\/cat\/(\d+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g)].filter(m => now - Date.parse(m[2]) < 30 * 3600000).slice(0, 8).map(m => m[1]);
   const b = new Date(now + 3 * 3600000), day = d => d.toISOString().slice(0, 10);
@@ -195,12 +216,12 @@ async function fetchNna(now) {
 
 /* ---------- YouTube channel (sources with no website feed) ---------- */
 async function fetchYouTube(handle) {
-  const r = await fetch("https://www.youtube.com/" + handle, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5", Cookie: "CONSENT=YES+1; SOCS=CAI" }, signal: AbortSignal.timeout(6000) });
+  const r = await tf("https://www.youtube.com/" + handle, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5", Cookie: "CONSENT=YES+1; SOCS=CAI" }, signal: AbortSignal.timeout(6000) });
   if (!r.ok) throw new Error("yt-page-" + r.status);
   const h = await r.text();
   const m = h.match(/"externalId":"(UC[\w-]{22})"/) || h.match(/"channelId":"(UC[\w-]{22})"/) || h.match(/channel\/(UC[\w-]{22})/);
   if (!m) throw new Error("yt-no-id");
-  const f = await fetch("https://www.youtube.com/feeds/videos.xml?channel_id=" + m[1], { headers: BROWSER, signal: AbortSignal.timeout(5000) });
+  const f = await tf("https://www.youtube.com/feeds/videos.xml?channel_id=" + m[1], { headers: BROWSER, signal: AbortSignal.timeout(5000) });
   if (!f.ok) throw new Error("yt-feed-" + f.status);
   return parseFeed(await f.text());
 }
@@ -213,13 +234,13 @@ async function fetchFeed(src) {
   }
   if (src.html) {
     try {
-      const r = await fetch(src.html.url, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(5000) });
+      const r = await tf(src.html.url, { headers: { ...BROWSER, Accept: "text/html,*/*;q=0.5" }, signal: AbortSignal.timeout(5000) });
       if (r.ok) { const items = src.html.parse(await r.text(), Date.now()); if (items.length) return { items, via: src.html.url }; last = "html-empty"; } else last = "html-http-" + r.status;
     } catch (e) { last = "html-" + String(e.name || e.message || e); }
   }
   for (const u of src.urls) {
     try {
-      const r = await fetch(u, { headers: BROWSER, signal: AbortSignal.timeout(4000) });
+      const r = await tf(u, { headers: BROWSER, signal: AbortSignal.timeout(4000) });
       if (!r.ok) { last = "http-" + r.status; continue; }
       const items = parseFeed(await r.text()); if (!items.length) { last = "empty"; continue; }
       return { items, via: u };
@@ -232,6 +253,7 @@ function stripSource(t) { const i = t.lastIndexOf(" - "); return i > 12 ? t.slic
 const TARGET = 25;     /* headlines in the bar (about one hour's worth) */
 const PER_SOURCE = 5;  /* at most this many from any one channel */
 export async function build(now = Date.now()) {
+  used = 0;
   const res = await Promise.all(SOURCES.map(s => fetchFeed(s).then(r => ({ s, r }))));
   const status = {}, cand = [];
   for (const { s, r } of res) {
@@ -241,7 +263,7 @@ export async function build(now = Date.now()) {
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
-      if (text) mine.push({ text, ts: it.ts, src: s.id, sport: !!s.sport });
+      if (text) mine.push({ text, ts: it.ts, src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };
@@ -255,14 +277,14 @@ export async function build(now = Date.now()) {
       if (now - c.ts > w * 60000) continue;
       const k = norm(c.text), k2 = k.slice(0, 28);
       if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
-      if ((per[c.src] = (per[c.src] || 0) + 1) > PER_SOURCE) continue;
+      if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
       seen.add(k); seen.add(k2); picked.push(c);
       if (picked.length >= TARGET) break;
     }
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, TARGET).map(c => ({ text: c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 

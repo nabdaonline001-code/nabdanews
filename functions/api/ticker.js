@@ -223,6 +223,10 @@ export function clean(t, link, sportSrc = false) {
   if ((sportSrc || SPORT.test(t)) && SPORT_SOFT.test(t)) return null;
   if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
   // word policy
+  /* «فلسطين المحتلة» / «الأراضي المحتلة» / «الداخل المحتل» (meaning Israel) → «إسرائيل»; Palestinian places lose the «المحتلة» label */
+  t = t.replace(/(?:ال)?أراضي\s+(?:ال)?فلسطينية\s+(?:ال)?محتلة/g, "الأراضي الفلسطينية");
+  t = t.replace(/(^|[^\p{L}])(و|ب|ل|ف)?(?:فلسطين\s+(?:ال)?محتلة|(?:ال)?أراضي\s+(?:ال)?محتلة|(?:ال)?داخل\s+(?:ال)?محتل|(?:ال)?كيان\s+(?:ال)?محتل)(?![\p{L}])/gu, (m, a, p) => a + (p || "") + "إسرائيل");
+  t = t.replace(/(الضفة الغربية|الضفة|القدس|الجولان|الجولان السوري|مزارع شبعا|تلال كفرشوبا|الأراضي اللبنانية)\s+(?:ال)?محتل(?:ة)?(?![\p{L}])/gu, "$1");
   /* «طيران العدو الحربي» → «الطيران الحربي الإسرائيلي», «لطيران العدو» → «للطيران الإسرائيلي», «مسيّرة للعدو» → «مسيّرة إسرائيلية» */
   t = t.replace(/(^|[^\p{L}])(و|ف|ب|ل)?(طيران|الطيران|طائرات|الطائرات|طائرة|مسيّرة|مسيرة|مسيّرات|مسيرات|مدفعية|المدفعية|دبابات|آليات|زوارق|بوارج|جيش|قوات|جنود|بحرية|زورق|دبابة|قوة)\s+(?:لل|ال)?عدو(?:\s+(?:ال)?(?:إسرائيلي|صهيوني))?((?:\s+(?:الحربي|الحربية|المسيّر|المسير|المسيرة|المسيّرة|التجسسي|الاستطلاعي))?)(?![\p{L}])/gu,
     (m, a, p, n, adj) => {
@@ -495,7 +499,7 @@ export async function build(now = Date.now(), origin = "") {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=15"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=16"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

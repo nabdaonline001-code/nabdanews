@@ -188,6 +188,7 @@ export function clean(t, link, sportSrc = false) {
 /* typography and stray-noise clean-up so every headline reads like a newsroom headline */
 const NUM_OK_BEFORE = /^(إلى|الى|نحو|حوالي|قرابة|بنسبة|عند|حصيلة|مقتل|إصابة|وفاة|رقم|المرتبة|الجولة|يوم|عام|سنة|دقيقة|ساعة|جولة|الدور|المجموعة|الفئة|ب|ل|من|في|على|بين|و)$/;
 export function tidy(t) {
+  t = t.replace(/&(?:amp;)*(?:rlm|lrm|zwj|zwnj|shy|nbsp|#8207|#8206|#x200f|#x200e|#160);?/gi, " ");   // HTML direction marks that arrived undecoded («&rlm;»)
   t = t.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g, " ").replace(/\s+/g, " ").trim();
   t = t.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim();   // no emojis/flags anywhere: the site and channel stay neutral («سياستنا لا تشجع أحداً»)
   t = t.replace(/^[\-–—•·|:؛,،\s]+|[\-–—•·|\s]+$/g, "");                       // stray bullets / dashes at the edges

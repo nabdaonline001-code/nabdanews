@@ -42,7 +42,7 @@ if (lines.length < 3) { note("too few newspaper headlines yet; nothing sent"); p
 
 const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date());
 const text = `<b>عناوين الصحف اللبنانية |</b> ${dateAr}\n\n` + lines.join("\n\n");
-if (DRY) { console.log(text); process.exit(0); }
+if (DRY) { console.log(text); for (const l of lines) note(l.replace(/<[^>]+>/g, "")); process.exit(0); }
 const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "HTML", disable_web_page_preview: true }) });
 const j = await r.json().catch(() => ({}));
 if (!j.ok) { note("Telegram error " + r.status + " " + (j.description || "")); process.exit(1); }

@@ -1601,7 +1601,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var now=Date.now(), seen={};
     var man=items.filter(function(i){ return i.order>1e12 && now-i.order<=3600000; });
     man.forEach(function(i){ seen[normTx(i.text)]=1; });
-    var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)] && !man.some(function(m){ return simTx(m.text,a.text); }); })
+    var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)] && (a.off||!man.some(function(m){ return simTx(m.text,a.text); })); })
       .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts,pri:a.pri?1:0,leb:a.pri?1:0}; });
     man.forEach(function(i){ i.pri=1; });
     /* one line, in sections: general (Lebanon first), then economy, then sport; newest first inside each */

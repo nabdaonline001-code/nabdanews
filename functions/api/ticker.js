@@ -180,6 +180,10 @@ const concept = w => { for (const [re, c] of CONCEPTS) if (re.test(w)) return c;
 export const cwords = s => new Set(fold(s).replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).map(w => w.replace(/^(?:وال|بال|فال|كال|لل|ال)(?=.{3})/, "")).filter(w => w.length > 2)
   .map(w => PLACE.test(w) ? "p_" + w.slice(0, 4) : concept(w.replace(/^(?:و|ب|ل)(?=.{4})/, ""))).filter(w => /^[cp]_/.test(w) || (!STOP.has(w) && !STOPS.has(stem(w)))).map(w => /^[cp]_/.test(w) ? w : stem(w)));
 const sameWord = (x, y) => x === y || (x.length >= 5 && y.length >= 5 && x.slice(0, 4) === y.slice(0, 4));
+/* an official statement (the army, a ministry, a spokesperson, an agency) and a media report of the same event are two different items:
+   both are published, and the one-source rule applies only inside each class */
+export const OFFICIAL = /^(?:الجيش|المتحدث|المتحدثة|أدرعي|أفيخاي|قيادة الجيش|مديرية التوجيه|الدفاع المدني|وزارة|الخارجية|الرئاسة|رئاسة|البيت الأبيض|البنتاغون|الكرملين|حزب الله|سلاح الجو|الصليب الأحمر|الأمم المتحدة|اليونيفيل)/;
+export const isOfficial = (src, text, pre) => !!pre || src === "idf" || src === "nna" || OFFICIAL.test(text);
 export const similar = (a, b) => {
   const A = [...cwords(a)], B = [...cwords(b)];
   const inB = w => B.some(v => sameWord(w, v)), inA = w => A.some(v => sameWord(w, v));
@@ -332,7 +336,7 @@ export async function build(now = Date.now()) {
       if (s.topic) { const i = raw.lastIndexOf(" - "); if (i > 12 && BLOCKPUB.test(raw.slice(i + 3))) continue; }
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
       if (text && s.lebActivityOnly && isLeb(s.id, text) && (WAR.test(text) || !ACTIVITY.test(text))) continue;   /* from SANA only Lebanon-related activities (visits, delegations, meetings), never war news */
-      if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, topic: !!s.topic, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
+      if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, topic: !!s.topic, sport: !!s.sport, off: isOfficial(s.id, text, s.agency), pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };
@@ -355,7 +359,7 @@ export async function build(now = Date.now()) {
         const k = norm(c.text), k2 = k.slice(0, 28);
         if (seen.has(k) || seen.has(k2)) continue;
         /* the same story from another source: one source only, and a direct channel is preferred over a topic search */
-        const d = picked.findIndex(p => similar(p.text, c.text));
+        const d = picked.findIndex(p => p.off === c.off && similar(p.text, c.text));
         if (d >= 0) { if (picked[d].topic && !c.topic) { picked[d] = c; seen.add(k); seen.add(k2); } continue; }
         if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
         seen.add(k); seen.add(k2); picked.push(c); nc[cc] = (nc[cc] || 0) + 1; if (c.leb) nleb++;
@@ -364,13 +368,13 @@ export async function build(now = Date.now()) {
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts, pri: c.leb ? 1 : 0, src: c.src }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts, pri: c.leb ? 1 : 0, src: c.src, off: c.off ? 1 : 0 }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=10"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=11"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

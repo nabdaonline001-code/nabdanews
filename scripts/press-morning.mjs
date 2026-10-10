@@ -47,7 +47,7 @@ const lines = PAPERS.filter(p => best[p]).map(p => `▪ <b>${p}:</b> «${esc(bes
 note(`papers found ${lines.length}: ${Object.keys(best).join("، ")}`);
 if (lines.length < 3) { note("too few newspaper headlines yet; nothing sent"); process.exit(0); }
 const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date()).replace(/،/g, "");
-const text = `<b>صحف لبنان |</b> ${dateAr}\n\n` + lines.join("\n\n") + `\n\n———\n<i>نبضة | جولة الصحف الصباحية</i>`;
+const text = `🗞 <b>صحف لبنان |</b> ${dateAr}\n\n` + lines.join("\n\n") + `\n\n———\n<i>نبضة | جولة الصحف الصباحية</i>`;
 if (DRY) { console.log(text); for (const l of lines) note(l.replace(/<[^>]+>/g, "")); process.exit(0); }
 const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "HTML", disable_web_page_preview: true }) });
 const j = await r.json().catch(() => ({}));

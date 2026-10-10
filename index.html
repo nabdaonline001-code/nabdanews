@@ -785,8 +785,11 @@ html[data-theme=dark] #brklog th{background:#1f3329}
 html[data-theme=dark] .story.hasimg>.sthumb{background:#16221c;border-color:#2a3a32}
 /* hover on the lead story and the home news list only: a fill in the site's main green sweeps behind the headline from its first word to its last (the text stays on top and readable) */
 #s-news .story h3 a,.lead h1 a{background-image:linear-gradient(to left,#5a7567 0%,#fff 100%);background-repeat:no-repeat;background-position:100% 100%;background-size:0% 100%;border-radius:.55em;-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:.06em .3em;margin-inline:-.3em;transition:background-size .7s cubic-bezier(.25,.7,.2,1),color .25s ease}
-#s-news .story:hover h3 a,#s-news .story:focus-within h3 a,.lead:hover h1 a,.lead:focus-within h1 a{background-size:100% 100%;color:#0f1b15}
-.lead:hover h1,.lead:focus-within h1{text-shadow:none}
+#s-news .story:hover h3 a,#s-news .story:focus-within h3 a,.lead:hover h1 a,.lead:focus-within h1 a{background-size:100% 100%}
+#s-news .story:hover h3 a,#s-news .story:focus-within h3 a{color:#0f1b15}
+/* lead story: only a very light tint behind the headline, the title stays white */
+.lead h1 a{background-image:linear-gradient(to left,rgba(90,117,103,.5) 0%,rgba(90,117,103,0) 100%)}
+.lead:hover h1 a,.lead:focus-within h1 a{color:#fff}
 html[data-theme=dark] #s-news .story:hover h3 a,html[data-theme=dark] #s-news .story:focus-within h3 a{color:#0f1b15}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a,.lead h1 a{transition:color .2s}}
 /* section label and "make it the lead" button on story lists: very light boxes, natural width */

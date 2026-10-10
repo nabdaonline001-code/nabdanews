@@ -10,6 +10,7 @@ on:
         default: false
 permissions:
   contents: read
+  actions: write
 concurrency:
   group: telegram-breaking
   cancel-in-progress: false
@@ -49,3 +50,9 @@ jobs:
         with:
           path: .tg-state
           key: tg-state-${{ github.run_id }}
+      - name: Chain the next run
+        # GitHub's own schedule leaves gaps of 10-20 minutes; each run starts the next one so the channel is watched without a break
+        if: always() && inputs.test != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run telegram-breaking.yml --repo "$GITHUB_REPOSITORY" --ref main || true

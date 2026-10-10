@@ -176,6 +176,7 @@ export function clean(t, link, sportSrc = false) {
 const NUM_OK_BEFORE = /^(إلى|الى|نحو|حوالي|قرابة|بنسبة|عند|حصيلة|مقتل|إصابة|وفاة|رقم|المرتبة|الجولة|يوم|عام|سنة|دقيقة|ساعة|جولة|الدور|المجموعة|الفئة|ب|ل|من|في|على|بين|و)$/;
 export function tidy(t) {
   t = t.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g, " ").replace(/\s+/g, " ").trim();
+  t = t.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim();   // no emojis/flags anywhere: the site and channel stay neutral («سياستنا لا تشجع أحداً»)
   t = t.replace(/^[\-–—•·|:؛,،\s]+|[\-–—•·|\s]+$/g, "");                       // stray bullets / dashes at the edges
   t = t.replace(/\s*[|｜]\s*(?:قناة\s*)?(?:الجزيرة|العربية|الحدث|الجديد|إل بي سي|ام تي في|MTV|LBCI|النهار|الوكالة الوطنية للإعلام|سكاي نيوز عربية|الميادين|العالم|RT|روسيا اليوم|الشرق|الشرق للأخبار|الإخبارية السورية|السومرية|اليوم السابع|الأهرام|CNBC عربية|الشرق بلومبرغ|beIN SPORTS|سبورت 360|في الجول|العربي الجديد|فرانس 24)\s*$/u, ""); // source suffix
   t = t.replace(/"([^"]{2,}?)"/g, "«$1»").replace(/“([^”]{2,}?)”/g, "«$1»");    // ASCII / curly quotes → «»

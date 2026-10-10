@@ -73,7 +73,8 @@ let data = { items: [], used: {} };
 try { data = await channelItems(now, FRESH_MIN); } catch (e) { console.error("channels failed:", e.message); }
 console.log("breaking channels in use:", JSON.stringify(data.used), "| fresh posts:", data.items.length);
 if (process.env.GITHUB_ACTIONS) console.log(`::notice title=channels::${Object.keys(data.used).length}/${(await import("../functions/api/_channels.js")).CHANNELS.length} read: ${Object.values(data.used).join(",")} | fresh ${data.items.length}`);
-for (const it of data.items) if (publishable(it.text, it.src)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.leb, off: isOfficial(it.src, it.text, "") ? 1 : 0, media: it.visual ? it.media : null });
+let rejected = 0; const rejSample = [];
+for (const it of data.items) if (!publishable(it.text, it.src)) { rejected++; if (rejSample.length < 4) rejSample.push(it.text.slice(0, 70)); } else if (true) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.leb, off: isOfficial(it.src, it.text, "") ? 1 : 0, media: it.visual ? it.media : null });
 /* decision-makers' statements and speeches come first (owner: «الأولوية للخطابات السياسية… وكل من له وزن في صناعة القرار») */
 const LEADERS = /نعيم قاسم|الشيخ قاسم|أمين عام حزب الله|الأمين العام لحزب الله|نتنياهو|ترامب|البيت الأبيض|بزشكيان|الرئيس الإيراني|خامنئي|المرشد الإيراني|المرشد الأعلى|عراقجي|الرئيس السوري|أحمد الشرع|(?<!\p{L})الشرع(?!\p{L})|محمد بن سلمان|ولي العهد السعودي|الملك سلمان|العاهل السعودي|السيسي|الرئيس المصري|الملك عبدالله|العاهل الأردني|محمد بن زايد|رئيس الإمارات|أمير قطر|تميم بن حمد|أردوغان|الرئيس التركي|بوتين|الكرملين|ماكرون|الإليزيه|ستارمر|ميرتس|زيلينسكي|شي جين بينغ|الرئيس الصيني|روبيو|فانس|ويتكوف|غوتيريش|الأمين العام للأمم المتحدة|الرئيس عون|جوزاف عون|الرئيس اللبناني|الرئيس بري|نبيه بري|رئيس مجلس النواب|نواف سلام|الرئيس سلام|رئيس الحكومة اللبنانية|عبد الملك الحوثي|السوداني|رئيس الوزراء العراقي|كاتس|وزير الدفاع الإسرائيلي|رئيس الأركان الإسرائيلي|أبو عبيدة|حماس|عباس|الرئيس الفلسطيني/u;
 for (const c of cand) c.lead = LEADERS.test(c.text) ? 1 : 0;
@@ -108,6 +109,7 @@ for (const c of cand) {
   const tags = hashtags(c.text);
   if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + (tags ? "\n" + tags : ""), c.media)) { sent++; sentNow.push(c.text); st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
 }
+if (process.env.GITHUB_ACTIONS) console.log(`::notice title=flow::fresh ${data.items.length}, rejected by filter ${rejected}, sent ${sent}${rejSample.length ? " | e.g. " + rejSample.join(" ‖ ") : ""}`);
 if (!st.seeded || !st.ch) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.ch = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);
 fs.mkdirSync(path.dirname(STATE), { recursive: true }); fs.writeFileSync(STATE, JSON.stringify(st));

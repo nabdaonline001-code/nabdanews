@@ -356,7 +356,8 @@ a.ad:hover{background:rgba(90,117,103,.08)}
 .lead:has(#leadImgWrap:not([hidden]))>.leadimg{position:absolute;inset:0;margin:0;z-index:-2;max-width:none;background:#3d5247}
 /* the whole photo is shown, never cropped: the box takes the photo's own proportions (--ar, set from the image), so there are no bars */
 .lead:has(#leadImgWrap:not([hidden])){aspect-ratio:var(--ar,16/9);min-height:0}
-.lead:has(#leadImgWrap:not([hidden]))>.leadimg img{object-fit:contain}
+.lead:has(#leadImgWrap:not([hidden]))>.leadimg{overflow:hidden}
+.lead:has(#leadImgWrap:not([hidden]))>.leadimg img{object-fit:cover}
 
 .lead:has(#leadImgWrap:not([hidden]))::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(to top,rgba(8,14,11,.88) 0,rgba(8,14,11,.55) 34%,rgba(8,14,11,.08) 66%,rgba(8,14,11,0) 100%);transition:opacity .6s ease}
 .lead:has(#leadImgWrap:not([hidden])) .lh{position:relative;z-index:3;justify-content:flex-start}
@@ -376,7 +377,8 @@ a.ad:hover{background:rgba(90,117,103,.08)}
   .lead:has(#leadImgWrap:not([hidden])){aspect-ratio:auto;min-height:0;padding:0 20px 22px;justify-content:flex-start;background:#5a7567}
   .lead:has(#leadImgWrap:not([hidden]))::before{display:none}
   .lead:has(#leadImgWrap:not([hidden]))>.leadimg{position:relative;inset:auto;z-index:0;margin:0 -20px 16px;max-width:none;background:#3d5247}
-  .lead:has(#leadImgWrap:not([hidden]))>.leadimg img{width:100%;height:auto;max-height:none;object-fit:contain}
+  .lead:has(#leadImgWrap:not([hidden]))>.leadimg{aspect-ratio:var(--ar,16/9);overflow:hidden}
+  .lead:has(#leadImgWrap:not([hidden]))>.leadimg img{width:100%;height:100%;max-height:none;object-fit:cover}
   .lead:has(#leadImgWrap:not([hidden]))>.shr{top:10px}
 }
 @media (prefers-reduced-motion:reduce){.lead:has(#leadImgWrap:not([hidden]))>.leadimg img,.lead:has(#leadImgWrap:not([hidden])) h1,.lead:has(#leadImgWrap:not([hidden])) #leadB{transition:none}.lead:has(#leadImgWrap:not([hidden])):hover>.leadimg img{transform:none}}
@@ -1123,10 +1125,27 @@ economy:{t:"اقتصاد",c:"--econ",i:[["المتاجر الصغيرة تسجّ
 var PG={important:["الأخبار المهمة","ستظهر هنا أهم أخبار اليوم فور نشرها."],radar:["رادار","ستظهر هنا متابعات سريعة لأبرز ما يتداوله الناس."],shorts:["شورتس","ستظهر هنا مقاطع الفيديو القصيرة فور نشرها."],informer:["المُخبر","ستظهر هنا مواد هذا القسم فور نشرها."],special:["خاص","ستظهر هنا المواد الخاصة بالموقع فور نشرها."],security:["أمن وقضاء","ستظهر هنا أخبار الأمن والقضاء فور نشرها."],photos:["تقارير مصوّرة","ستظهر هنا التقارير المصوّرة فور نشرها."],read:["اقرأ","ستظهر هنا المقالات والتقارير المطوّلة فور نشرها."],video:["الفيديو","ستظهر هنا مقاطع الفيديو فور نشرها."],culture:["ثقافة","ستظهر هنا أخبار الثقافة فور نشرها."],world:["دولي","ستظهر هنا الأخبار الدولية فور نشرها."],writers:["كتّابنا","ستظهر هنا مقالات كتّاب الموقع فور نشرها."],ads:["أعلن معنا","للإعلان على الموقع، تواصل معنا عبر البيانات التي ستُضاف هنا."],jobs:["وظائف شاغرة","لا توجد وظائف شاغرة حالياً. ستُنشر الفرص الجديدة في هذه الصفحة."],archive:["الأرشيف","سيجد القارئ هنا أخبار الأيام والشهور السابقة."],complaints:["الشكاوى والتصحيحات","إذا لاحظت خطأً في خبر، أرسل لنا ملاحظتك وسنصحّحه بسرعة. ستُضاف طريقة الإرسال هنا."],privacy:["سياسة الخصوصية","ستُكتب هنا سياسة الموقع في جمع بيانات الزوار واستخدامها."],guidelines:["إرشادات التحرير","ستُكتب هنا المعايير التي يلتزم بها فريق التحرير في نشر الأخبار."]};
 function isImgSrc(v){ return typeof v==="string"&&(/^data:image\//.test(v)||/^\/img\/[A-Za-z0-9._-]+$/.test(v)); }
 var LEAD={title:document.getElementById("leadTa").textContent,body:document.getElementById("leadB").textContent,by:document.getElementById("leadBy").textContent,full:"",image:"",imageAlt:""};
+/* the lead photo fills its box edge to edge: the blurred side bars some photos carry are measured and cropped away, and the box takes the real photo's proportions */
+function fitLead(im,w){
+  var nw=im.naturalWidth, nh=im.naturalHeight; if(!nw||!nh) return;
+  var l=0, r=1, L=w.parentNode;
+  try{
+    var sw=Math.min(nw,400), sh=Math.max(2,Math.round(nh*sw/nw)), c=document.createElement("canvas"); c.width=sw; c.height=sh;
+    var x=c.getContext("2d"); x.drawImage(im,0,0,sw,sh); var d=x.getImageData(0,0,sw,sh).data, g=[], i, j;
+    for(i=0;i<sw;i++){ var t=0; for(j=1;j<sh;j++){ var a=(j*sw+i)*4, b=((j-1)*sw+i)*4; t+=Math.abs(d[a]+d[a+1]+d[a+2]-d[b]-d[b+1]-d[b+2])/3; } g[i]=t/(sh-1); }
+    var T=1.1, ok=function(k){ for(var q=0;q<5;q++){ if(!(g[k+q]>T)) return false; } return true; };
+    var A=0; while(A<sw-5&&!ok(A)) A++; var B=sw-1; while(B>5&&!(g[B]>T&&g[B-1]>T&&g[B-2]>T&&g[B-3]>T&&g[B-4]>T)) B--;
+    if((A>sw*.03||sw-1-B>sw*.03)&&A<sw*.35&&sw-1-B<sw*.35&&B-A>sw*.4){ l=A/sw; r=(B+1)/sw; }
+  }catch(e){ l=0; r=1; }
+  var cw=(r-l)*nw, ratio=Math.min(2.4,Math.max(1.15,cw/nh));
+  if(L&&L.style) L.style.setProperty("--ar",ratio.toFixed(3));
+  if(l>0||r<1){ var f=1/(r-l); im.style.cssText="position:absolute;top:0;height:100%;max-width:none;object-fit:fill;width:"+(f*100).toFixed(2)+"%;left:"+(-l*f*100).toFixed(2)+"%"; }
+  else im.style.cssText="";
+}
 function applyImg(){
   var w=document.getElementById("leadImgWrap"), im=document.getElementById("leadImg");
   var ok=isImgSrc(LEAD.image);
-  if(w&&im){ w.hidden=!ok; if(ok){ im.src=LEAD.image; im.alt=LEAD.imageAlt||""; im.onload=function(){ var r=im.naturalWidth/Math.max(1,im.naturalHeight); r=Math.min(2.4,Math.max(1.15,r)); var L=w.parentNode; if(L&&L.style) L.style.setProperty("--ar",r.toFixed(3)); }; if(im.complete&&im.naturalWidth) im.onload(); } else { im.removeAttribute("src"); } }
+  if(w&&im){ w.hidden=!ok; if(ok){ im.src=LEAD.image; im.alt=LEAD.imageAlt||""; im.onload=function(){ fitLead(im,w); }; if(im.complete&&im.naturalWidth) fitLead(im,w); } else { im.removeAttribute("src"); } }
   if(location.hash==="#article") window.renderArticle();
 }
 function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }

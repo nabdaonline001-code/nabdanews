@@ -774,6 +774,15 @@ html[data-theme=dark] #brklog tr.on td{background:#14201a}
 html[data-theme=dark] #brklog .bl-tabs button[aria-pressed=false]{background:transparent;color:#A9C3B5}
 html[data-theme=dark] #brklog .pl{color:#A9C3B5;border-color:#6f8f7e}
 html[data-theme=dark] #brklog th{background:#1f3329}
+/* small photo beside each headline in the news lists */
+.story.hasimg{display:grid;grid-template-columns:104px minmax(0,1fr);column-gap:14px;align-items:start}
+.story.hasimg>*{grid-column:2}
+.story.hasimg>.sthumb{grid-column:1;grid-row:1/span 6;display:block;aspect-ratio:16/9;background:#EEF3F0;border:1px solid var(--line);overflow:hidden}
+.story.hasimg>.sthumb img{display:block;width:100%;height:100%;object-fit:contain}
+.story.hasimg>.shr{grid-column:auto}
+.ngrid .story.hasimg{grid-template-columns:84px minmax(0,1fr);column-gap:12px}
+@media (max-width:520px){.story.hasimg,.ngrid .story.hasimg{grid-template-columns:92px minmax(0,1fr);column-gap:10px}}
+html[data-theme=dark] .story.hasimg>.sthumb{background:#16221c;border-color:#2a3a32}
 /* ---------- weather box (under the art section) ---------- */
 .wx{--wi:#2F4A3E;--wm:#5a7567;--wl:rgba(47,74,62,.18);--wc:rgba(255,255,255,.55);--ws:#fff;--wsb:#9DB5A8;--wcl:#9DB0A6;--wcl2:#C9D6CF;--wfx:rgba(47,74,62,.35);
   position:relative;isolation:isolate;margin:6px 0 34px;border:1px solid var(--wl);border-radius:18px;background:linear-gradient(100deg,#EEF3F0,#DCE5E0 55%,#E9EEEC);color:var(--wi);overflow:hidden;box-shadow:0 6px 22px -14px rgba(47,74,62,.55)}
@@ -1197,6 +1206,12 @@ function leadBtn(it,cls){
 }
 function storyEl(it,lbl){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
+  if(isImgSrc(it.image)){
+    /* small photo beside the headline (whole picture, never cropped) */
+    d.classList.add("hasimg");
+    var th=el("a","sthumb"); th.href=newsHref(it.id); th.tabIndex=-1; th.setAttribute("aria-hidden","true");
+    var ti=document.createElement("img"); ti.src=it.image; ti.alt=""; ti.loading="lazy"; ti.decoding="async"; th.appendChild(ti); d.appendChild(th);
+  }
   if(lbl&&SECDEF[it.section]) d.appendChild(el("span","lbl",SECDEF[it.section].t));
   h.appendChild(a); d.appendChild(h);
   if(it.summary) d.appendChild(el("p",null,it.summary));

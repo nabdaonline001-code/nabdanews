@@ -21,7 +21,8 @@ const target = Date.parse(day + "T05:00:00Z");
 if (!DRY && Date.now() < target) await new Promise(r => setTimeout(r, Math.min(target - Date.now(), 25 * 60000)));
 
 const get = async u => { const r = await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) }); if (!r.ok) throw new Error(u + " " + r.status); return r.text(); };
-const idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml");
+let idx = "";
+try { idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml"); } catch (e) { note("NNA unreachable: " + e.message); process.exit(0); }
 const cats = [...idx.matchAll(/\/sitemap\/cat\/(\d+)<\/loc>/g)].map(m => m[1]);
 const items = [];
 await Promise.all(cats.map(async c => { try { items.push(...parseNnaDay(await get(`https://nna-leb.gov.lb/ar/sitemap/n/${c}?date=${day}`))); } catch (e) {} }));

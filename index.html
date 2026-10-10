@@ -789,6 +789,20 @@ html[data-theme=dark] .story.hasimg>.sthumb{background:#16221c;border-color:#2a3
 .lead:hover h1,.lead:focus-within h1{text-shadow:none}
 html[data-theme=dark] #s-news .story:hover h3 a,html[data-theme=dark] #s-news .story:focus-within h3 a{color:#17231d}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a,.lead h1 a{transition:color .2s}}
+/* section label and "make it the lead" button on story lists: very light boxes, natural width */
+.story .lbl{border-color:#E0E9E4;background:#F5F8F6;color:#6F867A;padding:0 10px;justify-self:start;align-self:start}
+.story .ldbtn{border-color:#E0E9E4;background:#fff;color:#5a7567;justify-self:start}
+.story .ldbtn:hover:not(:disabled){background:#EEF3F0;color:#2F4A3E}
+.story .ldbtn.done{background:#EEF3F0;color:#2F4A3E}
+.story.hasimg>.lbl,.story.hasimg>.ldbtn,.story.hasimg>time{justify-self:start}
+html[data-theme=dark] .story .lbl{border-color:#2a3a32;background:#16221c;color:#A9C3B5}
+html[data-theme=dark] .story .ldbtn{border-color:#2a3a32;background:transparent;color:#A9C3B5}
+html[data-theme=dark] .story .ldbtn:hover:not(:disabled),html[data-theme=dark] .story .ldbtn.done{background:#1c2c24;color:#fff}
+.tabs button{border-color:#E0E9E4;background:#fff;color:#5a7567}
+.tabs button:hover{background:#F5F8F6}
+.tabs button.on{background:#E7EFEA;border-color:#CFDCD4;color:#2F4A3E}
+html[data-theme=dark] .tabs button{border-color:#2a3a32;background:transparent;color:#A9C3B5}
+html[data-theme=dark] .tabs button.on{background:#1c2c24;border-color:#3d5a4b;color:#fff}
 /* ---------- weather box (under the art section) ---------- */
 .wx{--wi:#2F4A3E;--wm:#5a7567;--wl:rgba(47,74,62,.18);--wc:rgba(255,255,255,.55);--ws:#fff;--wsb:#9DB5A8;--wcl:#9DB0A6;--wcl2:#C9D6CF;--wfx:rgba(47,74,62,.35);
   position:relative;isolation:isolate;margin:6px 0 34px;border:1px solid var(--wl);border-radius:18px;background:linear-gradient(100deg,#EEF3F0,#DCE5E0 55%,#E9EEEC);color:var(--wi);overflow:hidden;box-shadow:0 6px 22px -14px rgba(47,74,62,.55)}

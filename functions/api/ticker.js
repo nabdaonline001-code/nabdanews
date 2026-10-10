@@ -189,7 +189,7 @@ export function tidy(t) {
 }
 const arWords = t => (t.match(/[\u0621-\u064A]{2,}/g) || []).length;
 export function catOf(t) { return ECON.test(t) ? "economy" : SPORT.test(t) ? "sports" : "politics"; }
-const STOP = new Set("في على من إلى الى عن مع بعد قبل أن ان إن التي الذي هذا هذه ذلك كان كانت يكون بين حول خلال أمام ضد لدى ثم أو او لا لم لن قد كل بعض اليوم بأن بان أكد اكد قال قالت يقول وقال يعلن تعلن اعلن غارة غارات سقوط جرحى جريح قتلى قتيل وزير وزيرة مجلس تسفر عن أمام امام رئيس مصدر مصادر بعد يؤكد تؤكد".split(" "));
+const STOP = new Set("هيئة عمليات التجارة البحرية البريطانية في على من إلى الى عن مع بعد قبل أن ان إن التي الذي هذا هذه ذلك كان كانت يكون بين حول خلال أمام ضد لدى ثم أو او لا لم لن قد كل بعض اليوم بأن بان أكد اكد قال قالت يقول وقال يعلن تعلن اعلن غارة غارات سقوط جرحى جريح قتلى قتيل وزير وزيرة مجلس تسفر عن أمام امام رئيس مصدر مصادر بعد يؤكد تؤكد".split(" "));
 const fold = s => s.replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ترمب/g, "ترامب");
 const stem = w => w.replace(/(.)\1+/g, "$1").replace(/^(?:وال|بال|فال|كال|لل|ال|و|ل)(?=.{4})/, "").replace(/(?:ون|ين|ات|ان|ا|ي|ه|ن)$/, "").replace(/(?:ي|ا|ن)$/, "");
 const STOPS = new Set([...STOP].map(w => stem(fold(w))));
@@ -216,7 +216,7 @@ export const similar = (a, b) => {
   const pa = A.filter(w => w.startsWith("p_") && !inB(w)), pb = B.filter(w => w.startsWith("p_") && !inA(w));
   return !(pa.length && pb.length);   /* each names a place the other does not: two different events */
 };
-const norm = s => fold(s).replace(/[^\p{L}\p{N}]/gu, "");
+const norm = s => fold(s).replace(/^هي[يئ][هة] عمليات التجار[هة] البحري[هة] البريطاني[هة]\s*[:：]\s*/, "").replace(/[^\p{L}\p{N}]/gu, "");
 
 /* ---------- HTML front pages (sites with no usable RSS) ---------- */
 // MTV: article links are /News/<section>/<id>/<slug> with the headline in div.news-title. Ids grow with time, so the

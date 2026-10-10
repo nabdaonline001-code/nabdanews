@@ -1645,7 +1645,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   /* ticker = manual items (last 60 min) + automatic channel headlines from /api/ticker */
   var AUTO=[], AUTOWIN=60, lastSig=null, autoDone=false;
   try{ var _c=JSON.parse(localStorage.getItem("nabda_auto5")||"null"); if(_c&&Array.isArray(_c.items)&&_c.items.length){ AUTO=_c.items.filter(function(a){ return a&&a.text&&a.ts&&!/مراسل/.test(a.text); }); AUTOWIN=Number(_c.win)||60; } }catch(e){}
-  function normTx(s){ return String(s||"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
+  function normTx(s){ return String(s||"").replace(/^هيئة عمليات التجارة البحرية البريطانية\s*[:：]\s*/,"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
   /* the same story told twice (a manual item and an automatic one): same event words (قصف/غارة…, اعتراض, صاروخ…) and the same names */
   var SIM_C=[[/^(?:غار|قصف|استهداف|استهدف|يستهدف|تستهدف|ضرب)/,"c1"],[/^(?:اعتراض|اعترض|يعترض|تعترض)/,"c2"],[/^(?:صاروخ|صواريخ)/,"c3"],[/^(?:مسير|درون)/,"c4"],[/^(?:مقتل|قتل|استشهاد|شهيد|شهداء)/,"c5"],[/^(?:اسرايل|اسرائيل|الاحتلال)/,"c6"]];
   function simW(t){

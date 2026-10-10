@@ -130,6 +130,18 @@ export function houseNames(t) {
     .replace(/(النظام|نظام|الحكم|حكم)(\s+السوري)?\s+البائد/g, (m, a, b) => a + (b || "") + " السابق")
     .replace(/(?<![\p{L}«])((?:[وبلكف]|وب|ول|فب|فل)?)(إسرائيل|اسرائيل)(?![\p{L}»])/gu, (m, p) => p + "«إسرائيل»")).join("");
 }
+/* loaded labels are never the site's words, whatever the outlet: «مرتزقة العمالقة» → «قوات العمالقة», «المرتزقة» → «القوات»;
+   and a non-official outlet named after a source («مصدر يمني للميادين:») is dropped («مصدر يمني:») */
+const OUTLET_NAMES = ["الميادين", "الجزيرة", "العربية", "الحدث", "الجديد", "المنار", "المسيرة", "العالم", "سكاي نيوز عربية", "سكاي نيوز", "روسيا اليوم", "RT", "بي بي سي", "BBC", "الشرق", "النهار", "الأخبار", "المدن", "السومرية", "ام تي في", "MTV", "إل بي سي", "LBCI", "رويترز", "فرانس برس", "سبوتنيك", "تسنيم", "فارس"];
+const OUTLET_TO = new RegExp("((?:مصدر|مصادر|مسؤول|مسؤولون|قيادي|متحدث|ناطق)(?:\\s+\\p{L}+){0,5}?)\\s+(?:" +
+  OUTLET_NAMES.map(n => n.startsWith("ال") ? "ل" + n.slice(1) : "لـ?\\s*" + n).join("|") + ")(?![\\p{L}])", "u");
+const LABEL = (stem) => new RegExp("(^|[^\\p{L}])(و|ف|ب|وب)?(ال|لل|ل)?" + stem + "(?![\\p{L}])", "gu");
+export function loadedWords(t) {
+  const swap = (m, a, p, art) => a + (p || "") + (art === "ال" ? "القوات" : art === "لل" ? "للقوات" : art === "ل" ? "لقوات" : "قوات");
+  t = t.replace(LABEL("مرتزق(?:ة|ون|ين|و)"), swap).replace(LABEL("غزاة"), swap);
+  t = t.replace(OUTLET_TO, "$1");
+  return t;
+}
 export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
@@ -151,6 +163,7 @@ export function clean(t, link, sportSrc = false) {
     t = t.replace(/(?:ال)?عدو\s+(?=(?:ال)?إسرائيل)/g, "");
     t = t.replace(/العدوان/g, "الهجوم").replace(/عدوان/g, "هجوم");
   }
+  t = loadedWords(t);
   t = tidy(t);
   t = houseNames(t);
   if (!t || arWords(t) < 3) return null;

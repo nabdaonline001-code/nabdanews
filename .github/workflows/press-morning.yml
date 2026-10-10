@@ -1,0 +1,43 @@
+name: Lebanese press headlines (08:00 Beirut)
+on:
+  schedule:
+    - cron: "38 4 * * *"   # 07:38 Beirut — the script waits until 08:00
+    - cron: "17 5 * * *"   # backup if GitHub skipped the first run (sends only once a day)
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "Only build the message (do not send)"
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: press-morning
+  cancel-in-progress: false
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: .press-state
+          key: press-state-${{ github.run_id }}
+          restore-keys: press-state-
+      - name: Send the newspapers' headlines
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_DRY: ${{ inputs.dry && '1' || '' }}
+        run: node scripts/press-morning.mjs
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .press-state
+          key: press-state-${{ github.run_id }}

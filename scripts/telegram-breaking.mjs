@@ -59,10 +59,20 @@ try {
 } catch (e) { console.error("site.json:", e.message); }
 /* the channel is public: no site names/taglines, no teasers or analysis titles, no clickbait/entertainment, no sport («كل خبر ليس واضحاً لا أريده», «لا أريد رياضة») */
 const TG_SPORT = /رياض[ةي]|الرياضة|مباراة|المباراة|مباريات|كأس|منتخب|فيفا|الفيفا|يويفا|(?<!\p{L})(?:ال)?(?:دوري|نادي|أندية|مدرب|مدربة|لاعب|لاعبة|لاعبون|لاعبين|هدف|أهداف|ملعب|الملعب|حكم المباراة|ركلة|بطولة|بطل العالم|نهائي|ميدالية|ميداليات)(?!\p{L})|كرة القدم|كرة السلة|كرة اليد|كرة الطائرة|التنس|الأولمبي|الأولمبية|أولمبياد|فورمولا|سباق|رالي|ملاكمة|المصارعة|الجودو|السباحة|ألعاب القوى|ماراثون|ريال مدريد|برشلونة|ليفربول|مانشستر|بايرن|يوفنتوس|باريس سان جيرمان|الزمالك|النادي الأهلي|ميسي|رونالدو|صلاح|انتقالات|سوق الانتقالات|الاتحاد اللبناني لكرة|الاتحاد الدولي لكرة/u;
-const publishable = (t, src) => { if (TG_SPORT.test(t)) return false; const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x)); return w.length >= 5 && t.replace(/[^\p{L}]/gu, "").length >= 22 && !JUNK.test(t) && !BAIT.test(t) && !VAGUE.test(t); };
+/* strict channel mode («ما فيي ضلني إبعتلك كل خبر»): a channel item must read like a breaking line —
+   either a statement («X: …») or a concrete event word; one sentence; at most ~150 characters; 5+ words; no sport */
+const EVENT = /غار[ةا]|غارات|قصف|استهداف|يستهدف|استهدف|انفجار|تفجير|نسف|اغتيال|مقتل|قتلى|قتيل|شهيد|شهداء|استشهاد|جريح|جرحى|إصاب|اشتباك|هجوم|صاروخ|صواريخ|مسيّر|مسير|اعتراض|إنذار|صفارات|توغل|اقتحام|يقتحم|تقتحم|اقتحم|اعتقال|اعتقل|تحليق|يعلن|أعلن|تعلن|أعلنت|بيان|يستقبل|استقبل|تستقبل|يلتقي|التقى|اجتماع|يجتمع|زيارة|يزور|زار|يصل|وصل|غادر|قرار|يقرر|قرر|يقر|أقر|مرسوم|انتخاب|استقال|توقيع|وقّع|اتفاق|مفاوضات|محادثات|عقوبات|يدين|أدان|تدين|يحذر|حذر|حذّر|يطالب|دعا|يدعو|تعيين|عيّن|جلسة|قمة|اتصال|ارتفاع|انخفاض|يرتفع|ينخفض|تراجع|سعر|أسعار|الدولار|النفط|الذهب|البورصة|مصرف|إغلاق|إخلاء|نزوح|حريق|زلزال|وفاة|توفي|سقوط|إسقاط|تدمير|احتراق|إطلاق|يطلق|أطلق/u;
+const publishable = (t, src) => {
+  if (TG_SPORT.test(t) || JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return false;
+  const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x));
+  if (w.length < 5 || t.replace(/[^\p{L}]/gu, "").length < 22 || t.length > 150) return false;
+  if (/[.!؟?]\s+\p{L}/u.test(t)) return false;                                   /* two sentences = a summary, not a breaking line */
+  return /^[^:：]{3,60}[:：]\s*\S/.test(t) || EVENT.test(t);                     /* a statement, or a concrete event */
+};
 let data = { items: [], used: {} };
 try { data = await channelItems(now, FRESH_MIN); } catch (e) { console.error("channels failed:", e.message); }
 console.log("breaking channels in use:", JSON.stringify(data.used), "| fresh posts:", data.items.length);
+if (process.env.GITHUB_ACTIONS) console.log(`::notice title=channels::${Object.keys(data.used).length}/${(await import("../functions/api/_channels.js")).CHANNELS.length} read: ${Object.values(data.used).join(",")} | fresh ${data.items.length}`);
 for (const it of data.items) if (publishable(it.text, it.src)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.leb, off: isOfficial(it.src, it.text, "") ? 1 : 0, media: it.visual ? it.media : null });
 /* decision-makers' statements and speeches come first (owner: «الأولوية للخطابات السياسية… وكل من له وزن في صناعة القرار») */
 const LEADERS = /نعيم قاسم|الشيخ قاسم|أمين عام حزب الله|الأمين العام لحزب الله|نتنياهو|ترامب|البيت الأبيض|بزشكيان|الرئيس الإيراني|خامنئي|المرشد الإيراني|المرشد الأعلى|عراقجي|الرئيس السوري|أحمد الشرع|(?<!\p{L})الشرع(?!\p{L})|محمد بن سلمان|ولي العهد السعودي|الملك سلمان|العاهل السعودي|السيسي|الرئيس المصري|الملك عبدالله|العاهل الأردني|محمد بن زايد|رئيس الإمارات|أمير قطر|تميم بن حمد|أردوغان|الرئيس التركي|بوتين|الكرملين|ماكرون|الإليزيه|ستارمر|ميرتس|زيلينسكي|شي جين بينغ|الرئيس الصيني|روبيو|فانس|ويتكوف|غوتيريش|الأمين العام للأمم المتحدة|الرئيس عون|جوزاف عون|الرئيس اللبناني|الرئيس بري|نبيه بري|رئيس مجلس النواب|نواف سلام|الرئيس سلام|رئيس الحكومة اللبنانية|عبد الملك الحوثي|السوداني|رئيس الوزراء العراقي|كاتس|وزير الدفاع الإسرائيلي|رئيس الأركان الإسرائيلي|أبو عبيدة|حماس|عباس|الرئيس الفلسطيني/u;

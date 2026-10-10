@@ -9,8 +9,10 @@ const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d
 /* topic searches (any outlet): catch the big stories no single channel feed carries in time */
 const gq = (q, when = "6h") => `https://news.google.com/rss/search?q=${encodeURIComponent(q + " when:" + when)}&hl=ar&gl=LB&ceid=LB:ar`;
 const bq = q => `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
-/* outlets never used for topic searches (publisher name after " - " in the Google News title) */
-const BLOCKPUB = /i24|(?<!\p{L})كان(?!\p{L})|القناة\s*1[0-9]|يديعوت|معاريف|هآرتس|جيروزاليم|تايمز أوف إسرائيل|إسرائيل اليوم|ويكيبيديا|(?<![A-Za-z])X(?![A-Za-z])|Facebook|فيسبوك|YouTube|يوتيوب/iu;
+/* publishers never used for topic searches (not news outlets); Israeli outlets are allowed: their events and the army's statements are news */
+const BLOCKPUB = /ويكيبيديا|(?<![A-Za-z])X(?![A-Za-z])|Facebook|فيسبوك|YouTube|يوتيوب|Telegram|تيليغرام/iu;
+/* Israeli sources: the event and the army's statement are taken, not the loaded vocabulary (as with the Sanaa-side sources) */
+const ISR_LOADED = /مخرب|إرهاب|ارهاب|يهودا والسامرة|الكيان|ما يسمى|المعادي|الأعداء/;
 const gnewsAny = sites => `https://news.google.com/rss/search?q=${encodeURIComponent("(" + sites.map(x => "site:" + x).join(" OR ") + ") when:2d")}&hl=ar&gl=LB&ceid=LB:ar`;
 /* Pages Functions allow ~50 subrequests per call: count every fetch and refuse beyond the limit (first tries always
    go out before any fallback, so fallbacks are what gets dropped when many feeds are down) */
@@ -58,6 +60,8 @@ export const SOURCES = [
   { id: "econ_ar", cap: 6, urls: [gnewsAny(["cnbcarabia.com", "asharqbusiness.com"])] },
   { id: "leb_topic", topic: true, cap: 10, urls: [gq('("جنوب لبنان" OR "الجنوب اللبناني" OR "الضاحية الجنوبية" OR "حزب الله" OR "اليونيفيل" OR "الجيش اللبناني" OR "البقاع")'), bq("جنوب لبنان")] },
   { id: "leb_sec", topic: true, cap: 8, urls: [gq('لبنان (غارة OR صاروخ OR مسيّرة OR "صفارات الإنذار" OR "القبة الحديدية" OR "صاروخ اعتراضي" OR قصف)', "3h"), bq("لبنان صاروخ اعتراضي غارة")] },
+  { id: "idf", topic: true, cap: 8, skipText: ISR_LOADED, urls: [gq('("الجيش الإسرائيلي" OR "المتحدث باسم الجيش الإسرائيلي" OR "أدرعي" OR "سلاح الجو الإسرائيلي") (يعلن OR أعلن OR بيان OR اعتراض OR "ينذر" OR "إنذار")', "3h"), bq("الجيش الإسرائيلي يعلن")] },
+  { id: "israel_media", topic: true, cap: 6, skipText: ISR_LOADED, urls: [gnewsAny(["i24news.tv/ar", "makan.org.il"])] },
   { id: "region_topic", topic: true, cap: 8, urls: [gq('(إسرائيل OR غزة OR إيران OR سوريا OR اليمن OR العراق) (عاجل OR "وقف إطلاق النار" OR هجوم OR غارة)', "3h")] },
   { id: "sport_ar", sport: true, cap: 8, urls: [gnewsAny(["beinsports.com/ar", "arabia.sport360.com", "filgoal.com"])] }
 ];
@@ -309,6 +313,7 @@ export async function build(now = Date.now()) {
       if (s.skipLink && s.skipLink.test(it.link)) continue;
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
+      if (s.skipText && s.skipText.test(raw)) continue;
       if (s.topic) { const i = raw.lastIndexOf(" - "); if (i > 12 && BLOCKPUB.test(raw.slice(i + 3))) continue; }
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
       if (text && s.lebActivityOnly && isLeb(s.id, text) && (WAR.test(text) || !ACTIVITY.test(text))) continue;   /* from SANA only Lebanon-related activities (visits, delegations, meetings), never war news */

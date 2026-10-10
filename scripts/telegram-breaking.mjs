@@ -20,8 +20,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 if (!DRY && (!TOKEN || !CHAT)) { console.log("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID are not set yet: nothing to do."); process.exit(0); }
 
-async function send(text) {
-  if (DRY) { console.log("[dry] " + text); return true; }
+async function send(text, media) {
+  if (DRY) { console.log("[dry] " + (media ? "[" + media.type + "] " : "") + text); return true; }
+  if (media) {   /* a picture item goes out with its video/photo as the caption; if Telegram refuses the file, the item is not sent at all */
+    const method = media.type === "video" ? "sendVideo" : "sendPhoto";
+    for (let i = 0; i < 3; i++) {
+      const r = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, [media.type]: media.url, caption: text, parse_mode: "HTML", supports_streaming: true }) });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok) return true;
+      if (r.status === 429) { await sleep(((j.parameters && j.parameters.retry_after) || 5) * 1000 + 500); continue; }
+      console.error("Telegram media error:", r.status, j.description || ""); return false;
+    }
+    return false;
+  }
   for (let i = 0; i < 3; i++) {
     const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "HTML", disable_web_page_preview: true }) });
     const j = await r.json().catch(() => ({}));
@@ -52,7 +63,7 @@ const publishable = (t, src) => { if (TG_SPORT.test(t)) return false; const w = 
 let data = { items: [], used: {} };
 try { data = await channelItems(now, FRESH_MIN); } catch (e) { console.error("channels failed:", e.message); }
 console.log("breaking channels in use:", JSON.stringify(data.used), "| fresh posts:", data.items.length);
-for (const it of data.items) if (publishable(it.text, it.src)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.leb, off: isOfficial(it.src, it.text, "") ? 1 : 0 });
+for (const it of data.items) if (publishable(it.text, it.src)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.leb, off: isOfficial(it.src, it.text, "") ? 1 : 0, media: it.visual ? it.media : null });
 /* decision-makers' statements and speeches come first (owner: «الأولوية للخطابات السياسية… وكل من له وزن في صناعة القرار») */
 const LEADERS = /نعيم قاسم|الشيخ قاسم|أمين عام حزب الله|الأمين العام لحزب الله|نتنياهو|ترامب|البيت الأبيض|بزشكيان|الرئيس الإيراني|خامنئي|المرشد الإيراني|المرشد الأعلى|عراقجي|الرئيس السوري|أحمد الشرع|(?<!\p{L})الشرع(?!\p{L})|محمد بن سلمان|ولي العهد السعودي|الملك سلمان|العاهل السعودي|السيسي|الرئيس المصري|الملك عبدالله|العاهل الأردني|محمد بن زايد|رئيس الإمارات|أمير قطر|تميم بن حمد|أردوغان|الرئيس التركي|بوتين|الكرملين|ماكرون|الإليزيه|ستارمر|ميرتس|زيلينسكي|شي جين بينغ|الرئيس الصيني|روبيو|فانس|ويتكوف|غوتيريش|الأمين العام للأمم المتحدة|الرئيس عون|جوزاف عون|الرئيس اللبناني|الرئيس بري|نبيه بري|رئيس مجلس النواب|نواف سلام|الرئيس سلام|رئيس الحكومة اللبنانية|عبد الملك الحوثي|السوداني|رئيس الوزراء العراقي|كاتس|وزير الدفاع الإسرائيلي|رئيس الأركان الإسرائيلي|أبو عبيدة|حماس|عباس|الرئيس الفلسطيني/u;
 for (const c of cand) c.lead = LEADERS.test(c.text) ? 1 : 0;
@@ -65,7 +76,7 @@ for (const c of cand) {
   if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
   if (!st.seeded || !st.ch) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
   if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
-  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
+  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), c.media)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
 }
 if (!st.seeded || !st.ch) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.ch = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);

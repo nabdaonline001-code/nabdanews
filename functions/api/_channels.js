@@ -53,6 +53,8 @@ export function firstLine(html) {
   return /\p{L}{2,}.*\p{L}{2,}/u.test(out) ? out : "";
 }
 
+export const VISUAL = /^(?:لحظة|لحظات|مشاهد|مشهد|شاهد|شاهدوا|بالفيديو|فيديو|بالصور|صور|صورة|لقطات|لقطة|توثيق|كاميرا|مقطع|مقاطع)(?!\p{L})|(?:بالفيديو|بالصور|[(\[]\s*(?:فيديو|صور|شاهد)\s*[)\]]|فيديو يظهر|فيديو يوثق|مقطع يظهر|صور تظهر|يوثق لحظة|توثق لحظة)/u;
+const VISUAL_TAG = /\s*[(\[]\s*(?:فيديو|صور|شاهد|بالفيديو|بالصور)\s*[)\]]\s*|\s*[\-–—|]?\s*(?:بالفيديو|بالصور)\s*$/gu;
 export function parseChannel(html) {
   const out = [];
   for (const m of html.matchAll(/<div class="tgme_widget_message_wrap[\s\S]*?(?=<div class="tgme_widget_message_wrap|$)/g)) {
@@ -67,7 +69,10 @@ export function parseChannel(html) {
     if (!body || !time) continue;
     const ts = Date.parse(time[1]);
     const text = firstLine(body[1]);
-    if (text && ts) out.push({ text, ts, post: post ? post[1] : "" });
+    /* the post's own video or photo (public page): kept so a «لحظة اعتقال…» item goes out with it on Telegram */
+    const vid = block.match(/<video[^>]*\ssrc="([^"]+)"/), pho = block.match(/tgme_widget_message_photo_wrap[^>]*background-image:url\('([^']+)'\)/);
+    const media = vid ? { type: "video", url: decode(vid[1]) } : pho ? { type: "photo", url: decode(pho[1]) } : null;
+    if (text && ts) out.push({ text, ts, post: post ? post[1] : "", media });
   }
   return out;
 }
@@ -97,8 +102,11 @@ export async function channelItems(now = Date.now(), freshMin = 30) {
       used[ch.id] = name;
       for (const p of parseChannel(h)) {
         if (now - p.ts > freshMin * 60000 || p.ts - now > 5 * 60000) continue;
-        const t = clean(ch.fix ? houthiFix(p.text) : p.text, "", false);
-        if (t) items.push({ text: t, ts: p.ts, src: ch.id, leb: LEB.test(t) ? 1 : 0 });
+        /* «لحظة اعتقال…»، «مشاهد…»، «بالفيديو…»: the text only describes a picture — Telegram only, and only with that picture; never on the site */
+        const visual = VISUAL.test(p.text);
+        if (visual && !p.media) continue;
+        const t = clean(ch.fix ? houthiFix(p.text) : p.text, "", false, visual);
+        if (t) items.push({ text: visual ? t.replace(VISUAL_TAG, "").trim() : t, ts: p.ts, src: ch.id, leb: LEB.test(t) ? 1 : 0, ...(visual ? { visual: 1, media: p.media } : {}) });
       }
       break;
     }

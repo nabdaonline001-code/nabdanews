@@ -159,7 +159,7 @@ const TAIL_OUTLET = new RegExp("\\s*[\\-–—|(]?\\s*(?:(?:بحسب|وفق|حس
 /* «لا داعي لكلمة الجيش الإسرائيلي إلا بالبيانات»: the army is named only when it speaks (statement, spokesman, warning);
    otherwise the act is told as Israeli: «الجيش الإسرائيلي يستهدف سيارة» → «استهداف إسرائيلي لسيارة»,
    «يقصف بلدة» → «قصف إسرائيلي على بلدة», «يشن غارات على» → «غارات إسرائيلية على», other acts → «قوة إسرائيلية تقتحم…» */
-const ARMY_SPEAKS = /يعلن|أعلن|تعلن|بيان|المتحدث|متحدث|أدرعي|يزعم|زعم|يدعي|ادعى|يقول|قال|يؤكد|أكد|يحذر|حذر|ينذر|أنذر|إنذار|يصدر|أصدر|يطالب|يدعو|دعا|يعترف|اعترف|يكشف|كشف|يوضح|يفيد|أفاد|يرصد|رصد|اعتراض|يعترض|اعترض|يطلب/u;
+const ARMY_SPEAKS = /(?<!\p{L})(?:يعلن|أعلن|تعلن|بيان|المتحدث|متحدث|أدرعي|يزعم|زعم|يدعي|ادعى|يقول|قال|يؤكد|أكد|يحذر|حذر|ينذر|أنذر|إنذار|يصدر|أصدر|يطالب|يدعو|دعا|يعترف|اعترف|يكشف|كشف|يوضح|يفيد|أفاد|يرصد|رصد|اعتراض|يعترض|اعترض|يطلب)(?!\p{L})/u;
 export function armyOnlyInStatements(t) {
   if (ARMY_SPEAKS.test(t) || !/الجيش الإسرائيلي/.test(t)) return t;
   const before = t;
@@ -170,7 +170,7 @@ export function armyOnlyInStatements(t) {
     .replace(/(^|[^\p{L}])الجيش الإسرائيلي\s+(?:يقصف|قصف)\s+(?!على\s)(?!بال)/gu, "$1قصف إسرائيلي على ")
     .replace(/(^|[^\p{L}])الجيش الإسرائيلي\s+(?:يقصف|قصف)\s+/gu, "$1قصف إسرائيلي ")
     .replace(/(^|[^\p{L}])الجيش الإسرائيلي\s+ي(\p{L}{2,})/gu, "$1قوة إسرائيلية ت$2")
-    .replace(/(^|[^\p{L}])الجيش الإسرائيلي\s+(\p{L}{3,})(?=\s)/gu, (m, a, v) => a + "قوة إسرائيلية " + (/ت$/.test(v) ? v : v + "ت"))
+    .replace(/(^|[^\p{L}])الجيش الإسرائيلي\s+(اقتحم|اعتقل|قصف|أطلق|توغل|استهدف|فجّر|فجر|جرف|دمر|دمّر|هدم|أصاب|قتل|خطف|احتجز|داهم|أغلق|انسحب|نفذ|نفّذ|شن|شنّ|سيطر|حاصر|اعتدى|منع|أحرق|صادر)(?![\p{L}])/gu, (m, a, v) => a + "قوة إسرائيلية " + v + "ت")
     .replace(/(^|[^\p{L}])(و|ف|ب)?(ال|لل)جيش الإسرائيلي(?![\p{L}])/gu, (m, a, p, art) => a + (p || "") + (art === "لل" ? "لقوة إسرائيلية" : "قوة إسرائيلية"));
   if (t !== before && /قوة إسرائيلية/.test(t)) t = t.replace(/(\sو)ي(\p{L}{3,})/gu, "$1ت$2");   /* «…تقتحم مخيم جنين ويعتقل» → «وتعتقل» */
   return t;
@@ -206,7 +206,7 @@ export function loadedWords(t) {
 export const JUNK = /^(?:(?:أحدث|احدث|آخر|اخر|أهم|اهم|أبرز|ابرز|جديد|كل|متابعة|تغطية|موجز|نشرة|ملخص|عناوين|تحديثات|مباشر)(?!\p{L})|(?:ال)?أخبار(?!\p{L}))|أخبار\s+\S+\s+والعالم|لحظة بلحظة|على مدار الساعة|الموقع الرسمي|اشترك|تابعونا|حمّل التطبيق|حمل التطبيق|المزيد|اقرأ أيضا|اقرأ أيضاً/u;
 export const BAIT = /يشعل|تشعل|أشعل|أشعلت|غضب|يثير|تثير|أثار|أثارت|يفجّر جدلاً|تفجّر جدلاً|يفجر جدلا|جدل|جدلا|جدلاً|صفعة|ضربة موجعة|ضربة قاسية|زلزال سياسي|يقلب|تقلب|الطاولة|كابوس|معركة كسر|رسالة إلى|رسائل إلى|بالتفاصيل|خفايا|كواليس|تقرير|دراسة|تحقيق صحفي|صحيفة|صحف|مقال|افتتاحية|غامض|غامضة|مثير|مثيرة|صادم|صادمة|مفاجأة|مفاجئة|مفاجئ|لن تصدق|يكشف سر|تكشف سر|كواليس|رسالة من|رسالة جديدة|تغريدة|منشور|يعلق على|تعلق على|يرد على|ترد على|تركي آل الشيخ|آل الشيخ|هيئة الترفيه|موسم الرياض/u;
 export const VAGUE = /^(?:هذا|هذه|هكذا|إليك|اليكم|إليكم|تعرف|تعرّف|ما الذي|ماذا|من هو|من هي|كيف|لماذا|هل)(?!\p{L})|…|\.\.\.|تعرف على|تعرّف على|السبب وراء|سر |أسرار|بالتفاصيل|التفاصيل الكاملة|ما حدث|ما جرى|مسارات|سيناريوهات|سيناريو|قراءة في|تحليل|ما بعد|ماذا بعد|أبعاد|دلالات|رسائل|حسابات|خيارات|تداعيات|مستقبل|إلى أين|الى أين|بين التصعيد|التصعيد والتهدئة|ملف |حدود |معادلة|لعبة |ما قاله|ما قالته|في ظروف|حقيقة /u;
-export function clean(t, link, sportSrc = false) {
+export function clean(t, link, sportSrc = false, allowMedia = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
   t = t.replace(/^[\p{Extended_Pictographic}\uFE0F\s]*(?:خبر\s+)?عاجل(?:ة)?\s*[|:\-–—،]*\s*/u, "");   /* «عاجل | …» is the breaking label, not a programme title */
@@ -216,7 +216,7 @@ export function clean(t, link, sportSrc = false) {
   t = noReporter(t);
   if (!t || /مراسل/.test(t)) return null;   /* the bar carries the news itself, never "our reporter says…" */
   t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
-  if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
+  if (!t || /[؟?]/.test(t) || (!allowMedia && MEDIA.test(t)) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
   if (TAGLINE.test(t)) return null;
   if (JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return null;   /* a feed's own name/tagline («أحدث أخبار مصر والعالم») is not news */
   if (t.length < 14 || t.length > 190) return null;
@@ -446,7 +446,7 @@ export async function build(now = Date.now(), origin = "") {
   const status = {}, cand = [];
   const tg = await tgP;
   for (const it of tg.items || []) {
-    if (!it || !it.text || it.ts > now + 600000) continue;
+    if (!it || !it.text || it.ts > now + 600000 || it.visual) continue;   /* picture-only items («لحظة اعتقال…») are for Telegram, not the site */
     const src = "tg_" + it.src;
     cand.push({ text: it.text, ts: it.ts, leb: it.leb || isLeb(src, it.text), src, topic: false, sport: SPORT.test(it.text), off: isOfficial(src, it.text, ""), pre: "", cap: PER_SOURCE });
   }
@@ -499,7 +499,7 @@ export async function build(now = Date.now(), origin = "") {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=16"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=17"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

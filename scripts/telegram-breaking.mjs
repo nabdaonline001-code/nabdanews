@@ -1,0 +1,63 @@
+/* Sends the site's breaking news to the Telegram channel, automatically (GitHub Actions, every 5 minutes).
+   Needs two repository secrets: TELEGRAM_BOT_TOKEN (from @BotFather) and TELEGRAM_CHAT_ID (the channel, e.g. @your_channel).
+   What is sent: the owner's manual breaking items (data/site.json), official statements, and Lebanese news; never the same story twice
+   (same one-source rule as the site's bar), at most MAX_PER_RUN per run and MAX_PER_HOUR per hour.
+   Memory between runs is a tiny JSON file kept in the Actions cache (.tg-state/sent.json). The first run only records what is
+   already on the bar (nothing is posted), so the channel is not flooded. TG_TEST=1 sends one test message; TG_DRY=1 prints instead of sending. */
+import fs from "node:fs";
+import path from "node:path";
+import { build, similar } from "../functions/api/ticker.js";
+
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "";
+const DRY = !!process.env.TG_DRY, TEST = !!process.env.TG_TEST;
+const MAX_PER_RUN = 5, MAX_PER_HOUR = 10, FRESH_MIN = 30;
+const STATE = path.join(".tg-state", "sent.json");
+const norm = s => String(s || "").replace(/[ً-ْـ]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\p{L}\p{N}]/gu, "").slice(0, 40);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+if (!DRY && (!TOKEN || !CHAT)) { console.log("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID are not set yet: nothing to do."); process.exit(0); }
+
+async function send(text) {
+  if (DRY) { console.log("[dry] " + text); return true; }
+  for (let i = 0; i < 3; i++) {
+    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, disable_web_page_preview: true }) });
+    const j = await r.json().catch(() => ({}));
+    if (j.ok) return true;
+    if (r.status === 429) { await sleep(((j.parameters && j.parameters.retry_after) || 5) * 1000 + 500); continue; }
+    console.error("Telegram error:", r.status, j.description || ""); return false;
+  }
+  return false;
+}
+
+if (TEST) { const ok = await send("✅ نبضة: تم ربط البوت بالقناة بنجاح. ستصل العواجل إلى هنا تلقائياً."); console.log(ok ? "test sent" : "test failed"); process.exit(ok ? 0 : 1); }
+
+let st = { keys: [], texts: [], times: [], seeded: false };
+try { st = { ...st, ...JSON.parse(fs.readFileSync(STATE, "utf8")) }; } catch (e) {}
+const now = Date.now();
+st.times = st.times.filter(t => now - t < 3600000);
+st.texts = st.texts.filter(x => now - x.t < 3 * 3600000);
+
+/* candidates: manual items first, then the automatic bar */
+const cand = [];
+try {
+  const site = JSON.parse(fs.readFileSync("data/site.json", "utf8"));
+  for (const [id, b] of Object.entries(site.breaking || {})) if (b && b.text && b.order > 1e12 && now - b.order <= FRESH_MIN * 60000) cand.push({ text: String(b.text).trim(), ts: b.order, man: 1, off: 1 });
+} catch (e) { console.error("site.json:", e.message); }
+let data = { items: [] };
+try { data = await build(); } catch (e) { console.error("ticker build failed:", e.message); }
+for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && (it.off || it.pri)) cand.push({ text: it.text, ts: it.ts, man: 0, off: it.off ? 1 : 0 });
+cand.sort((a, b) => (b.man - a.man) || (b.ts - a.ts));
+
+let sent = 0;
+for (const c of cand) {
+  const k = norm(c.text);
+  if (!k || st.keys.includes(k)) continue;
+  if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
+  if (!st.seeded) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
+  if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
+  if (await send("🔴 عاجل | " + c.text)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(1200); }
+}
+if (!st.seeded) console.log("first run: recorded " + st.keys.length + " current items without posting");
+st.seeded = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);
+fs.mkdirSync(path.dirname(STATE), { recursive: true }); fs.writeFileSync(STATE, JSON.stringify(st));
+console.log("sent " + sent + " message(s)");

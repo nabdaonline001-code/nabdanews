@@ -1,0 +1,42 @@
+name: Telegram breaking news
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Send one test message to the channel"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: telegram-breaking
+  cancel-in-progress: false
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: .tg-state
+          key: tg-state-${{ github.run_id }}
+          restore-keys: tg-state-
+      - name: Send breaking news
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TG_TEST: ${{ inputs.test && '1' || '' }}
+        run: node scripts/telegram-breaking.mjs
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .tg-state
+          key: tg-state-${{ github.run_id }}

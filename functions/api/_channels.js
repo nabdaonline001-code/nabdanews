@@ -33,20 +33,24 @@ const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rlm: 
 const decode = s => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : +e.slice(1)) : (ENT[e.toLowerCase()] ?? " "));
 
 /* the first real line of a post, without labels, hashtags, links, mentions or the station's signature */
+const cleanLine = line => line.replace(/https?:\/\/\S+|t\.me\/\S+|@\w+/g, " ").replace(/#[\p{L}\p{N}_]+/gu, " ")
+  .replace(/^[\p{Extended_Pictographic}️‍\s•▪◾🔸🔹⭕|:\-–—]*/u, "")
+  .replace(/^(?:خبر\s+)?عاجل(?:ة)?\s*[|:\-–—،]*\s*/u, "")
+  .replace(/^(?:ورد\s+الآن|ورد\s+للتو|الآن|الان|الآن\s+عاجل|متابعة|تحديث|مباشر|أخبار عاجلة|خبر عاجل|هام|مهم|عاجل\s+جدا|عاجل\s+جداً)\s*[|:\-–—،]+\s*/u, "")
+  .replace(/^[\p{Extended_Pictographic}️‍\s|:\-–—]*/u, "")
+  .replace(/[\p{Extended_Pictographic}️‍]+/gu, " ")
+  .replace(/\s+/g, " ").trim();
+const LABEL_ONLY = /^(?:(?:ورد|وردنا|وصلنا)\s+(?:الآن|الان|للتو)|الآن|الان|عاجل|متابعة|تحديث|هام|مهم)[\s|:/\\\-–—،.!]*$/u;
+/* the headline of a post: its first real line, joined with the next line(s) when it is unfinished — a speaker line ending in «:»
+   («المتحدث باسم الخارجية الأمريكية:»), a trailing comma/dash, an open «, or fewer than 5 words — so statements are never cut */
 export function firstLine(html) {
   const txt = decode(decode(html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")));
-  for (let line of txt.split(/\n+/)) {
-    line = line.replace(/https?:\/\/\S+|t\.me\/\S+|@\w+/g, " ").replace(/#[\p{L}\p{N}_]+/gu, " ")
-      .replace(/^[\p{Extended_Pictographic}️‍\s•▪️◾️🔸🔹⭕️|:\-–—]*/u, "")
-      .replace(/^(?:خبر\s+)?عاجل(?:ة)?\s*[|:\-–—،]*\s*/u, "")
-      .replace(/^(?:ورد\s+الآن|ورد\s+للتو|الآن|الان|الآن\s+عاجل|متابعة|تحديث|مباشر|أخبار عاجلة|خبر عاجل|هام|مهم|عاجل\s+جدا|عاجل\s+جداً)\s*[|:\-–—،]+\s*/u, "")
-      .replace(/^[\p{Extended_Pictographic}️‍\s|:\-–—]*/u, "")
-      .replace(/[\p{Extended_Pictographic}️‍]+/gu, " ")
-      .replace(/\s+/g, " ").trim();
-    if (/^(?:(?:ورد|وردنا|وصلنا)\s+(?:الآن|الان|للتو)|الآن|الان|عاجل|متابعة|تحديث|هام|مهم)[\s|:/\\\-–—،.!]*$/u.test(line)) continue;   /* a label on its own line: the news is on the next line */
-    if (/\p{L}{2,}.*\p{L}{2,}/u.test(line)) return line;
-  }
-  return "";
+  const lines = txt.split(/\n+/).map(cleanLine).filter(l => l && !LABEL_ONLY.test(l) && /\p{L}{2,}/u.test(l));
+  if (!lines.length) return "";
+  let out = lines[0], i = 1;
+  const unfinished = t => /[:：،,؛\-–—]$/.test(t) || (t.match(/«/g) || []).length > (t.match(/»/g) || []).length || t.split(/\s+/).length < 5;
+  while (i < lines.length && unfinished(out) && out.length < 170) out = (out + " " + lines[i++]).replace(/\s+/g, " ").trim();
+  return /\p{L}{2,}.*\p{L}{2,}/u.test(out) ? out : "";
 }
 
 export function parseChannel(html) {

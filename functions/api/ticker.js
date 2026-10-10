@@ -223,6 +223,17 @@ export function clean(t, link, sportSrc = false) {
   if ((sportSrc || SPORT.test(t)) && SPORT_SOFT.test(t)) return null;
   if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
   // word policy
+  /* «طيران العدو الحربي» → «الطيران الحربي الإسرائيلي», «لطيران العدو» → «للطيران الإسرائيلي», «مسيّرة للعدو» → «مسيّرة إسرائيلية» */
+  t = t.replace(/(^|[^\p{L}])(و|ف|ب|ل)?(طيران|الطيران|طائرات|الطائرات|طائرة|مسيّرة|مسيرة|مسيّرات|مسيرات|مدفعية|المدفعية|دبابات|آليات|زوارق|بوارج|جيش|قوات|جنود|بحرية|زورق|دبابة|قوة)\s+(?:لل|ال)?عدو(?:\s+(?:ال)?(?:إسرائيلي|صهيوني))?((?:\s+(?:الحربي|الحربية|المسيّر|المسير|المسيرة|المسيّرة|التجسسي|الاستطلاعي))?)(?![\p{L}])/gu,
+    (m, a, p, n, adj) => {
+      const base = n.replace(/^ال/, ""), fem = /(ة|ات)$/.test(base) && !/^(قوات)$/.test(base);
+      if (/^(جيش|قوات)$/.test(base)) return a + (p === "ل" ? "للجيش" : (p || "") + "الجيش") + " الإسرائيلي";
+      if (base === "جنود") return a + (p || "") + "جنود إسرائيليون";
+      const def = n.startsWith("ال") || base === "طيران";
+      const head = def ? (p === "ل" ? "لل" : (p || "") + "ال") + base : (p || "") + base;
+      const a2 = (adj || "").trim();
+      return a + head + (a2 ? " " + (def ? a2 : a2.replace(/^ال/, "")) : "") + (def ? (fem ? " الإسرائيلية" : " الإسرائيلي") : (fem ? " إسرائيلية" : " إسرائيلي"));
+    });
   /* «غارة للعدو/للجيش/للاحتلال الإسرائيلي» → «غارة إسرائيلية», «قصف مدفعي للعدو» → «قصف مدفعي إسرائيلي», «مسيّرة معادية» → «مسيّرة إسرائيلية» */
   t = t.replace(/(غارة|غارات|ضربة|ضربات|مسيّرة|مسيرة|مسيّرات|مسيرات|طائرة|طائرات|قذيفة|قذائف|غارة جوية|هجمات|عملية|توغل|اعتداء|اعتداءات|قصف|استهداف|هجوم|تحليق|خرق|إنذار|تهديد|عدوان)((?:\s+(?:جوي|جوية|مدفعي|مدفعية|صاروخي|صاروخية|معادي|معادية|عنيف|عنيفة|مكثف|مكثفة|جديد|جديدة|مسيّرة|مسيرة|بمسيّرة|بمسيرة))*)\s+(?:لل(?:عدو|جيش|احتلال)|من\s+(?:ال)?(?:عدو|جيش|احتلال))\s+(?:ال)?(?:إسرائيلي|صهيوني)(?![\p{L}])/gu,
     (m, n, adj) => n + (adj || "").replace(/\s+معادي(ة)?/g, "") + (/(ة|ات)$/.test(n) || /(ات)$/.test(n) ? " إسرائيلية" : " إسرائيلي"));
@@ -484,7 +495,7 @@ export async function build(now = Date.now(), origin = "") {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=14"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=15"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

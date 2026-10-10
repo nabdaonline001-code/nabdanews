@@ -1,6 +1,6 @@
 /* Breaking news for the Telegram channel comes ONLY from the stations' own breaking-news Telegram channels
    (the owner: «يبدو أنك تأخذ الأخبار وليس فقط العواجل» → switch to real breaking streams).
-   Each outlet lists candidate public usernames; the first one whose public page (t.me/s/<name>) has posts is used,
+   Each outlet lists candidate public usernames (`trusted`: usernames the owner confirmed as the real channel); the first one whose public page (t.me/s/<name>) has posts is used,
    the others are ignored. Every post then goes through the site's own wording rules (clean() in ticker.js). */
 import { clean } from "../functions/api/ticker.js";
 
@@ -41,6 +41,9 @@ export function parseChannel(html) {
   for (const m of html.matchAll(/<div class="tgme_widget_message_wrap[\s\S]*?(?=<div class="tgme_widget_message_wrap|$)/g)) {
     const block = m[0];
     if (/tgme_widget_message_forwarded_from/.test(block)) continue;          /* reposts of other channels */
+    if (/tgme_widget_message_link_preview/.test(block)) continue;              /* post with an article link preview */
+    const bodyHtml = (block.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/) || [])[1] || "";
+    if (/<a\b[^>]*href="(?!https?:\/\/t\.me\/|\?q=)/i.test(bodyHtml) || /https?:\/\/(?!t\.me\/)\S+|www\.\S+/i.test(bodyHtml.replace(/<[^>]+>/g, " "))) continue;   /* «اقرأ المزيد: رابط» — the owner wants no linked news */
     const body = block.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     const time = block.match(/<time[^>]*datetime="([^"]+)"/);
     const post = block.match(/data-post="([^"]+)"/);
@@ -54,12 +57,16 @@ export function parseChannel(html) {
 
 const LEB = /لبنان|اللبناني|اللبنانية|بيروت|الضاحية|جنوب لبنان|الجنوب|البقاع|بعلبك|الهرمل|النبطية|صيدا|(?<!\p{L})صور(?!\p{L})|طرابلس|عكار|بنت جبيل|مرجعيون|حاصبيا|كفركلا|الخيام|الناقورة|اليونيفيل|حزب الله|الرئيس عون|الرئيس بري|نواف سلام|الرئيس سلام/u;
 
-async function page(name) {
+async function page(name, trusted) {
   try {
     const r = await fetch(`https://t.me/s/${name}`, { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "ar" }, signal: AbortSignal.timeout(15000) });
     if (!r.ok) return null;
     const h = await r.text();
-    return /tgme_widget_message_wrap/.test(h) ? h : null;
+    if (!/tgme_widget_message_wrap/.test(h)) return null;
+    /* fake look-alike channels: use a page only when Telegram marks it verified (blue tick) or the owner confirmed it */
+    const head = (h.match(/<div class="tgme_channel_info_header[\s\S]*?<\/div>\s*<\/div>/) || h.match(/<div class="tgme_header_title[\s\S]*?<\/div>/) || [""])[0];
+    if (!trusted && !/verified-icon/.test(head)) { console.log("skipped (not verified):", name); return null; }
+    return h;
   } catch (e) { return null; }
 }
 
@@ -68,7 +75,7 @@ export async function channelItems(now = Date.now(), freshMin = 30) {
   const items = [], used = {};
   await Promise.all(CHANNELS.map(async ch => {
     for (const name of ch.names) {
-      const h = await page(name);
+      const h = await page(name, (ch.trusted || []).map(x => x.toLowerCase()).includes(name.toLowerCase()));
       if (!h) continue;
       used[ch.id] = name;
       for (const p of parseChannel(h)) {

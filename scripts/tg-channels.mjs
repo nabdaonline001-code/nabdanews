@@ -43,6 +43,7 @@ export function firstLine(html) {
       .replace(/^[\p{Extended_Pictographic}️‍\s|:\-–—]*/u, "")
       .replace(/[\p{Extended_Pictographic}️‍]+/gu, " ")
       .replace(/\s+/g, " ").trim();
+    if (/^(?:(?:ورد|وردنا|وصلنا)\s+(?:الآن|الان|للتو)|الآن|الان|عاجل|متابعة|تحديث|هام|مهم)[\s|:/\\\-–—،.!]*$/u.test(line)) continue;   /* a label on its own line: the news is on the next line */
     if (/\p{L}{2,}.*\p{L}{2,}/u.test(line)) return line;
   }
   return "";

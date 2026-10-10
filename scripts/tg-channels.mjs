@@ -17,7 +17,7 @@ export const CHANNELS = [
   { id: "jazeera",    ...T("AjaNews") },
   { id: "arabiya",    ...T("Alarabiya") },
   { id: "araby",      ...T("AlarabyTelevision") },
-  { id: "mayadeen",   ...T("almayadeen") },
+  { id: "mayadeen",   ...T("almayadeen"), fix: true },
   { id: "mamlaka",    ...T("almamlakatvbreaking") },
   { id: "quds",       ...T("QudsN") },
   { id: "lebnow",     ...T("lebanonNewsNow") },

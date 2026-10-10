@@ -22,10 +22,14 @@ const tf = (u, o) => (++used > LIMIT ? Promise.reject(new Error("budget")) : fet
 /* Sanaa-side (Houthi) outlets: the news is taken from them but their loaded vocabulary is not (no "Saudi aggression",
    "aggression coalition", "mercenaries", "Zionist entity"…); a headline that still carries such a word is dropped */
 export const houthiFix = t => {
-  t = t.replace(/(?:ال)?تحالف\s+(?:ال)?عدوان(?:\s+(?:ال)?(?:سعودي|أمريكي|امريكي|إسرائيلي|بريطاني)){0,3}/g, "التحالف");
-  t = t.replace(/(?:ال)?عدوان\s+(?:ال)?(?:أمريكي\s+(?:ال)?)?سعودي(?:\s+(?:ال)?(?:أمريكي|امريكي))?/g, "السعودية");
+  /* «لا أريد استفزازاً في الصياغة»: a headline built on «العدوان السعودي/الأمريكي» or «تحالف العدوان» is dropped,
+     not rewritten (a rewrite like «ضحايا السعودية» still accuses); casualty wording is neutral («قتيلاً» not «شهيداً») */
+  if (/عدوان|مرتزق|غزاة|جرائم|مجازر|مجزرة|إجرام|إرهاب|وحشي|همجي|غاشم/u.test(t)) return "";
+  if (/سعودي|السعودية|الإمارات|إماراتي|التحالف/u.test(t) && /قصف|غار[ةا]|غارات|استهداف|استهدف|ضحايا|تصعيد|هجوم|قتل|مقتل|شهيد|شهداء|استشهاد|جرحى|جريح/u.test(t)) return "";   /* Saudi/Emirati blame from a Sanaa-side outlet is not published */
   t = t.replace(/للكيان\s+(?:ال)?صهيوني/g, "لإسرائيل").replace(/([وبف]?)(?:ال)?كيان\s+(?:ال)?صهيوني/g, "$1إسرائيل");
+  t = t.replace(/(^|[^\p{L}])(إسرائيل)\s+ي(\p{L}{2,})/gu, "$1$2 ت$3");   /* «الكيان الصهيوني يقصف» → «إسرائيل تقصف» */
   t = t.replace(/(?:ال)?صهيوني(?:ة)?/g, m => /ة$/.test(m) ? "الإسرائيلية" : "الإسرائيلي").replace(/(?:ال)?عدو\s+(?=(?:ال)?إسرائيل)/g, "");
+  t = t.replace(/شهيدا[ًً]?/g, "قتيلاً").replace(/شهيدان/g, "قتيلان").replace(/شهيدين/g, "قتيلين").replace(/(?:ال)?شهداء/g, m => m.startsWith("ال") ? "القتلى" : "قتلى").replace(/استشهاد/g, "مقتل");
   return /عدوان|مرتزق|الغزاة|عملاء|خونة|الخونة|الأعداء|(?<!\p{L})(?:لل|ال|ب|ل|و)?عدو(?!\p{L})/u.test(t) ? "" : t;
 };
 /* `agency`: official news agencies are named in front of their headlines («سانا: …»); every other outlet is never named.

@@ -204,7 +204,7 @@ export function tidy(t) {
   t = t.replace(/([.!،:؛])\1+/g, "$1");
   const m = t.match(/^(.*\S)\s+(\d{1,2})$/u);                                 // a stray counter glued to the end ("… لا طائل منه 4")
   if (m) { const prev = m[1].split(" ").pop(); if (!NUM_OK_BEFORE.test(prev) && !/\d/.test(prev) && m[1].length > 30) t = m[1]; }
-  t = t.replace(/ترمب/g, "ترامب");                                               // one spelling for the same name
+  t = t.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب");                                               // one spelling for the same name
   return t.replace(/\s+/g, " ").trim();
 }
 const arWords = t => (t.match(/[\u0621-\u064A]{2,}/g) || []).length;

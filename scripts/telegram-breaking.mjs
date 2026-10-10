@@ -55,7 +55,7 @@ for (const c of cand) {
   if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
   if (!st.seeded) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
   if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
-  if (await send("🚨 <b>عاجل |</b> " + c.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(1200); }
+  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(1200); }
 }
 if (!st.seeded) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);

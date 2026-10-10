@@ -1,0 +1,83 @@
+/* Breaking news for the Telegram channel comes ONLY from the stations' own breaking-news Telegram channels
+   (the owner: «يبدو أنك تأخذ الأخبار وليس فقط العواجل» → switch to real breaking streams).
+   Each outlet lists candidate public usernames; the first one whose public page (t.me/s/<name>) has posts is used,
+   the others are ignored. Every post then goes through the site's own wording rules (clean() in ticker.js). */
+import { clean } from "../functions/api/ticker.js";
+
+export const CHANNELS = [
+  { id: "jazeera",  names: ["AJABreaking", "ajanews"] },
+  { id: "arabiya",  names: ["AlArabiya_Brk", "AlArabiya"] },
+  { id: "hadath",   names: ["AlHadath_Brk", "alhadath"] },
+  { id: "sky",      names: ["skynewsarabia_breaking", "skynewsarabia_b", "skynewsarabia"] },
+  { id: "mayadeen", names: ["almayadeennews", "almayadeen"] },
+  { id: "manar",    names: ["almanarnews", "almanar_news"] },
+  { id: "lbci",     names: ["LBCI_NEWS", "lbcinews", "LBCIV7"] },
+  { id: "jadeed",   names: ["aljadeednews", "aljadeedtv"] },
+  { id: "mtv",      names: ["mtvlebanonnews", "mtvlebanon"] },
+  { id: "rt",       names: ["RTarabic"] },
+  { id: "bbc",      names: ["bbcarabic"] }
+];
+
+const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+const decode = s => s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : +e.slice(1)) : (ENT[e.toLowerCase()] ?? m));
+
+/* the first real line of a post, without labels, hashtags, links, mentions or the station's signature */
+export function firstLine(html) {
+  const txt = decode(html.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""));
+  for (let line of txt.split(/\n+/)) {
+    line = line.replace(/https?:\/\/\S+|t\.me\/\S+|@\w+/g, " ").replace(/#[\p{L}\p{N}_]+/gu, " ")
+      .replace(/^[\p{Extended_Pictographic}️‍\s•▪️◾️🔸🔹⭕️|:\-–—]*/u, "")
+      .replace(/^(?:خبر\s+)?عاجل(?:ة)?\s*[|:\-–—،]*\s*/u, "")
+      .replace(/^[\p{Extended_Pictographic}️‍\s|:\-–—]*/u, "")
+      .replace(/[\p{Extended_Pictographic}️‍]+/gu, " ")
+      .replace(/\s+/g, " ").trim();
+    if (/\p{L}{2,}.*\p{L}{2,}/u.test(line)) return line;
+  }
+  return "";
+}
+
+export function parseChannel(html) {
+  const out = [];
+  for (const m of html.matchAll(/<div class="tgme_widget_message_wrap[\s\S]*?(?=<div class="tgme_widget_message_wrap|$)/g)) {
+    const block = m[0];
+    if (/tgme_widget_message_forwarded_from/.test(block)) continue;          /* reposts of other channels */
+    const body = block.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    const time = block.match(/<time[^>]*datetime="([^"]+)"/);
+    const post = block.match(/data-post="([^"]+)"/);
+    if (!body || !time) continue;
+    const ts = Date.parse(time[1]);
+    const text = firstLine(body[1]);
+    if (text && ts) out.push({ text, ts, post: post ? post[1] : "" });
+  }
+  return out;
+}
+
+const LEB = /لبنان|اللبناني|اللبنانية|بيروت|الضاحية|جنوب لبنان|الجنوب|البقاع|بعلبك|الهرمل|النبطية|صيدا|(?<!\p{L})صور(?!\p{L})|طرابلس|عكار|بنت جبيل|مرجعيون|حاصبيا|كفركلا|الخيام|الناقورة|اليونيفيل|حزب الله|الرئيس عون|الرئيس بري|نواف سلام|الرئيس سلام/u;
+
+async function page(name) {
+  try {
+    const r = await fetch(`https://t.me/s/${name}`, { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "ar" }, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return null;
+    const h = await r.text();
+    return /tgme_widget_message_wrap/.test(h) ? h : null;
+  } catch (e) { return null; }
+}
+
+/* all fresh posts from every outlet, already in Nabda's wording; `used` reports which username answered for each outlet */
+export async function channelItems(now = Date.now(), freshMin = 30) {
+  const items = [], used = {};
+  await Promise.all(CHANNELS.map(async ch => {
+    for (const name of ch.names) {
+      const h = await page(name);
+      if (!h) continue;
+      used[ch.id] = name;
+      for (const p of parseChannel(h)) {
+        if (now - p.ts > freshMin * 60000 || p.ts - now > 5 * 60000) continue;
+        const t = clean(p.text, "", false);
+        if (t) items.push({ text: t, ts: p.ts, src: ch.id, leb: LEB.test(t) ? 1 : 0 });
+      }
+      break;
+    }
+  }));
+  return { items, used };
+}

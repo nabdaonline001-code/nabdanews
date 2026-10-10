@@ -767,9 +767,14 @@ html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.d
 #brklog .pl{display:inline-block;padding:1px 9px;font-size:.78rem;border:1px solid #5a7567;color:#5a7567;white-space:nowrap}
 #brklog .pl.man{background:#C8102E;border-color:#C8102E;color:#fff}
 #brklog .pl.now{background:#2F4A3E;border-color:#2F4A3E;color:#fff}
+#brklog .wabtn{padding:4px 12px;font-size:.82rem;border:1px solid #25a35a;background:#fff;color:#1d7d44;cursor:pointer;white-space:nowrap;font-family:inherit}
+#brklog .wabtn:hover{background:#eaf7ef}
+#brklog .wabtn.done{background:#25a35a;border-color:#25a35a;color:#fff}
+html[data-theme=dark] #brklog .wabtn{background:transparent;color:#7fd6a2;border-color:#3d8f61}
+html[data-theme=dark] #brklog .wabtn.done{background:#25a35a;color:#fff;border-color:#25a35a}
 #brklog .bl-note{margin:10px 0 0;font-size:.82rem;color:#6b7f74}
 #brklog .bl-empty{padding:18px;text-align:center}
-@media (max-width:700px){#brklog th:nth-child(4),#brklog td:nth-child(4){display:none}}
+@media (max-width:700px){#brklog th:nth-child(3),#brklog td:nth-child(3){display:none}}
 html[data-theme=dark] #brklog .bl-sum li{background:#16221c;border-color:#2c4136;color:#cfe0d6}
 html[data-theme=dark] #brklog td.tm{color:#cfe0d6}
 html[data-theme=dark] #brklog tr.on td{background:#14201a}
@@ -1798,6 +1803,29 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     rows.sort(function(x,y){ return y.t-x.t; });
     return rows;
   }
+  /* WhatsApp: channels have no posting API, so each headline gets a one-tap copy button in the WhatsApp format
+     («🔴 *عاجل |* الخبر», where *…* is WhatsApp bold); copied headlines are marked so they are not posted twice */
+  var WA={done:{}};
+  try{ WA.done=JSON.parse(localStorage.getItem("nabda_wa_done")||"{}")||{}; var _n=Date.now(); Object.keys(WA.done).forEach(function(k){ if(_n-WA.done[k]>172800000) delete WA.done[k]; }); }catch(e){ WA.done={}; }
+  function waKey(t){ return normTx(t).slice(0,40); }
+  function waText(t){ return "\uD83D\uDD34 *عاجل |* "+t; }
+  function waCopy(text,cb){
+    function fb(){ try{ var ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;opacity:0;top:0;left:0"; document.body.appendChild(ta); ta.select(); var ok=document.execCommand("copy"); document.body.removeChild(ta); cb(!!ok); }catch(e){ cb(false); } }
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ cb(true); },fb); } else fb(); }catch(e){ fb(); }
+  }
+  function bCopyBtn(text){
+    var k=waKey(text), b=document.createElement("button"); b.type="button"; b.className="wabtn";
+    function paint(){ var d=!!WA.done[k]; b.textContent=d?"نُسخ ✓":"نسخ"; b.classList.toggle("done",d); }
+    paint();
+    b.onclick=function(){
+      waCopy(waText(text),function(ok){
+        if(!ok){ b.textContent="تعذّر النسخ"; return; }
+        WA.done[k]=Date.now(); try{ localStorage.setItem("nabda_wa_done",JSON.stringify(WA.done)); }catch(e){}
+        b.textContent="تم النسخ ✓"; b.classList.add("done"); setTimeout(paint,1600);
+      });
+    };
+    return b;
+  }
   function bDraw(){
     if(!LG.wrap) return;
     var all=bRows(), now=Date.now(), today=bDay(now);
@@ -1811,7 +1839,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     if(!rows.length){ var p=document.createElement("p"); p.className="bl-empty empty"; p.textContent=LG.ok===false?"تعذّر جلب البيانات.":"لا توجد عواجل لعرضها."; LG.wrap.appendChild(p); }
     else{
       var tb=document.createElement("table"), th=document.createElement("thead"), hr=document.createElement("tr");
-      ["الوقت","النوع / المصدر","القسم","الخبر","الحالة"].forEach(function(h){ var c=document.createElement("th"); c.textContent=h; hr.appendChild(c); });
+      ["الوقت","النوع / المصدر","القسم","الخبر","الحالة","واتساب"].forEach(function(h){ var c=document.createElement("th"); c.textContent=h; hr.appendChild(c); });
       th.appendChild(hr); tb.appendChild(th);
       var tbd=document.createElement("tbody");
       rows.forEach(function(r){
@@ -1823,7 +1851,8 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
         var c3=document.createElement("td"); c3.textContent=catName(r.cat);
         var c4=document.createElement("td"); c4.className="tx"; c4.textContent=r.text;
         var c5=document.createElement("td"); var pn=document.createElement("span"); pn.className="pl"+(r.on?" now":""); pn.textContent=r.on?"على الشريط":"انتهى"; c5.appendChild(pn);
-        [c1,c2,c3,c4,c5].forEach(function(c){ tr.appendChild(c); }); tbd.appendChild(tr);
+        var c6=document.createElement("td"); c6.appendChild(bCopyBtn(r.text));
+        [c1,c2,c3,c4,c5,c6].forEach(function(c){ tr.appendChild(c); }); tbd.appendChild(tr);
       });
       tb.appendChild(tbd); LG.wrap.appendChild(tb);
     }

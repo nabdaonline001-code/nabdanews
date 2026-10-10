@@ -20,7 +20,7 @@ if (!DRY && (!TOKEN || !CHAT)) { console.log("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT
 async function send(text) {
   if (DRY) { console.log("[dry] " + text); return true; }
   for (let i = 0; i < 3; i++) {
-    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, disable_web_page_preview: true }) });
+    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "HTML", disable_web_page_preview: true }) });
     const j = await r.json().catch(() => ({}));
     if (j.ok) return true;
     if (r.status === 429) { await sleep(((j.parameters && j.parameters.retry_after) || 5) * 1000 + 500); continue; }
@@ -55,7 +55,7 @@ for (const c of cand) {
   if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
   if (!st.seeded) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
   if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
-  if (await send("🔴 عاجل | " + c.text)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(1200); }
+  if (await send("🚨 <b>عاجل |</b> " + c.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(1200); }
 }
 if (!st.seeded) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);

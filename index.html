@@ -1204,9 +1204,9 @@ function leadBtn(it,cls){
   });
   return b;
 }
-function storyEl(it,lbl){
+function storyEl(it,lbl,noimg){
   var d=el("div","story"), h=el("h3"), a=el("a",null,it.title); a.href=newsHref(it.id);
-  if(isImgSrc(it.image)){
+  if(!noimg&&isImgSrc(it.image)){
     /* small photo beside the headline (whole picture, never cropped) */
     d.classList.add("hasimg");
     var th=el("a","sthumb"); th.href=newsHref(it.id); th.tabIndex=-1; th.setAttribute("aria-hidden","true");
@@ -1252,7 +1252,7 @@ function renderHome(){
     var nl=NEWS.filter(isNewsSec).slice();
     nl.sort(function(x,y){ return y.order-x.order; }); nl=nl.slice(0,9);
     if(!nl.length) g.appendChild(el("div","story")).appendChild(el("p",null,"لا توجد أخبار بعد."));
-    nl.forEach(function(it){ var d=storyEl(it,false), p=d.querySelector("p"); if(p) p.remove(); var pdt=d.querySelector(".pdate"); if(pdt) pdt.remove(); g.appendChild(d); });
+    nl.forEach(function(it){ var d=storyEl(it,false,true), p=d.querySelector("p"); if(p) p.remove(); var pdt=d.querySelector(".pdate"); if(pdt) pdt.remove(); g.appendChild(d); });
   }
   var rl=document.getElementById("readlist");
   if(rl){
@@ -1309,7 +1309,7 @@ function renderHome(){
     Array.prototype.slice.call(sec.querySelectorAll(".story")).forEach(function(n){ n.remove(); });
     var list=NEWS.filter(function(n){ return n.section===k; }).slice(0,3);
     if(!list.length){ var e=el("div","story"); e.appendChild(el("p",null,"لا توجد أخبار بعد.")); sec.appendChild(e); return; }
-    list.forEach(function(it){ sec.appendChild(storyEl(it)); });
+    list.forEach(function(it){ sec.appendChild(storyEl(it,false,true)); });
   });
   syncSide();
 }

@@ -3,7 +3,7 @@
    The lines pass through the site's wording rules (loadedWords / houseNames / tidy). TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { loadedWords, houseNames, tidy, parseFeed } from "../functions/api/ticker.js";
+import { parseFeed } from "../functions/api/ticker.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "", DRY = !!process.env.TG_DRY;
 const STATE = path.join(".press-state", "sent.json");
@@ -31,17 +31,23 @@ await Promise.all(Object.entries(SITES).map(async ([paper, site]) => {
     const xml = await (await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) })).text();
     const its = parseFeed(xml).map(i => ({ title: i.title.replace(/\s+-\s+[^-]{2,40}$/, "").trim(), ts: i.ts })).filter(i => i.ts >= since && i.title.length >= 15 && !/^(?:رأي|مقال|كاريكاتير|افتتاحية)/.test(i.title)).sort((a, b) => a.ts - b.ts);
     if (!its.length) return;
-    let line = houseNames(tidy(loadedWords(its[0].title)));
-    if (line.length > 160) line = line.slice(0, line.lastIndexOf(" ", 157)) + "…";
+    /* the paper's own headline, word for word (owner: «مثل ما هي معنونة مع ذكر الصحيفة») — only spacing and stray quotes are tidied */
+    const line = its[0].title.replace(/^[«"“]+|[»"”]+$/g, "").replace(/\s+/g, " ").trim();
     if (line.length >= 12) best[paper] = line;
   } catch (e) {}
 }));
-const lines = PAPERS.filter(p => best[p]).map(p => `<b>${p}:</b> ${best[p].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}`);
+/* fixed layout, the same every morning, so readers know it at a glance:
+     صحف لبنان | الأحد 11 تشرين الأول 2026
+     ▪ النهار: «…»
+     ▪ الأخبار: «…»
+     ———
+     نبضة | جولة الصحف الصباحية */
+const esc = x => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const lines = PAPERS.filter(p => best[p]).map(p => `▪ <b>${p}:</b> «${esc(best[p])}»`);
 note(`papers found ${lines.length}: ${Object.keys(best).join("، ")}`);
 if (lines.length < 3) { note("too few newspaper headlines yet; nothing sent"); process.exit(0); }
-
-const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date());
-const text = `<b>عناوين الصحف اللبنانية |</b> ${dateAr}\n\n` + lines.join("\n\n");
+const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date()).replace(/،/g, "");
+const text = `<b>صحف لبنان |</b> ${dateAr}\n\n` + lines.join("\n\n") + `\n\n———\n<i>نبضة | جولة الصحف الصباحية</i>`;
 if (DRY) { console.log(text); for (const l of lines) note(l.replace(/<[^>]+>/g, "")); process.exit(0); }
 const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: CHAT, text, parse_mode: "HTML", disable_web_page_preview: true }) });
 const j = await r.json().catch(() => ({}));

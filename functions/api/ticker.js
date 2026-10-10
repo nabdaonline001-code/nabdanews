@@ -303,6 +303,14 @@ const sameWord = (x, y) => x === y || (x.length >= 5 && y.length >= 5 && x.slice
    both are published, and the one-source rule applies only inside each class */
 export const OFFICIAL = /^(?:هيئة عمليات التجارة البحرية|الجيش|المتحدث|المتحدثة|أدرعي|أفيخاي|قيادة الجيش|مديرية التوجيه|الدفاع المدني|وزارة|الخارجية|الرئاسة|رئاسة|البيت الأبيض|البنتاغون|الكرملين|حزب الله|سلاح الجو|الصليب الأحمر|الأمم المتحدة|اليونيفيل)/;
 export const isOfficial = (src, text, pre) => !!pre || src === "idf" || src === "nna" || src === "maritime" || OFFICIAL.test(text);
+/* the same specific figure in two headlines (309 injured, 41 dead…) plus one shared key word = the same story, whoever reports it
+   («الطيران السعودي يعلن إصابة 309…» = «هيئة الطيران المدني: إصابة 309 أشخاص…»); years and small counts do not count */
+const bigNums = t => new Set((t.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).match(/\d+(?:[.,]\d+)?/g) || []).filter(n => { const v = parseFloat(n.replace(",", ".")); return v >= 11 && !(v >= 1900 && v <= 2100); }));
+export const sameFigure = (a, b) => {
+  const A = bigNums(a), B = bigNums(b); if (!A.size || ![...A].some(n => B.has(n))) return false;
+  const wa = [...cwords(a)], wb = [...cwords(b)];
+  return wa.filter(w => wb.some(v => sameWord(w, v))).length >= 2;
+};
 export const similar = (a, b) => {
   const A = [...cwords(a)], B = [...cwords(b)];
   const inB = w => B.some(v => sameWord(w, v)), inA = w => A.some(v => sameWord(w, v));
@@ -487,7 +495,7 @@ export async function build(now = Date.now(), origin = "") {
         const k = norm(c.text), k2 = k.slice(0, 28);
         if (seen.has(k) || seen.has(k2)) continue;
         /* the same story from another source: one source only, and a direct channel is preferred over a topic search */
-        const d = picked.findIndex(p => p.off === c.off && similar(p.text, c.text));
+        const d = picked.findIndex(p => (p.off === c.off && similar(p.text, c.text)) || sameFigure(p.text, c.text));
         if (d >= 0) { if (picked[d].topic && !c.topic) { picked[d] = c; seen.add(k); seen.add(k2); } continue; }
         if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
         seen.add(k); seen.add(k2); picked.push(c); nc[cc] = (nc[cc] || 0) + 1; if (c.leb) nleb++;
@@ -502,7 +510,7 @@ export async function build(now = Date.now(), origin = "") {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=18"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=19"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

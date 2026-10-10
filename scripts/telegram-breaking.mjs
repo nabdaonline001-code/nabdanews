@@ -6,7 +6,7 @@
    already on the bar (nothing is posted), so the channel is not flooded. TG_TEST=1 sends one test message; TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { similar, isOfficial, JUNK, BAIT, VAGUE } from "../functions/api/ticker.js";
+import { similar, sameFigure, isOfficial, JUNK, BAIT, VAGUE } from "../functions/api/ticker.js";
 import { channelItems } from "../functions/api/_channels.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "";
@@ -98,15 +98,15 @@ const TAGS = [
   ["السودان", /السودان|السوداني(?!\s*محمد)|الخرطوم|الدعم السريع|البرهان/u]
 ];
 const hashtags = t => TAGS.map(([tag, rx]) => { const m = t.match(rx); return m ? [tag, m.index] : null; }).filter(Boolean).sort((a, b) => a[1] - b[1]).slice(0, 2).map(x => "#" + x[0].replace(/\s+/g, "_")).join(" ");
-let sent = 0;
+let sent = 0; const sentNow = [];
 for (const c of cand) {
   const k = norm(c.text);
   if (!k || st.keys.includes(k)) continue;
-  if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
+  if (st.texts.some(x => (x.off === c.off && similar(x.text, c.text)) || sameFigure(x.text, c.text)) || sentNow.some(x => similar(x, c.text) || sameFigure(x, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
   if (!st.seeded || !st.ch) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
   if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
   const tags = hashtags(c.text);
-  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + (tags ? "\n" + tags : ""), c.media)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
+  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + (tags ? "\n" + tags : ""), c.media)) { sent++; sentNow.push(c.text); st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
 }
 if (!st.seeded || !st.ch) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.ch = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);

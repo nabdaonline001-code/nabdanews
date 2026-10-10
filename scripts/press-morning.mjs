@@ -3,7 +3,7 @@
    The lines pass through the site's wording rules (loadedWords / houseNames / tidy). TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { parseNnaDay, loadedWords, houseNames, tidy } from "../functions/api/ticker.js";
+import { loadedWords, houseNames, tidy } from "../functions/api/ticker.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "", DRY = !!process.env.TG_DRY;
 const STATE = path.join(".press-state", "sent.json");
@@ -20,13 +20,12 @@ if (st.day === day && !DRY) { note("already sent today"); process.exit(0); }
 const target = Date.parse(day + "T05:00:00Z");
 if (!DRY && Date.now() < target) await new Promise(r => setTimeout(r, Math.min(target - Date.now(), 25 * 60000)));
 
-const get = async u => { const r = await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) }); if (!r.ok) throw new Error(u + " " + r.status); return r.text(); };
-let idx = "";
-try { idx = await get("https://nna-leb.gov.lb/ar/sitemap/news.xml"); } catch (e) { note("NNA unreachable: " + e.message); process.exit(0); }
-const cats = [...idx.matchAll(/\/sitemap\/cat\/(\d+)<\/loc>/g)].map(m => m[1]);
-const items = [];
-await Promise.all(cats.map(async c => { try { items.push(...parseNnaDay(await get(`https://nna-leb.gov.lb/ar/sitemap/n/${c}?date=${day}`))); } catch (e) {} }));
-
+let items = [];
+try {
+  const r = await fetch("https://nabdanews.org/api/press", { headers: { "User-Agent": "nabda-press-bot" }, signal: AbortSignal.timeout(60000) });
+  const j = await r.json(); items = j.items || []; if (j.err) note("NNA via site: " + j.err);
+} catch (e) { note("site unreachable: " + e.message); process.exit(0); }
+const cats = [];
 /* one headline per paper (its earliest one today = the morning press review), in a fixed order */
 const best = {};
 for (const it of items.sort((a, b) => a.ts - b.ts)) {
@@ -37,7 +36,7 @@ for (const it of items.sort((a, b) => a.ts - b.ts)) {
   if (line.length >= 12) best[paper] = line;
 }
 const lines = PAPERS.filter(p => best[p]).map(p => `<b>${p}:</b> ${best[p].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}`);
-note(`NNA sections ${cats.length}, items today ${items.length}, papers found ${lines.length}`);
+note(`items today ${items.length}, papers found ${lines.length}`);
 if (lines.length < 3) { note("too few newspaper headlines yet; nothing sent"); process.exit(0); }
 
 const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date());

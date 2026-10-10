@@ -218,7 +218,10 @@ export function clean(t, link, sportSrc = false, allowMedia = false) {
   t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
   if (!t || /[؟?]/.test(t) || (!allowMedia && MEDIA.test(t)) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
   if (TAGLINE.test(t)) return null;
-  if (JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return null;   /* a feed's own name/tagline («أحدث أخبار مصر والعالم») is not news */
+  if (JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return null;
+  /* a bulletin/programme title that strings two or more stories together («استهداف… وترامب يتوعد…، تصعيد ميداني ومعارك…») is not a breaking item */
+  if (!/[:：«"]/.test(t)) { const parts = t.split(/\s*[،,؛]\s*/).filter(x => x.split(/\s+/).length >= 4); if (parts.length >= 2 && t.split(/\s+/).length >= 14) return null; }
+  if (/على الساحة|المشهد (?:الميداني|السياسي|اليمني|السوري|اللبناني|العراقي)|تصعيد ميداني|معارك محتدمة|تطورات متسارعة|آخر التطورات|أبرز التطورات|حصاد|جولة إخبارية|في ملفات|ملفات ساخنة/u.test(t)) return null;   /* a feed's own name/tagline («أحدث أخبار مصر والعالم») is not news */
   if (t.length < 14 || t.length > 190) return null;
   if ((sportSrc || SPORT.test(t)) && SPORT_SOFT.test(t)) return null;
   if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
@@ -499,7 +502,7 @@ export async function build(now = Date.now(), origin = "") {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=17"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=18"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

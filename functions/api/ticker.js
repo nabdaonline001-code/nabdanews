@@ -17,7 +17,7 @@ const gnewsAny = sites => `https://news.google.com/rss/search?q=${encodeURICompo
 /* Pages Functions allow ~50 subrequests per call: count every fetch and refuse beyond the limit (first tries always
    go out before any fallback, so fallbacks are what gets dropped when many feeds are down) */
 let used = 0;
-const LIMIT = 46;
+const LIMIT = 47;
 const tf = (u, o) => (++used > LIMIT ? Promise.reject(new Error("budget")) : fetch(u, o));
 /* Sanaa-side (Houthi) outlets: the news is taken from them but their loaded vocabulary is not (no "Saudi aggression",
    "aggression coalition", "mercenaries", "Zionist entity"…); a headline that still carries such a word is dropped */
@@ -201,6 +201,11 @@ export function loadedWords(t) {
   t = t.replace(LEAD_OUTLET, "").replace(TAIL_OUTLET, "");
   return t;
 }
+/* editorial gate shared by the site bar and the Telegram channel (owner, 2026-10-10): no site names/taglines (JUNK), no clickbait,
+   article or entertainment headlines (BAIT), no teasers or analysis titles (VAGUE) */
+export const JUNK = /^(?:(?:أحدث|احدث|آخر|اخر|أهم|اهم|أبرز|ابرز|جديد|كل|متابعة|تغطية|موجز|نشرة|ملخص|عناوين|تحديثات|مباشر)(?!\p{L})|(?:ال)?أخبار(?!\p{L}))|أخبار\s+\S+\s+والعالم|لحظة بلحظة|على مدار الساعة|الموقع الرسمي|اشترك|تابعونا|حمّل التطبيق|حمل التطبيق|المزيد|اقرأ أيضا|اقرأ أيضاً/u;
+export const BAIT = /يشعل|تشعل|أشعل|أشعلت|غضب|يثير|تثير|أثار|أثارت|يفجّر جدلاً|تفجّر جدلاً|يفجر جدلا|جدل|جدلا|جدلاً|صفعة|ضربة موجعة|ضربة قاسية|زلزال سياسي|يقلب|تقلب|الطاولة|كابوس|معركة كسر|رسالة إلى|رسائل إلى|بالتفاصيل|خفايا|كواليس|تقرير|دراسة|تحقيق صحفي|صحيفة|صحف|مقال|افتتاحية|غامض|غامضة|مثير|مثيرة|صادم|صادمة|مفاجأة|مفاجئة|مفاجئ|لن تصدق|يكشف سر|تكشف سر|كواليس|رسالة من|رسالة جديدة|تغريدة|منشور|يعلق على|تعلق على|يرد على|ترد على|تركي آل الشيخ|آل الشيخ|هيئة الترفيه|موسم الرياض/u;
+export const VAGUE = /^(?:هذا|هذه|هكذا|إليك|اليكم|إليكم|تعرف|تعرّف|ما الذي|ماذا|من هو|من هي|كيف|لماذا|هل)(?!\p{L})|…|\.\.\.|تعرف على|تعرّف على|السبب وراء|سر |أسرار|بالتفاصيل|التفاصيل الكاملة|ما حدث|ما جرى|مسارات|سيناريوهات|سيناريو|قراءة في|تحليل|ما بعد|ماذا بعد|أبعاد|دلالات|رسائل|حسابات|خيارات|تداعيات|مستقبل|إلى أين|الى أين|بين التصعيد|التصعيد والتهدئة|ملف |حدود |معادلة|لعبة |ما قاله|ما قالته|في ظروف|حقيقة /u;
 export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
@@ -212,7 +217,8 @@ export function clean(t, link, sportSrc = false) {
   if (!t || /مراسل/.test(t)) return null;   /* the bar carries the news itself, never "our reporter says…" */
   t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
   if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
-  if (TAGLINE.test(t)) return null;   /* a feed's own name/tagline («أحدث أخبار مصر والعالم») is not news */
+  if (TAGLINE.test(t)) return null;
+  if (JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return null;   /* a feed's own name/tagline («أحدث أخبار مصر والعالم») is not news */
   if (t.length < 14 || t.length > 190) return null;
   if ((sportSrc || SPORT.test(t)) && SPORT_SOFT.test(t)) return null;
   if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
@@ -232,14 +238,19 @@ export function clean(t, link, sportSrc = false) {
   t = loadedWords(t);
   t = tidy(t);
   t = houseNames(t);
-  if (!t || arWords(t) < 3) return null;
+  if (!t || arWords(t) < 3 || BROKEN.test(t)) return null;
   return t;
 }
 /* typography and stray-noise clean-up so every headline reads like a newsroom headline */
 const NUM_OK_BEFORE = /^(إلى|الى|نحو|حوالي|قرابة|بنسبة|عند|حصيلة|مقتل|إصابة|وفاة|رقم|المرتبة|الجولة|يوم|عام|سنة|دقيقة|ساعة|جولة|الدور|المجموعة|الفئة|ب|ل|من|في|على|بين|و)$/;
+const FLAGS = { SA: "السعودية", AE: "الإمارات", QA: "قطر", KW: "الكويت", BH: "البحرين", OM: "عُمان", LB: "لبنان", SY: "سوريا", IQ: "العراق", IR: "إيران", IL: "إسرائيل", PS: "فلسطين", YE: "اليمن", EG: "مصر", JO: "الأردن", US: "الولايات المتحدة", RU: "روسيا", UA: "أوكرانيا", TR: "تركيا", FR: "فرنسا", GB: "بريطانيا", DE: "ألمانيا", CN: "الصين", SD: "السودان", LY: "ليبيا", TN: "تونس", DZ: "الجزائر", MA: "المغرب", PK: "باكستان", AF: "أفغانستان", IN: "الهند", IT: "إيطاليا", ES: "إسبانيا", CY: "قبرص", GR: "اليونان", JP: "اليابان", KP: "كوريا الشمالية", KR: "كوريا الجنوبية" };
+/* a word lost from the middle of a sentence (an emoji that stood for a word) leaves a dangling preposition: such a headline is not sent */
+export const BROKEN = /(?<!\p{L})(?:على|في|من|إلى|الى|عن|مع|ضد|بين|نحو|لدى)\s+(?:و|ف)(?=\p{L})|(?<!\p{L})(?:على|في|من|إلى|الى|عن|مع|ضد|بين|نحو|لدى|و)\s*[،,.:]|(?<!\p{L})(?:على|في|من|إلى|الى|عن|مع|ضد|بين|نحو|لدى|و)\s*$/u;
 export function tidy(t) {
   t = t.replace(/&(?:amp;)*(?:rlm|lrm|zwj|zwnj|shy|nbsp|#8207|#8206|#x200f|#x200e|#160);?/gi, " ");   // HTML direction marks that arrived undecoded («&rlm;»)
   t = t.replace(/[\u200e\u200f\u202a-\u202e\u00a0]/g, " ").replace(/\s+/g, " ").trim();
+  /* a flag used as a word («هجمات الحوثي على 🇸🇦 وأمن 🇸🇦…») becomes the country's name; flags used as decoration are dropped below */
+  t = t.replace(/(\p{L}[\s‏‎]*)((?:\p{Regional_Indicator}{2}))(?=[\s‏‎]*[\p{L}،,.:]|$)/gu, (m, a, f) => { const n = FLAGS[String.fromCodePoint(...[...f].map(c => c.codePointAt(0) - 0x1F1E6 + 65))]; return n ? a + " " + n : m; });
   t = t.replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim();   // no emojis/flags anywhere: the site and channel stay neutral («سياستنا لا تشجع أحداً»)
   t = t.replace(/^[\-–—•·|:؛,،\s]+|[\-–—•·|\s]+$/g, "");                       // stray bullets / dashes at the edges
   t = t.replace(/\s*[|｜]\s*(?:قناة\s*)?(?:الجزيرة|العربية|الحدث|الجديد|إل بي سي|ام تي في|MTV|LBCI|النهار|الوكالة الوطنية للإعلام|سكاي نيوز عربية|الميادين|العالم|RT|روسيا اليوم|الشرق|الشرق للأخبار|الإخبارية السورية|السومرية|اليوم السابع|الأهرام|CNBC عربية|الشرق بلومبرغ|beIN SPORTS|سبورت 360|في الجول|العربي الجديد|فرانس 24)\s*$/u, ""); // source suffix
@@ -250,6 +261,7 @@ export function tidy(t) {
   const m = t.match(/^(.*\S)\s+(\d{1,2})$/u);                                 // a stray counter glued to the end ("… لا طائل منه 4")
   if (m) { const prev = m[1].split(" ").pop(); if (!NUM_OK_BEFORE.test(prev) && !/\d/.test(prev) && m[1].length > 30) t = m[1]; }
   t = t.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب");                                               // one spelling for the same name
+  t = t.replace(/\s*[.۔]+\s*$/u, "");                                          // no full stop at the end of a headline
   return t.replace(/\s+/g, " ").trim();
 }
 const arWords = t => (t.match(/[\u0621-\u064A]{2,}/g) || []).length;
@@ -411,10 +423,19 @@ const LEB_MAX = 24;
 const CATCAP = { politics: 26, economy: 7, sports: 7 };
 const TARGET = 40;     /* headlines in the bar (about one hour's worth) */
 const PER_SOURCE = 6;  /* at most this many from any one channel */
-export async function build(now = Date.now()) {
+export async function build(now = Date.now(), origin = "") {
   used = 0;
+  /* the owner's breaking Telegram channels (via /api/tgfeed, its own budget); started first so it always gets a sub-request slot */
+  const tgP = origin ? tf(origin + "/api/tgfeed").then(r => r.ok ? r.json() : { items: [] }).catch(e => ({ items: [], err: String(e.message || e) })) : Promise.resolve({ items: [] });
   const res = await Promise.all(SOURCES.map(s => fetchFeed(s).then(r => ({ s, r }))));
   const status = {}, cand = [];
+  const tg = await tgP;
+  for (const it of tg.items || []) {
+    if (!it || !it.text || it.ts > now + 600000) continue;
+    const src = "tg_" + it.src;
+    cand.push({ text: it.text, ts: it.ts, leb: it.leb || isLeb(src, it.text), src, topic: false, sport: SPORT.test(it.text), off: isOfficial(src, it.text, ""), pre: "", cap: PER_SOURCE });
+  }
+  status.telegram = tg.err ? { ok: false, err: tg.err } : { ok: true, usable: (tg.items || []).length, channels: Object.keys(tg.used || {}).length };
   for (const { s, r } of res) {
     const mine = [];
     for (const it of r.items) {
@@ -463,7 +484,7 @@ export async function build(now = Date.now()) {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=13"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=14"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {
@@ -477,7 +498,7 @@ export async function liveTicker({ request, env, waitUntil }, fresh) {
   const cache = typeof caches !== "undefined" ? caches.default : null;
   const key = new Request(new URL(request.url).origin + KEYV);
   if (cache && !fresh) { const hit = await cache.match(key); if (hit) return hit; }
-  const data = await build();
+  const data = await build(Date.now(), new URL(request.url).origin);
   const res = new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": data.items.length ? "public, max-age=300" : "public, max-age=60" } });
   const jobs = [logSeen(env, data)]; if (cache) jobs.push(cache.put(key, res.clone()));
   const all = Promise.all(jobs); if (waitUntil) waitUntil(all); else await all;

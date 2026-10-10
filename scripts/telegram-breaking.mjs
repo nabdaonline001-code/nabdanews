@@ -6,8 +6,8 @@
    already on the bar (nothing is posted), so the channel is not flooded. TG_TEST=1 sends one test message; TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { similar, isOfficial } from "../functions/api/ticker.js";
-import { channelItems } from "./tg-channels.mjs";
+import { similar, isOfficial, JUNK, BAIT, VAGUE } from "../functions/api/ticker.js";
+import { channelItems } from "../functions/api/_channels.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "";
 const DRY = !!process.env.TG_DRY, TEST = !!process.env.TG_TEST;
@@ -47,9 +47,6 @@ try {
   for (const [id, b] of Object.entries(site.breaking || {})) if (b && b.text && b.order > 1e12 && now - b.order <= FRESH_MIN * 60000) cand.push({ text: String(b.text).trim(), ts: b.order, man: 1, off: 1 });
 } catch (e) { console.error("site.json:", e.message); }
 /* the channel is public: no site names/taglines, no teasers or analysis titles, no clickbait/entertainment, no sport («كل خبر ليس واضحاً لا أريده», «لا أريد رياضة») */
-const JUNK = /^(?:(?:أحدث|احدث|آخر|اخر|أهم|اهم|أبرز|ابرز|جديد|كل|متابعة|تغطية|موجز|نشرة|ملخص|عناوين|تحديثات|مباشر)(?!\p{L})|(?:ال)?أخبار(?!\p{L}))|أخبار\s+\S+\s+والعالم|لحظة بلحظة|على مدار الساعة|الموقع الرسمي|اشترك|تابعونا|حمّل التطبيق|حمل التطبيق|المزيد|اقرأ أيضا|اقرأ أيضاً/u;
-const BAIT = /يشعل|تشعل|أشعل|أشعلت|غضب|يثير|تثير|أثار|أثارت|يفجّر جدلاً|تفجّر جدلاً|يفجر جدلا|جدل|جدلا|جدلاً|صفعة|ضربة موجعة|ضربة قاسية|زلزال سياسي|يقلب|تقلب|الطاولة|كابوس|معركة كسر|رسالة إلى|رسائل إلى|بالتفاصيل|خفايا|كواليس|تقرير|دراسة|تحقيق صحفي|صحيفة|صحف|مقال|افتتاحية|غامض|غامضة|مثير|مثيرة|صادم|صادمة|مفاجأة|مفاجئة|مفاجئ|لن تصدق|يكشف سر|تكشف سر|كواليس|رسالة من|رسالة جديدة|تغريدة|منشور|يعلق على|تعلق على|يرد على|ترد على|تركي آل الشيخ|آل الشيخ|هيئة الترفيه|موسم الرياض/u;
-const VAGUE = /^(?:هذا|هذه|هكذا|إليك|اليكم|إليكم|تعرف|تعرّف|ما الذي|ماذا|من هو|من هي|كيف|لماذا|هل)(?!\p{L})|…|\.\.\.|تعرف على|تعرّف على|السبب وراء|سر |أسرار|بالتفاصيل|التفاصيل الكاملة|ما حدث|ما جرى|مسارات|سيناريوهات|سيناريو|قراءة في|تحليل|ما بعد|ماذا بعد|أبعاد|دلالات|رسائل|حسابات|خيارات|تداعيات|مستقبل|إلى أين|الى أين|بين التصعيد|التصعيد والتهدئة|ملف |حدود |معادلة|لعبة |ما قاله|ما قالته|في ظروف|حقيقة /u;
 const TG_SPORT = /رياض[ةي]|الرياضة|مباراة|المباراة|مباريات|كأس|منتخب|فيفا|الفيفا|يويفا|(?<!\p{L})(?:ال)?(?:دوري|نادي|أندية|مدرب|مدربة|لاعب|لاعبة|لاعبون|لاعبين|هدف|أهداف|ملعب|الملعب|حكم المباراة|ركلة|بطولة|بطل العالم|نهائي|ميدالية|ميداليات)(?!\p{L})|كرة القدم|كرة السلة|كرة اليد|كرة الطائرة|التنس|الأولمبي|الأولمبية|أولمبياد|فورمولا|سباق|رالي|ملاكمة|المصارعة|الجودو|السباحة|ألعاب القوى|ماراثون|ريال مدريد|برشلونة|ليفربول|مانشستر|بايرن|يوفنتوس|باريس سان جيرمان|الزمالك|النادي الأهلي|ميسي|رونالدو|صلاح|انتقالات|سوق الانتقالات|الاتحاد اللبناني لكرة|الاتحاد الدولي لكرة/u;
 const publishable = (t, src) => { if (TG_SPORT.test(t)) return false; const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x)); return w.length >= 5 && t.replace(/[^\p{L}]/gu, "").length >= 22 && !JUNK.test(t) && !BAIT.test(t) && !VAGUE.test(t); };
 let data = { items: [], used: {} };

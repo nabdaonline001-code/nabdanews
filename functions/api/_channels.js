@@ -2,7 +2,7 @@
    (the owner: «يبدو أنك تأخذ الأخبار وليس فقط العواجل» → switch to real breaking streams).
    Each outlet lists candidate public usernames (`trusted`: usernames the owner confirmed as the real channel); the first one whose public page (t.me/s/<name>) has posts is used,
    the others are ignored. Every post then goes through the site's own wording rules (clean() in ticker.js). */
-import { clean, houthiFix } from "../functions/api/ticker.js";
+import { clean, houthiFix } from "./ticker.js";
 
 /* the owner's own list of breaking channels (2026-10-10). `trusted` = confirmed by the owner, so no blue tick is needed.
    `fix`: outlets whose loaded vocabulary must not reach the channel (Houthi / Iranian / Al-Alam): same rule as the site («مرتزقة», «العدوان السعودي», «الكيان الصهيوني»…). */

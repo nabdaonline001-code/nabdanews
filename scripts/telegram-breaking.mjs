@@ -79,6 +79,25 @@ const LEADERS = /نعيم قاسم|الشيخ قاسم|أمين عام حزب ا
 for (const c of cand) c.lead = LEADERS.test(c.text) ? 1 : 0;
 cand.sort((a, b) => (b.man - a.man) || (b.lead - a.lead) || ((b.leb || 0) - (a.leb || 0)) || (b.ts - a.ts));   /* manual, then decision-makers, then Lebanon, then newest */   /* manual first, then Lebanon, then newest */
 
+/* country hashtags under each breaking item (Telegram only, never on the site): at most two, in the order the countries appear */
+const TAGS = [
+  ["لبنان", /لبنان|اللبناني|بيروت|الضاحية|البقاع|بعلبك|الهرمل|النبطية|صيدا|(?<!\p{L})صور(?!\p{L})|طرابلس|عكار|بنت جبيل|مرجعيون|حاصبيا|الخيام|كفركلا|الناقورة|عيترون|ميس الجبل|عيتا الشعب|يارون|بعبدا|الرئيس عون|الرئيس بري|نواف سلام|حزب الله|نعيم قاسم|اليونيفيل/u],
+  ["فلسطين", /فلسطين|الفلسطيني|غزة|القطاع|الضفة|القدس|الأقصى|جنين|نابلس|طولكرم|الخليل|رام الله|بيت لحم|رفح|خان ?يونس|جباليا|حماس|أبو عبيدة|دورا/u],
+  ["سوريا", /سوريا|السوري|دمشق|حلب|حمص|حماة|اللاذقية|طرطوس|درعا|السويداء|دير الزور|الرقة|إدلب|القنيطرة|الشرع/u],
+  ["العراق", /العراق|العراقي|بغداد|البصرة|الموصل|أربيل|كركوك|النجف|كربلاء|السوداني/u],
+  ["اليمن", /اليمن|اليمني|صنعاء|الحديدة|عدن|مأرب|تعز|صعدة|لحج|الحوثي|الحوثيين|الحوثيون/u],
+  ["إيران", /إيران|الإيراني|طهران|خامنئي|بزشكيان|عراقجي|الحرس الثوري/u],
+  ["السعودية", /السعودية|السعودي|الرياض|جدة|محمد بن سلمان|الملك سلمان/u],
+  ["مصر", /مصر|المصري|القاهرة|السيسي/u],
+  ["الأردن", /الأردن|الأردني|عمّان|الملك عبدالله/u],
+  ["الخليج", /الإمارات|الإماراتي|أبوظبي|دبي|قطر|القطري|الدوحة|الكويت|البحرين|عُمان|مسقط|مجلس التعاون/u],
+  ["أمريكا", /الولايات المتحدة|الأمريكي|الأمريكية|واشنطن|البيت الأبيض|ترامب|البنتاغون|روبيو|فانس|ويتكوف/u],
+  ["روسيا", /روسيا|الروسي|موسكو|بوتين|الكرملين/u],
+  ["أوكرانيا", /أوكرانيا|الأوكراني|كييف|زيلينسكي/u],
+  ["تركيا", /تركيا|التركي|أنقرة|إسطنبول|أردوغان/u],
+  ["السودان", /السودان|السوداني(?!\s*محمد)|الخرطوم|الدعم السريع|البرهان/u]
+];
+const hashtags = t => TAGS.map(([tag, rx]) => { const m = t.match(rx); return m ? [tag, m.index] : null; }).filter(Boolean).sort((a, b) => a[1] - b[1]).slice(0, 2).map(x => "#" + x[0].replace(/\s+/g, "_")).join(" ");
 let sent = 0;
 for (const c of cand) {
   const k = norm(c.text);
@@ -86,7 +105,8 @@ for (const c of cand) {
   if (st.texts.some(x => x.off === c.off && similar(x.text, c.text))) { st.keys.push(k); continue; }   /* same story already sent (same class: official / report) */
   if (!st.seeded || !st.ch) { st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); continue; }
   if (sent >= MAX_PER_RUN || st.times.length >= MAX_PER_HOUR) break;
-  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), c.media)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
+  const tags = hashtags(c.text);
+  if (await send("🔴 <b>عاجل |</b> " + c.text.replace(/ترم[\u064E\u0652]?[بپ]|ترامپ/g, "ترامب").replace(/[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{Regional_Indicator}\uFE0F\u200d\u20e3]+/gu, " ").replace(/\s+/g, " ").trim().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + (tags ? "\n" + tags : ""), c.media)) { sent++; st.keys.push(k); st.texts.push({ text: c.text, off: c.off, t: now }); st.times.push(Date.now()); await sleep(2000); }
 }
 if (!st.seeded || !st.ch) console.log("first run: recorded " + st.keys.length + " current items without posting");
 st.seeded = true; st.ch = true; st.keys = st.keys.slice(-400); st.texts = st.texts.slice(-80);

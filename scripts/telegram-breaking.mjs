@@ -11,7 +11,9 @@ import { channelItems } from "./tg-channels.mjs";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "";
 const DRY = !!process.env.TG_DRY, TEST = !!process.env.TG_TEST;
-const MAX_PER_RUN = 15, MAX_PER_HOUR = 60, FRESH_MIN = 30;
+/* steady flow, not bursts: at most 3 items per one-minute pass (the rest wait for the next pass, most important first),
+   and a high hourly ceiling so the channel does not fall silent mid-hour («تأتي بسرعة ورا بعضها وتقف فجأة») */
+const MAX_PER_RUN = 3, MAX_PER_HOUR = 120, FRESH_MIN = 30;
 const STATE = path.join(".tg-state", "sent.json");
 const norm = s => String(s || "").replace(/^هيئة عمليات التجارة البحرية البريطانية\s*[:：]\s*/, "").replace(/[ً-ْـ]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\p{L}\p{N}]/gu, "").slice(0, 40);
 const sleep = ms => new Promise(r => setTimeout(r, ms));

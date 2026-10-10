@@ -21,9 +21,17 @@ const LIMIT = 46;
 const tf = (u, o) => (++used > LIMIT ? Promise.reject(new Error("budget")) : fetch(u, o));
 /* Sanaa-side (Houthi) outlets: the news is taken from them but their loaded vocabulary is not (no "Saudi aggression",
    "aggression coalition", "mercenaries", "Zionist entity"…); a headline that still carries such a word is dropped */
+/* South Lebanon and Palestine are the exception («ما عدا جنوب لبنان وفلسطين»): their news keeps «شهيد/شهداء» and is not dropped
+   for strong wording; only the house names apply («الكيان الصهيوني» → «إسرائيل», «قوات الاحتلال» → «الجيش الإسرائيلي» via loadedWords) */
+const SOUTH_PAL = /جنوب لبنان|الجنوب اللبناني|الجنوب|بنت جبيل|النبطية|مرجعيون|حاصبيا|صور|صيدا|الخيام|كفركلا|عيترون|ميس الجبل|الناقورة|يارون|مارون الراس|عيتا الشعب|رميش|الضاحية|البقاع|بعلبك|لبنان|اللبناني|اللبنانية|فلسطين|الفلسطيني|الفلسطينية|فلسطينيين|فلسطينيون|غزة|القطاع|الضفة|القدس|الأقصى|جنين|نابلس|طولكرم|الخليل|رام الله|بيت لحم|رفح|خان يونس|خانيونس|جباليا|دير البلح|النصيرات|الشجاعية|طوباس|قلقيلية|أريحا/u;
 export const houthiFix = t => {
   /* «لا أريد استفزازاً في الصياغة»: a headline built on «العدوان السعودي/الأمريكي» or «تحالف العدوان» is dropped,
      not rewritten (a rewrite like «ضحايا السعودية» still accuses); casualty wording is neutral («قتيلاً» not «شهيداً») */
+  const sp = SOUTH_PAL.test(t);
+  if (sp) {
+    t = t.replace(/للكيان\s+(?:ال)?صهيوني/g, "لإسرائيل").replace(/([وبف]?)(?:ال)?كيان\s+(?:ال)?صهيوني/g, "$1إسرائيل").replace(/(^|[^\p{L}])(إسرائيل)\s+ي(\p{L}{2,})/gu, "$1$2 ت$3");
+    return t.replace(/(?:ال)?صهيوني(?:ة)?/g, m => /ة$/.test(m) ? "الإسرائيلية" : "الإسرائيلي");
+  }
   if (/عدوان|مرتزق|غزاة|جرائم|مجازر|مجزرة|إجرام|إرهاب|وحشي|همجي|غاشم/u.test(t)) return "";
   if (/سعودي|السعودية|الإمارات|إماراتي|التحالف/u.test(t) && /قصف|غار[ةا]|غارات|استهداف|استهدف|ضحايا|تصعيد|هجوم|قتل|مقتل|شهيد|شهداء|استشهاد|جرحى|جريح/u.test(t)) return "";   /* Saudi/Emirati blame from a Sanaa-side outlet is not published */
   t = t.replace(/للكيان\s+(?:ال)?صهيوني/g, "لإسرائيل").replace(/([وبف]?)(?:ال)?كيان\s+(?:ال)?صهيوني/g, "$1إسرائيل");

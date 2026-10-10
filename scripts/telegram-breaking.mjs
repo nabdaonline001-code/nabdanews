@@ -50,8 +50,13 @@ try { data = await build(); } catch (e) { console.error("ticker build failed:", 
 const JUNK = /^(?:(?:أحدث|احدث|آخر|اخر|أهم|اهم|أبرز|ابرز|جديد|كل|متابعة|تغطية|موجز|نشرة|ملخص|عناوين|تحديثات|مباشر)(?!\p{L})|(?:ال)?أخبار(?!\p{L}))|أخبار\s+\S+\s+والعالم|لحظة بلحظة|على مدار الساعة|الموقع الرسمي|اشترك|تابعونا|حمّل التطبيق|حمل التطبيق|المزيد|اقرأ أيضا|اقرأ أيضاً/u;
 /* clickbait and celebrity/entertainment figures are never breaking news on the channel */
 const BAIT = /غامض|غامضة|مثير|مثيرة|صادم|صادمة|مفاجأة|مفاجئة|مفاجئ|لن تصدق|يكشف سر|تكشف سر|كواليس|رسالة من|رسالة جديدة|تغريدة|منشور|يعلق على|تعلق على|يرد على|ترد على|تركي آل الشيخ|آل الشيخ|هيئة الترفيه|موسم الرياض/u;
-const publishable = t => { const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x)); return w.length >= 6 && t.replace(/[^\p{L}]/gu, "").length >= 30 && !JUNK.test(t) && !BAIT.test(t); };
-for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && it.cat !== "sports" && publishable(it.text)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.pri ? 1 : 0, off: it.off ? 1 : 0 });
+/* «كل خبر ليس واضحاً لا أريده»: a channel item must say who did what — a concrete event word — and must not be vague,
+   teaser-style or from a broad aggregated feed (Egyptian portals, the open regional search) */
+const TG_SKIP_SRC = new Set(["egypt", "region_topic"]);
+const CLEAR = /غار[ةا]|قصف|استهداف|استهدف|يستهدف|انفجار|تفجير|نسف|اغتيال|مقتل|قتلى|قتيل|شهيد|شهداء|جريح|جرحى|إصاب|اشتباك|هجوم|صاروخ|صواريخ|مسيّر|مسير|اعتراض|إنذار|صفارات|توغل|اقتحام|اعتقال|اعتقل|أسر |يعلن|أعلن|تعلن|أعلنت|بيان|يستقبل|استقبل|تستقبل|يلتقي|التقى|تلتقي|اجتماع|يجتمع|زيارة|يزور|زار|قرار|يقرر|قرر|يقر|أقر|أقرّ|مرسوم|انتخاب|استقال|توقيع|وقّع|وقع على|اتفاق|مفاوضات|محادثات|عقوبات|يدين|أدان|تدين|يحذر|حذر|حذّر|يطالب|طالب|دعا|يدعو|تدعو|وصل|يصل|غادر|تعيين|عيّن|يعين|تشكيل|جلسة|قمة|اتصالا?\s*هاتفي|يؤكد|أكد|أكّد|تؤكد|ينفي|نفى|تنفي|ارتفاع|انخفاض|يرتفع|ينخفض|تراجع|سعر|أسعار|الدولار|النفط|الذهب|البورصة|مصرف|فائدة|تضخم|موازنة|إغلاق|يغلق|فتح|إخلاء|نزوح|حريق|زلزال|وفاة|توفي|رحيل/u;
+const VAGUE = /^(?:هذا|هذه|هكذا|إليك|اليكم|إليكم|تعرف|تعرّف|ما الذي|ماذا|من هو|من هي|كيف|لماذا|هل)(?!\p{L})|…|\.\.\.|تعرف على|تعرّف على|السبب وراء|سر |أسرار|بالتفاصيل|التفاصيل الكاملة|ما حدث|ما جرى|ما قاله|ما قالته|في ظروف|حقيقة /u;
+const publishable = (t, src) => { if (TG_SKIP_SRC.has(src)) return false; const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x)); return w.length >= 6 && t.replace(/[^\p{L}]/gu, "").length >= 30 && !JUNK.test(t) && !BAIT.test(t) && !VAGUE.test(t) && CLEAR.test(t); };
+for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && it.cat !== "sports" && publishable(it.text, it.src)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.pri ? 1 : 0, off: it.off ? 1 : 0 });
 cand.sort((a, b) => (b.man - a.man) || ((b.leb || 0) - (a.leb || 0)) || (b.ts - a.ts));   /* manual first, then Lebanon, then newest */
 
 let sent = 0;

@@ -170,9 +170,24 @@ const fold = s => s.replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآٱ]/g,
 const stem = w => w.replace(/(.)\1+/g, "$1").replace(/^(?:وال|بال|فال|كال|لل|ال|و|ل)(?=.{4})/, "").replace(/(?:ون|ين|ات|ان|ا|ي|ه|ن)$/, "").replace(/(?:ي|ا|ن)$/, "");
 const STOPS = new Set([...STOP].map(w => stem(fold(w))));
 const words = s => new Set(fold(s).replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).map(stem).filter(w => w.length > 2 && !STOP.has(w) && !STOPS.has(w)));
-/* two headlines are "the same story" when they share most of their content words (spelling-insensitive, light stemming) */
+/* two headlines are "the same story" when they share most of their content words (spelling-insensitive, light stemming).
+   Synonyms of the same event word collapse to one concept (قصف/غارة/استهداف, اعتراض, صاروخ, مسيّرة, قتل…) and Israel's names
+   collapse to one, so "الجيش الإسرائيلي يعلن اعتراض صاروخ" and "إطلاق صاروخ اعتراضي" match; two different named places never do. */
+const CONCEPTS = [[/^(?:غار|قصف|قصفت|استهداف|استهدف|يستهدف|تستهدف|تقصف|يقصف|ضرب|تضرب)/, "c_hit"], [/^(?:اعتراض|اعترض|يعترض|تعترض|معترض)/, "c_ict"], [/^(?:صاروخ|صواريخ)/, "c_rkt"], [/^(?:مسير|درون)/, "c_drn"],
+  [/^(?:مقتل|قتل|قتلي|استشهاد|شهيد|شهداء)/, "c_kil"], [/^(?:اسرايل|اسراييل|اسرائيل|الاحتلال|احتلال)/, "c_isr"], [/^(?:ترامب|ترمب)/, "c_trp"], [/^(?:انذار|انذر|ينذر|تحذير|يحذر|اخلاء|اخل)/, "c_wrn"]];
+const PLACE = /^(?:خيام|نبطي|مرجعيون|حاصبيا|ضاحي|بقاع|بعلبك|هرمل|ميفدون|ناقور|ماروني?راس|كفرشوبا|شبعا|عيترون|طيب|صيدا|بنت|زوطر|بيروت|طرابلس|زحل|جزين|عكار|قنيطر|حداثا|حاريص|منصور|غز|رفح|خانيونس|جباليا|رام|نابلس|جنين|خليل|دمشق|حلب|حمص|درعا|بغداد|صنعاء|عدن|مارب|حديد|طهران|اصفهان|تبريز|لبنان|لبناني|سوري|عراق|ايران|مصر|اردن|سعود|يمن|ليبيا|سودان|فلسطين|تركيا|روسيا|اوكران|قطر|امارات|كويت|عمان|بحرين)/;
+const concept = w => { for (const [re, c] of CONCEPTS) if (re.test(w)) return c; return w; };
+export const cwords = s => new Set(fold(s).replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).map(w => w.replace(/^(?:وال|بال|فال|كال|لل|ال)(?=.{3})/, "")).filter(w => w.length > 2)
+  .map(w => PLACE.test(w) ? "p_" + w.slice(0, 4) : concept(w.replace(/^(?:و|ب|ل)(?=.{4})/, ""))).filter(w => /^[cp]_/.test(w) || (!STOP.has(w) && !STOPS.has(stem(w)))).map(w => /^[cp]_/.test(w) ? w : stem(w)));
 const sameWord = (x, y) => x === y || (x.length >= 5 && y.length >= 5 && x.slice(0, 4) === y.slice(0, 4));
-const similar = (a, b) => { const A = [...words(a)], B = [...words(b)]; let i = 0; for (const w of A) if (B.some(v => sameWord(w, v))) i++; const m = Math.min(A.length, B.length); return m >= 3 && i / m >= 0.55 && i >= 3; };
+export const similar = (a, b) => {
+  const A = [...cwords(a)], B = [...cwords(b)];
+  const inB = w => B.some(v => sameWord(w, v)), inA = w => A.some(v => sameWord(w, v));
+  const i = A.filter(inB).length, m = Math.min(A.length, B.length);
+  if (!(m >= 3 && i >= 3 && i / m >= 0.6)) return false;
+  const pa = A.filter(w => w.startsWith("p_") && !inB(w)), pb = B.filter(w => w.startsWith("p_") && !inA(w));
+  return !(pa.length && pb.length);   /* each names a place the other does not: two different events */
+};
 const norm = s => fold(s).replace(/[^\p{L}\p{N}]/gu, "");
 
 /* ---------- HTML front pages (sites with no usable RSS) ---------- */
@@ -317,7 +332,7 @@ export async function build(now = Date.now()) {
       if (s.topic) { const i = raw.lastIndexOf(" - "); if (i > 12 && BLOCKPUB.test(raw.slice(i + 3))) continue; }
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
       if (text && s.lebActivityOnly && isLeb(s.id, text) && (WAR.test(text) || !ACTIVITY.test(text))) continue;   /* from SANA only Lebanon-related activities (visits, delegations, meetings), never war news */
-      if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
+      if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, topic: !!s.topic, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
     }
     mine.sort((a, b) => b.ts - a.ts);
     status[s.id] = r.err ? { ok: false, err: r.err } : { ok: true, feed: r.items.length, usable: mine.length, newest: mine[0] ? Math.round((now - mine[0].ts) / 60000) + "m" : null };
@@ -338,7 +353,10 @@ export async function build(now = Date.now()) {
         const cc = c.sport ? "sports" : catOf(c.text);
         if (phase === 1 && (nc[cc] || 0) >= CATCAP[cc]) continue;
         const k = norm(c.text), k2 = k.slice(0, 28);
-        if (seen.has(k) || seen.has(k2) || picked.some(p => similar(p.text, c.text))) continue;
+        if (seen.has(k) || seen.has(k2)) continue;
+        /* the same story from another source: one source only, and a direct channel is preferred over a topic search */
+        const d = picked.findIndex(p => similar(p.text, c.text));
+        if (d >= 0) { if (picked[d].topic && !c.topic) { picked[d] = c; seen.add(k); seen.add(k2); } continue; }
         if ((per[c.src] = (per[c.src] || 0) + 1) > c.cap) continue;
         seen.add(k); seen.add(k2); picked.push(c); nc[cc] = (nc[cc] || 0) + 1; if (c.leb) nleb++;
       }
@@ -352,7 +370,7 @@ export async function build(now = Date.now()) {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=9"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=10"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

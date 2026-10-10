@@ -1580,11 +1580,28 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var AUTO=[], AUTOWIN=60, lastSig=null, autoDone=false;
   try{ var _c=JSON.parse(localStorage.getItem("nabda_auto5")||"null"); if(_c&&Array.isArray(_c.items)&&_c.items.length){ AUTO=_c.items.filter(function(a){ return a&&a.text&&a.ts&&!/مراسل/.test(a.text); }); AUTOWIN=Number(_c.win)||60; } }catch(e){}
   function normTx(s){ return String(s||"").replace(/[^\u0600-\u06FFa-z0-9]/gi,""); }
+  /* the same story told twice (a manual item and an automatic one): same event words (قصف/غارة…, اعتراض, صاروخ…) and the same names */
+  var SIM_C=[[/^(?:غار|قصف|استهداف|استهدف|يستهدف|تستهدف|ضرب)/,"c1"],[/^(?:اعتراض|اعترض|يعترض|تعترض)/,"c2"],[/^(?:صاروخ|صواريخ)/,"c3"],[/^(?:مسير|درون)/,"c4"],[/^(?:مقتل|قتل|استشهاد|شهيد|شهداء)/,"c5"],[/^(?:اسرايل|اسرائيل|الاحتلال)/,"c6"]];
+  function simW(t){
+    var o={}; String(t||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").split(/[^\u0600-\u06FFa-z0-9]+/i).forEach(function(w){
+      w=w.replace(/^(?:وال|بال|لل|ال)(?=.{3})/,""); if(w.length<3) return;
+      for(var i=0;i<SIM_C.length;i++) if(SIM_C[i][0].test(w)){ o[SIM_C[i][1]]=1; return; }
+      if(/^(?:على|الي|الى|من|في|عن|بعد|قبل|مع|ان|اكد|يعلن|اعلن|اليوم|حول|خلال|بين|ضد)$/.test(w)) return;
+      o[w.slice(0,5)]=1;
+    }); return Object.keys(o);
+  }
+  function simTx(a,b){
+    var A=simW(a),B=simW(b),n=0; A.forEach(function(w){ if(B.indexOf(w)>=0) n++; });
+    var m=Math.min(A.length,B.length); if(!(m>=3&&n>=3&&n/m>=.6)) return false;
+    var PL=/^(?:خيام|نبطي|مرجعي|حاصبي|بقاع|بعلبك|هرمل|ميفدو|ناقور|شبعا|عيترو|صيدا|بنت|زوطر|بيروت|طرابل|زحله|جزين|عكار|غزه|رفح|خانيو|جبالي|نابلس|جنين|خليل|دمشق|حلب|حمص|درعا|بغداد|صنعاء|عدن|مارب|طهران|مصر|سوري|عراق|ايران|يمن|ليبيا|سودا|تركي|روسي|اوكرا)/;
+    var pa=A.filter(function(w){ return PL.test(w)&&B.indexOf(w)<0; }), pb=B.filter(function(w){ return PL.test(w)&&A.indexOf(w)<0; });
+    return !(pa.length&&pb.length);
+  }
   function liveItems(){
     var now=Date.now(), seen={};
     var man=items.filter(function(i){ return i.order>1e12 && now-i.order<=3600000; });
     man.forEach(function(i){ seen[normTx(i.text)]=1; });
-    var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)]; })
+    var au=AUTO.filter(function(a){ return now-a.ts<=AUTOWIN*60000+300000 && !seen[normTx(a.text)] && !man.some(function(m){ return simTx(m.text,a.text); }); })
       .map(function(a){ return {id:"a"+a.ts,text:a.text,cat:catOf(a.cat),order:a.ts,pri:a.pri?1:0,leb:a.pri?1:0}; });
     man.forEach(function(i){ i.pri=1; });
     /* one line, in sections: general (Lebanon first), then economy, then sport; newest first inside each */

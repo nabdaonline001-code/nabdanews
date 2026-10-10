@@ -1692,7 +1692,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   }
 
   /* ---- breaking-news screen (admin only): every manual + automatic item with its time, source and section ---- */
-  var SRCN={jazeera:"الجزيرة",jazeera_sport:"الجزيرة (رياضة)",jadeed:"الجديد",lbci:"LBCI",annahar:"النهار",mtv:"MTV",hadath:"الحدث",nna:"الوكالة الوطنية",nbn:"NBN",france24:"فرانس 24",alaraby:"العربي الجديد",axiosar:"أكسيوس",shams:"شمس",skynews:"سكاي نيوز عربية",mayadeen_alalam:"الميادين/العالم",rt:"RT",asharq:"الشرق",ikhbariya_sumaria:"الإخبارية/السومرية",egypt:"مصر",sana:"سانا",wafa:"وفا",suna:"سونا",saba:"سبأ",irna:"إرنا",masirah:"المسيرة",saba_sanaa:"سبأ (صنعاء)",econ_ar:"اقتصاد",sport_ar:"رياضة"};
+  var SRCN={jazeera:"الجزيرة",jazeera_sport:"الجزيرة (رياضة)",jadeed:"الجديد",lbci:"LBCI",annahar:"النهار",mtv:"MTV",hadath:"الحدث",nna:"الوكالة الوطنية",nbn:"NBN",france24:"فرانس 24",alaraby:"العربي الجديد",axiosar:"أكسيوس",shams:"شمس",skynews:"سكاي نيوز عربية",mayadeen_alalam:"الميادين/العالم",rt:"RT",asharq:"الشرق",ikhbariya_sumaria:"الإخبارية/السومرية",egypt:"مصر",sana:"سانا",wafa:"وفا",suna:"سونا",saba:"سبأ",irna:"إرنا",masirah:"المسيرة",saba_sanaa:"سبأ (صنعاء)",econ_ar:"اقتصاد",sport_ar:"رياضة",leb_topic:"بحث: لبنان",leb_sec:"بحث: أمني لبنان",region_topic:"بحث: المنطقة"};
   var LG={live:[],log:[],logOn:false,ok:null,view:"all",wrap:null,sum:null,note:null,tabs:null,busy:false};
   function bTime(t){ try{ return new Date(t).toLocaleTimeString("en-GB",{timeZone:"Asia/Beirut",hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
   function bDay(t){ try{ return new Date(t).toLocaleDateString("en-CA",{timeZone:"Asia/Beirut"}); }catch(e){ return ""; } }

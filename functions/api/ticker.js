@@ -6,6 +6,11 @@ import { beirutDay } from "./_stats.js";
 const BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/rss+xml,application/xml,text/xml,*/*", "Accept-Language": "ar,en;q=0.8" };
 const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("site:" + site)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
+/* topic searches (any outlet): catch the big stories no single channel feed carries in time */
+const gq = (q, when = "6h") => `https://news.google.com/rss/search?q=${encodeURIComponent(q + " when:" + when)}&hl=ar&gl=LB&ceid=LB:ar`;
+const bq = q => `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
+/* outlets never used for topic searches (publisher name after " - " in the Google News title) */
+const BLOCKPUB = /i24|(?<!\p{L})كان(?!\p{L})|القناة\s*1[0-9]|يديعوت|معاريف|هآرتس|جيروزاليم|تايمز أوف إسرائيل|إسرائيل اليوم|ويكيبيديا|(?<![A-Za-z])X(?![A-Za-z])|Facebook|فيسبوك|YouTube|يوتيوب/iu;
 const gnewsAny = sites => `https://news.google.com/rss/search?q=${encodeURIComponent("(" + sites.map(x => "site:" + x).join(" OR ") + ") when:2d")}&hl=ar&gl=LB&ceid=LB:ar`;
 /* Pages Functions allow ~50 subrequests per call: count every fetch and refuse beyond the limit (first tries always
    go out before any fallback, so fallbacks are what gets dropped when many feeds are down) */
@@ -51,6 +56,9 @@ export const SOURCES = [
   { id: "masirah", cap: 6, fix: houthiFix, urls: [gnews("almasirah.net.ye"), bing("almasirah.net.ye")] },
   { id: "saba_sanaa", agency: "سبأ (صنعاء)", cap: 5, fix: houthiFix, urls: [gnews("saba.ye"), bing("saba.ye")] },
   { id: "econ_ar", cap: 6, urls: [gnewsAny(["cnbcarabia.com", "asharqbusiness.com"])] },
+  { id: "leb_topic", topic: true, cap: 10, urls: [gq('("جنوب لبنان" OR "الجنوب اللبناني" OR "الضاحية الجنوبية" OR "حزب الله" OR "اليونيفيل" OR "الجيش اللبناني" OR "البقاع")'), bq("جنوب لبنان")] },
+  { id: "leb_sec", topic: true, cap: 8, urls: [gq('لبنان (غارة OR صاروخ OR مسيّرة OR "صفارات الإنذار" OR "القبة الحديدية" OR "صاروخ اعتراضي" OR قصف)', "3h"), bq("لبنان صاروخ اعتراضي غارة")] },
+  { id: "region_topic", topic: true, cap: 8, urls: [gq('(إسرائيل OR غزة OR إيران OR سوريا OR اليمن OR العراق) (عاجل OR "وقف إطلاق النار" OR هجوم OR غارة)', "3h")] },
   { id: "sport_ar", sport: true, cap: 8, urls: [gnewsAny(["beinsports.com/ar", "arabia.sport360.com", "filgoal.com"])] }
 ];
 
@@ -114,6 +122,7 @@ export function noReporter(t) {
 export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
+  t = t.replace(/^[\p{Extended_Pictographic}\uFE0F\s]*(?:خبر\s+)?عاجل(?:ة)?\s*[|:\-–—،]*\s*/u, "");   /* «عاجل | …» is the breaking label, not a programme title */
   // "خاص"/"حصري" items and programme titles (نافذة…, مباشر مع…, "A | B") are not breaking news
   if (/^(خاص|حصري)(?!\p{L})/u.test(t) || /^(نافذة|مباشر مع|حلقة|بودكاست)(?!\p{L})/u.test(t) || /\s\|\s/.test(t)) return null;
   t = t.replace(/^عاجل\s*[|:\-–—]?\s*/, "");
@@ -121,7 +130,7 @@ export function clean(t, link, sportSrc = false) {
   if (!t || /مراسل/.test(t)) return null;   /* the bar carries the news itself, never "our reporter says…" */
   t = t.replace(/(?<!\.)\.\.(?!\.)\s*(?=[^\s.])/g, "، "); /* Al Jazeera style "بعد X.. Y" reads as "بعد X، Y" */
   if (!t || /[؟?]/.test(t) || MEDIA.test(t) || MINOR.test(t) || SOFT.test(t) || SHOWBIZ.test(t)) return null;
-  if (t.length < 18 || t.length > 190) return null;
+  if (t.length < 14 || t.length > 190) return null;
   if ((sportSrc || SPORT.test(t)) && SPORT_SOFT.test(t)) return null;
   if (sportSrc ? !SPORT_HARD.test(t) : !(NEWS.test(t) || ECON.test(t) || SPORT.test(t))) return null;
   // word policy
@@ -132,7 +141,7 @@ export function clean(t, link, sportSrc = false) {
     t = t.replace(/العدوان/g, "الهجوم").replace(/عدوان/g, "هجوم");
   }
   t = tidy(t);
-  if (!t || arWords(t) < 4) return null;
+  if (!t || arWords(t) < 3) return null;
   return t;
 }
 /* typography and stray-noise clean-up so every headline reads like a newsroom headline */
@@ -286,10 +295,10 @@ const isLeb = (srcId, text) => LEB_STRICT.test(text) || isLebName(text) || (LEB_
 const WAR = /قصف|غارة|غارات|استهداف|استهدف|مسيّرة|مسيرة|صاروخ|صواريخ|اشتباك|هجوم|تفجير|انفجار|شهداء|شهيد|جرحى|إصابة|قتلى/;
 const ACTIVITY = /زيارة|يزور|زار|تزور|وفد|وفود|يستقبل|تستقبل|استقبل|يلتقي|تلتقي|التقى|لقاء|اجتماع|يجتمع|مباحثات|محادثات|يبحث|تبحث|بحث|السفير|سفير|ممثل|ممثلي|المبعوث|مبعوث|توقيع|يوقع|اتفاقية|مذكرة تفاهم|تعاون|مؤتمر|منتدى|معرض|مهرجان|يشارك|مشاركة/;
 const LEB_SRC = new Set(["jadeed", "lbci", "annahar", "mtv", "nna", "nbn"]);
-const LEB_MAX = 16;
-const CATCAP = { politics: 15, economy: 5, sports: 5 };
-const TARGET = 25;     /* headlines in the bar (about one hour's worth) */
-const PER_SOURCE = 5;  /* at most this many from any one channel */
+const LEB_MAX = 24;
+const CATCAP = { politics: 26, economy: 7, sports: 7 };
+const TARGET = 40;     /* headlines in the bar (about one hour's worth) */
+const PER_SOURCE = 6;  /* at most this many from any one channel */
 export async function build(now = Date.now()) {
   used = 0;
   const res = await Promise.all(SOURCES.map(s => fetchFeed(s).then(r => ({ s, r }))));
@@ -300,6 +309,7 @@ export async function build(now = Date.now()) {
       if (s.skipLink && s.skipLink.test(it.link)) continue;
       if (it.ts > now + 600000) continue;
       const raw = s.fix ? s.fix(it.title) : it.title;
+      if (s.topic) { const i = raw.lastIndexOf(" - "); if (i > 12 && BLOCKPUB.test(raw.slice(i + 3))) continue; }
       const text = clean(/news\.google\./.test(r.via || "") ? stripSource(raw) : raw, it.link, !!s.sport);
       if (text && s.lebActivityOnly && isLeb(s.id, text) && (WAR.test(text) || !ACTIVITY.test(text))) continue;   /* from SANA only Lebanon-related activities (visits, delegations, meetings), never war news */
       if (text) mine.push({ text, ts: it.ts, leb: isLeb(s.id, text), src: s.id, sport: !!s.sport, pre: s.agency || "", cap: s.cap || PER_SOURCE });
@@ -337,7 +347,7 @@ export async function build(now = Date.now()) {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=8"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=9"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

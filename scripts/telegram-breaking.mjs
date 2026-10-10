@@ -1,6 +1,6 @@
 /* Sends the site's breaking news to the Telegram channel, automatically (GitHub Actions, every 5 minutes).
    Needs two repository secrets: TELEGRAM_BOT_TOKEN (from @BotFather) and TELEGRAM_CHAT_ID (the channel, e.g. @your_channel).
-   What is sent: the owner's manual breaking items (data/site.json), official statements, and Lebanese news; never the same story twice
+   What is sent: the owner's manual breaking items (data/site.json) and every bar item except sports, Lebanese ones first; never the same story twice
    (same one-source rule as the site's bar), at most MAX_PER_RUN per run and MAX_PER_HOUR per hour.
    Memory between runs is a tiny JSON file kept in the Actions cache (.tg-state/sent.json). The first run only records what is
    already on the bar (nothing is posted), so the channel is not flooded. TG_TEST=1 sends one test message; TG_DRY=1 prints instead of sending. */
@@ -45,8 +45,8 @@ try {
 } catch (e) { console.error("site.json:", e.message); }
 let data = { items: [] };
 try { data = await build(); } catch (e) { console.error("ticker build failed:", e.message); }
-for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && (it.off || it.pri)) cand.push({ text: it.text, ts: it.ts, man: 0, off: it.off ? 1 : 0 });
-cand.sort((a, b) => (b.man - a.man) || (b.ts - a.ts));
+for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && it.cat !== "sports") cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.pri ? 1 : 0, off: it.off ? 1 : 0 });
+cand.sort((a, b) => (b.man - a.man) || ((b.leb || 0) - (a.leb || 0)) || (b.ts - a.ts));   /* manual first, then Lebanon, then newest */
 
 let sent = 0;
 for (const c of cand) {

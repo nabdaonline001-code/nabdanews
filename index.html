@@ -735,6 +735,36 @@ html[data-theme=dark] .astat.off{border-color:#FF7C8A}
 html[data-theme=dark] .board .mk span.down{color:#FF9AA5}
 html[data-theme=dark] .board .mk span.up,html[data-theme=dark] .board .mk span.down,html[data-theme=dark] .board .mk span.flat{background:#E8F0EB}
 
+/* ---------- breaking-news screen (admin only) ---------- */
+#brklog .bl-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+#brklog .bl-top .sp{flex:1}
+#brklog .bl-sum{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:0;list-style:none}
+#brklog .bl-sum li{background:#EEF3F0;border:1px solid #cfdcd4;padding:5px 12px;font-size:.88rem;color:#2F4A3E}
+#brklog .bl-sum b{font-family:"Bricolage Grotesque","Noto Kufi Arabic",sans-serif;font-size:1.05rem;margin-inline-start:4px}
+#brklog .bl-tabs{display:flex;gap:6px}
+#brklog .bl-tabs button{padding:5px 14px;font-size:.88rem}
+#brklog .bl-tabs button[aria-pressed=true]{background:#5a7567;color:#fff}
+#brklog .bl-tabs button[aria-pressed=false]{background:#fff;color:#5a7567}
+#brklog .bl-wrap{max-height:520px;overflow:auto;border:1px solid var(--line)}
+#brklog table{width:100%;border-collapse:collapse;font-size:.93rem}
+#brklog th{position:sticky;top:0;background:#2F4A3E;color:#fff;text-align:start;font-weight:600;padding:8px 10px;white-space:nowrap;font-size:.82rem}
+#brklog td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+#brklog td.tm{white-space:nowrap;font-variant-numeric:tabular-nums;direction:ltr;text-align:right;font-weight:700;color:#2F4A3E}
+#brklog td.tm small{display:block;font-weight:400;color:#6b7f74;font-size:.75rem}
+#brklog td.tx{line-height:1.6;min-width:220px}
+#brklog tr.on td{background:#f3f8f5}
+#brklog .pl{display:inline-block;padding:1px 9px;font-size:.78rem;border:1px solid #5a7567;color:#5a7567;white-space:nowrap}
+#brklog .pl.man{background:#C8102E;border-color:#C8102E;color:#fff}
+#brklog .pl.now{background:#2F4A3E;border-color:#2F4A3E;color:#fff}
+#brklog .bl-note{margin:10px 0 0;font-size:.82rem;color:#6b7f74}
+#brklog .bl-empty{padding:18px;text-align:center}
+@media (max-width:700px){#brklog th:nth-child(4),#brklog td:nth-child(4){display:none}}
+html[data-theme=dark] #brklog .bl-sum li{background:#16221c;border-color:#2c4136;color:#cfe0d6}
+html[data-theme=dark] #brklog td.tm{color:#cfe0d6}
+html[data-theme=dark] #brklog tr.on td{background:#14201a}
+html[data-theme=dark] #brklog .bl-tabs button[aria-pressed=false]{background:transparent;color:#A9C3B5}
+html[data-theme=dark] #brklog .pl{color:#A9C3B5;border-color:#6f8f7e}
+html[data-theme=dark] #brklog th{background:#1f3329}
 /* ---------- weather box (under the art section) ---------- */
 .wx{--wi:#2F4A3E;--wm:#5a7567;--wl:rgba(47,74,62,.18);--wc:rgba(255,255,255,.55);--ws:#fff;--wsb:#9DB5A8;--wcl:#9DB0A6;--wcl2:#C9D6CF;--wfx:rgba(47,74,62,.35);
   position:relative;isolation:isolate;margin:6px 0 34px;border:1px solid var(--wl);border-radius:18px;background:linear-gradient(100deg,#EEF3F0,#DCE5E0 55%,#E9EEEC);color:var(--wi);overflow:hidden;box-shadow:0 6px 22px -14px rgba(47,74,62,.55)}
@@ -874,6 +904,7 @@ html[data-theme=dark] .wx-ft button{background:rgba(8,16,13,.6);color:#E8F0EB}
 </div>
 <section class="wrap adm" id="newsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار"></section>
 <section class="wrap adm" id="adm" lang="ar" dir="rtl" hidden aria-label="إدارة الأخبار العاجلة"></section>
+<section class="wrap adm" id="brklog" lang="ar" dir="rtl" hidden aria-label="شاشة العواجل"></section>
 <section class="wrap adm" id="adsadm" lang="ar" dir="rtl" hidden aria-label="إدارة الإعلانات"></section>
 <aside class="adside" id="adsslotside" aria-label="مساحة إعلانية جانبية" hidden>
   <div class="adh"><h2>إعلان جانبي</h2></div>
@@ -1659,6 +1690,89 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     panel.appendChild(box);
     renderRows();
   }
+
+  /* ---- breaking-news screen (admin only): every manual + automatic item with its time, source and section ---- */
+  var SRCN={jazeera:"الجزيرة",jazeera_sport:"الجزيرة (رياضة)",jadeed:"الجديد",lbci:"LBCI",annahar:"النهار",mtv:"MTV",hadath:"الحدث",nna:"الوكالة الوطنية",nbn:"NBN",france24:"فرانس 24",alaraby:"العربي الجديد",axiosar:"أكسيوس",shams:"شمس",skynews:"سكاي نيوز عربية",mayadeen_alalam:"الميادين/العالم",rt:"RT",asharq:"الشرق",ikhbariya_sumaria:"الإخبارية/السومرية",egypt:"مصر",sana:"سانا",wafa:"وفا",suna:"سونا",saba:"سبأ",irna:"إرنا",masirah:"المسيرة",saba_sanaa:"سبأ (صنعاء)",econ_ar:"اقتصاد",sport_ar:"رياضة"};
+  var LG={live:[],log:[],logOn:false,ok:null,view:"all",wrap:null,sum:null,note:null,tabs:null,busy:false};
+  function bTime(t){ try{ return new Date(t).toLocaleTimeString("en-GB",{timeZone:"Asia/Beirut",hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+  function bDay(t){ try{ return new Date(t).toLocaleDateString("en-CA",{timeZone:"Asia/Beirut"}); }catch(e){ return ""; } }
+  function bAgo(t){ var m=Math.max(0,Math.round((Date.now()-t)/60000)); return m<1?"الآن":m<60?"منذ "+m+" د":m<1440?"منذ "+Math.floor(m/60)+" س "+(m%60)+" د":"منذ "+Math.floor(m/1440)+" يوم"; }
+  function bRows(){
+    var now=Date.now(), today=bDay(now), liveKeys={}, rows=[], seen={};
+    LG.live.forEach(function(a){ liveKeys[normTx(a.text).slice(0,40)]=1; });
+    items.forEach(function(i){
+      if(!(i.order>1e12)) return;
+      rows.push({t:i.order,text:i.text,cat:i.cat,src:"يدوي",man:1,on:now-i.order<=3600000});
+    });
+    LG.log.forEach(function(a){
+      var k=normTx(a.text).slice(0,40); seen[k]=1;
+      rows.push({t:a.seen||a.ts,t2:a.ts,text:a.text,cat:catOf(a.cat),src:SRCN[a.src]||a.src||"",lb:a.pri,on:!!liveKeys[k]});
+    });
+    LG.live.forEach(function(a){
+      var k=normTx(a.text).slice(0,40); if(seen[k]) return;
+      rows.push({t:a.ts,text:a.text,cat:catOf(a.cat),src:SRCN[a.src]||a.src||"",lb:a.pri,on:true});
+    });
+    rows.sort(function(x,y){ return y.t-x.t; });
+    return rows;
+  }
+  function bDraw(){
+    if(!LG.wrap) return;
+    var all=bRows(), now=Date.now(), today=bDay(now);
+    var rows=all.filter(function(r){ return LG.view==="all"||(LG.view==="man"?r.man:LG.view==="auto"?!r.man:r.on); });
+    var onN=all.filter(function(r){return r.on;}).length, manN=all.filter(function(r){return r.man;}).length, todayN=all.filter(function(r){return bDay(r.t)===today;}).length;
+    LG.sum.textContent="";
+    [["على الشريط الآن",onN],["عواجل اليوم",todayN],["يدوية (كل المحفوظ)",manN]].forEach(function(x){
+      var li=document.createElement("li"); li.appendChild(document.createTextNode(x[0])); var b=document.createElement("b"); b.textContent=x[1]; li.appendChild(b); LG.sum.appendChild(li);
+    });
+    LG.wrap.textContent="";
+    if(!rows.length){ var p=document.createElement("p"); p.className="bl-empty empty"; p.textContent=LG.ok===false?"تعذّر جلب البيانات.":"لا توجد عواجل لعرضها."; LG.wrap.appendChild(p); }
+    else{
+      var tb=document.createElement("table"), th=document.createElement("thead"), hr=document.createElement("tr");
+      ["الوقت","النوع / المصدر","القسم","الخبر","الحالة"].forEach(function(h){ var c=document.createElement("th"); c.textContent=h; hr.appendChild(c); });
+      th.appendChild(hr); tb.appendChild(th);
+      var tbd=document.createElement("tbody");
+      rows.forEach(function(r){
+        var tr=document.createElement("tr"); if(r.on) tr.className="on";
+        var c1=document.createElement("td"); c1.className="tm"; c1.appendChild(document.createTextNode(bTime(r.t)));
+        var sm=document.createElement("small"); sm.textContent=(bDay(r.t)===today?"":bDay(r.t).slice(5).replace("-","/")+" · ")+bAgo(r.t); c1.appendChild(sm);
+        var c2=document.createElement("td"), pl=document.createElement("span"); pl.className="pl"+(r.man?" man":""); pl.textContent=r.src||"—"; c2.appendChild(pl);
+        if(r.lb){ var lb=document.createElement("small"); lb.style.cssText="display:block;margin-top:3px;color:#6b7f74;font-size:.75rem"; lb.textContent="لبنان"; c2.appendChild(lb); }
+        var c3=document.createElement("td"); c3.textContent=catName(r.cat);
+        var c4=document.createElement("td"); c4.className="tx"; c4.textContent=r.text;
+        var c5=document.createElement("td"); var pn=document.createElement("span"); pn.className="pl"+(r.on?" now":""); pn.textContent=r.on?"على الشريط":"انتهى"; c5.appendChild(pn);
+        [c1,c2,c3,c4,c5].forEach(function(c){ tr.appendChild(c); }); tbd.appendChild(tr);
+      });
+      tb.appendChild(tbd); LG.wrap.appendChild(tb);
+    }
+    LG.note.textContent=(LG.logOn?"السجل يحفظ وقت أول ظهور لكل خبر تلقائي على الشريط خلال اليوم (توقيت بيروت). ":"سجل اليوم غير مفعّل بعد (يحتاج ربط KV باسم STATS)؛ تظهر فقط الأخبار الموجودة على الشريط حالياً. ")+"وقت بعض المصادر تقديري عندما لا يوفّر موقعها وقت النشر.";
+  }
+  function bLoad(fresh){
+    if(LG.busy) return; LG.busy=true;
+    fetch("/api/breaking-log"+(fresh?"?fresh=1":""),{credentials:"same-origin",cache:"no-store"}).then(function(r){ return r.ok?r.json():null; })
+      .then(function(j){ if(j){ LG.live=j.live||[]; LG.log=j.log||[]; LG.logOn=!!j.logOn; LG.ok=true; } else LG.ok=false; })
+      .catch(function(){ LG.ok=false; }).then(function(){ LG.busy=false; bDraw(); });
+  }
+  function bBuild(){
+    var pn=document.getElementById("brklog"); pn.textContent="";
+    var box=document.createElement("div"); box.className="box";
+    var h=document.createElement("h2"); h.textContent="شاشة العواجل";
+    var hint=document.createElement("p"); hint.className="hint"; hint.textContent="كل خبر عاجل يمرّ على الشريط، بوقته ومصدره وقسمه. هذه الشاشة تظهر لك أنت فقط.";
+    var top=document.createElement("div"); top.className="bl-top";
+    var tabs=document.createElement("div"); tabs.className="bl-tabs"; tabs.setAttribute("role","group"); LG.tabs=tabs;
+    [["all","الكل"],["on","على الشريط الآن"],["auto","تلقائي"],["man","يدوي"]].forEach(function(v){
+      var b=document.createElement("button"); b.type="button"; b.textContent=v[1]; b.setAttribute("aria-pressed",String(v[0]===LG.view));
+      b.onclick=function(){ LG.view=v[0]; Array.prototype.forEach.call(tabs.children,function(x,i){ x.setAttribute("aria-pressed",String(["all","on","auto","man"][i]===LG.view)); }); bDraw(); };
+      tabs.appendChild(b);
+    });
+    var sp=document.createElement("span"); sp.className="sp";
+    var rf=document.createElement("button"); rf.type="button"; rf.className="ghost"; rf.textContent="تحديث الآن"; rf.onclick=function(){ bLoad(true); };
+    top.appendChild(tabs); top.appendChild(sp); top.appendChild(rf);
+    LG.sum=document.createElement("ul"); LG.sum.className="bl-sum";
+    LG.wrap=document.createElement("div"); LG.wrap.className="bl-wrap";
+    LG.note=document.createElement("p"); LG.note.className="bl-note";
+    [h,hint,top,LG.sum,LG.wrap,LG.note].forEach(function(e){ box.appendChild(e); }); pn.appendChild(box);
+    bDraw();
+  }
   if(adminOn && panel){
     var bw=document.querySelector(".brk .wrap");
     var btn=document.createElement("button"); btn.type="button"; btn.className="admbtn"; btn.textContent="إدارة"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","adm");
@@ -1667,6 +1781,16 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
       if(open){ if(!rows) buildPanel(); nt.focus(); }
     };
     bw.appendChild(btn);
+    var lp=document.getElementById("brklog");
+    if(lp){
+      var lb2=document.createElement("button"); lb2.type="button"; lb2.className="admbtn"; lb2.textContent="الشاشة"; lb2.setAttribute("aria-expanded","false"); lb2.setAttribute("aria-controls","brklog");
+      lb2.onclick=function(){
+        var open=lp.hidden; lp.hidden=!open; lb2.setAttribute("aria-expanded",String(open));
+        if(open){ if(!LG.wrap) bBuild(); bLoad(false); }
+      };
+      bw.appendChild(lb2);
+      setInterval(function(){ if(!lp.hidden){ bLoad(false); } },120000);
+    }
   }
   var brk=document.querySelector(".brk");
   if(brk){
@@ -1683,7 +1807,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
   var rzT=null; window.addEventListener("resize",function(){ clearTimeout(rzT); rzT=setTimeout(function(){ lastSig=null; renderTicker(); },250); });
   col.orderBy("order","desc").onSnapshot(function(snap){
     items=snap.docs.map(readItem).filter(function(i){return i.text;});
-    renderTicker(); renderRows();
+    renderTicker(); renderRows(); if(LG.wrap) bDraw();
   },function(){ /* keep the static headlines if the store is unavailable */ });
 })();
 

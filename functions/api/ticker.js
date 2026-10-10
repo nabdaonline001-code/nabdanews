@@ -2,6 +2,7 @@
    house rules (word policy, no questions / "watch the video" teasers / petty crime), keeps only recent items (60 min,
    widened up to 4 h when the news is quiet), and is edge-cached for 5 minutes. Public, read-only. */
 import { isLebName } from "./_leb.js";
+import { beirutDay } from "./_stats.js";
 const BROWSER = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", Accept: "application/rss+xml,application/xml,text/xml,*/*", "Accept-Language": "ar,en;q=0.8" };
 const bing = site => `https://www.bing.com/news/search?q=${encodeURIComponent("site:" + site)}&format=rss&setlang=ar&qft=sortbydate%3D%221%22`;
 const gnews = site => `https://news.google.com/rss/search?q=site:${site}+when:2d&hl=ar&gl=LB&ceid=LB:ar`;
@@ -330,16 +331,32 @@ export async function build(now = Date.now()) {
     /* aim for about TARGET headlines from the last hour; widen the window only when the hour is too quiet */
     if (picked.length >= (w === 60 ? 20 : w === 120 ? 15 : 8)) break;
   }
-  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts, pri: c.leb ? 1 : 0 }));
+  picked = picked.slice(0, TARGET).map(c => ({ text: c.pre ? c.pre + ": " + c.text : c.text, cat: c.sport ? "sports" : catOf(c.text), ts: c.ts, pri: c.leb ? 1 : 0, src: c.src }));
   return { items: picked, windowMin, updated: new Date(now).toISOString(), sources: status };
 }
 
-export async function onRequestGet({ request, waitUntil }) {
+/* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
+   (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
+const KEYV = "/api/ticker?v=8"; /* bump v to drop every cached copy after a logic change */
+async function logSeen(env, data) {
+  const kv = env && env.STATS; if (!kv || !data.items.length) return;
+  try {
+    const key = "tk:" + beirutDay(), cur = await kv.get(key), arr = cur ? JSON.parse(cur) : [], have = new Set(arr.map(x => x.k)), seen = Date.now();
+    let added = 0;
+    for (const it of data.items) { const k = norm(it.text).slice(0, 40); if (!k || have.has(k)) continue; have.add(k); arr.push({ k, text: it.text, cat: it.cat, src: it.src, ts: it.ts, pri: it.pri, seen }); added++; }
+    if (added) await kv.put(key, JSON.stringify(arr.slice(-500)), { expirationTtl: 60 * 60 * 24 * 3 });
+  } catch (e) { /* logging is best effort */ }
+}
+export async function liveTicker({ request, env, waitUntil }, fresh) {
   const cache = typeof caches !== "undefined" ? caches.default : null;
-  const key = new Request(new URL(request.url).origin + "/api/ticker?v=7"); /* bump v to drop every cached copy after a logic change */
-  if (cache && !new URL(request.url).searchParams.has("fresh")) { const hit = await cache.match(key); if (hit) return hit; }
+  const key = new Request(new URL(request.url).origin + KEYV);
+  if (cache && !fresh) { const hit = await cache.match(key); if (hit) return hit; }
   const data = await build();
   const res = new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": data.items.length ? "public, max-age=300" : "public, max-age=60" } });
-  if (cache) { const p = cache.put(key, res.clone()); if (waitUntil) waitUntil(p); else await p; }
+  const jobs = [logSeen(env, data)]; if (cache) jobs.push(cache.put(key, res.clone()));
+  const all = Promise.all(jobs); if (waitUntil) waitUntil(all); else await all;
   return res;
+}
+export async function onRequestGet(ctx) {
+  return liveTicker(ctx, new URL(ctx.request.url).searchParams.has("fresh"));
 }

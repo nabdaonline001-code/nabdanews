@@ -1706,7 +1706,7 @@ window.addEventListener("hashchange",function(){ route(); });renderHome();route(
     var guard=0; while(first.getBoundingClientRect().width<need && guard++<12){ fill(first,true); chars+=shown.reduce(function(n,it){ return n+(it.text||"").length; },0); }
     var second=first.cloneNode(true); second.setAttribute("aria-hidden","true"); trk.appendChild(second);
     trk.style.animation="";
-    trk.style.animationDuration=Math.max(14,Math.round(chars*0.19))+"s";
+    trk.style.animationDuration=Math.max(11,Math.round(chars*0.15))+"s";
   }
 
   var panel=document.getElementById("adm"), rows=null, st=null, nt=null, ncat=null, addBtn=null;

@@ -783,11 +783,11 @@ html[data-theme=dark] #brklog th{background:#1f3329}
 .ngrid .story.hasimg{grid-template-columns:84px minmax(0,1fr);column-gap:12px}
 @media (max-width:520px){.story.hasimg,.ngrid .story.hasimg{grid-template-columns:92px minmax(0,1fr);column-gap:10px}}
 html[data-theme=dark] .story.hasimg>.sthumb{background:#16221c;border-color:#2a3a32}
-/* hover on the lead story and the home news list only: a yellow fill sweeps behind the headline from its first word to its last (the text stays on top and readable) */
-#s-news .story h3 a,.lead h1 a{background-image:linear-gradient(#FFD93B,#FFD93B);background-repeat:no-repeat;background-position:100% 100%;background-size:0% 100%;padding:.04em .22em;margin-inline:-.22em;transition:background-size .7s cubic-bezier(.25,.7,.2,1),color .25s ease}
-#s-news .story:hover h3 a,#s-news .story:focus-within h3 a,.lead:hover h1 a,.lead:focus-within h1 a{background-size:100% 100%;color:#17231d}
+/* hover on the lead story and the home news list only: a fill in the site's main green sweeps behind the headline from its first word to its last (the text stays on top and readable) */
+#s-news .story h3 a,.lead h1 a{background-image:linear-gradient(#5a7567,#5a7567);background-repeat:no-repeat;background-position:100% 100%;background-size:0% 100%;padding:.04em .22em;margin-inline:-.22em;transition:background-size .7s cubic-bezier(.25,.7,.2,1),color .25s ease}
+#s-news .story:hover h3 a,#s-news .story:focus-within h3 a,.lead:hover h1 a,.lead:focus-within h1 a{background-size:100% 100%;color:#fff}
 .lead:hover h1,.lead:focus-within h1{text-shadow:none}
-html[data-theme=dark] #s-news .story:hover h3 a,html[data-theme=dark] #s-news .story:focus-within h3 a{color:#17231d}
+html[data-theme=dark] #s-news .story:hover h3 a,html[data-theme=dark] #s-news .story:focus-within h3 a{color:#fff}
 @media (prefers-reduced-motion:reduce){#s-news .story h3 a,.lead h1 a{transition:color .2s}}
 /* section label and "make it the lead" button on story lists: very light boxes, natural width */
 .story .lbl{border-color:#E0E9E4;background:#F5F8F6;color:#6F867A;padding:0 10px;justify-self:start;align-self:start}

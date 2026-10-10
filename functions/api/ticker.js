@@ -123,6 +123,13 @@ export function noReporter(t) {
   t = t.replace(new RegExp("\\s*[،\\-–—]?\\s*(?:بحسب|وفق|وفقاً ل|حسب|نقلاً عن|نقلا عن)\\s+" + REP + "(?:\\s+" + W + "){0,3}\\s*$", "u"), "");
   return t.trim();
 }
+/* house names: the former Syrian regime is never «البائد» (it is «السابق», unless the phrase is a quotation already between «»), and
+   «إسرائيل» is always written between quotes (the name only; «الجيش الإسرائيلي» etc. are untouched). Text already inside «…» is left as it is. */
+export function houseNames(t) {
+  return t.split(/(«[^»]*»)/).map((seg, i) => i % 2 ? seg : seg
+    .replace(/(النظام|نظام|الحكم|حكم)(\s+السوري)?\s+البائد/g, (m, a, b) => a + (b || "") + " السابق")
+    .replace(/(?<![\p{L}«])((?:[وبلكف]|وب|ول|فب|فل)?)(إسرائيل|اسرائيل)(?![\p{L}»])/gu, (m, p) => p + "«إسرائيل»")).join("");
+}
 export function clean(t, link, sportSrc = false) {
   t = t.replace(/\s+/g, " ").trim();
   t = t.replace(/^\d{1,2}:\d{2}\s+/, "");
@@ -145,6 +152,7 @@ export function clean(t, link, sportSrc = false) {
     t = t.replace(/العدوان/g, "الهجوم").replace(/عدوان/g, "هجوم");
   }
   t = tidy(t);
+  t = houseNames(t);
   if (!t || arWords(t) < 3) return null;
   return t;
 }
@@ -374,7 +382,7 @@ export async function build(now = Date.now()) {
 
 /* The bar's content, cached 5 min at the edge. When the STATS KV is bound, every headline that reaches the bar is also logged once
    (first time seen) under tk:<Beirut day>, so the admin screen (/api/breaking-log) can show what went out and when. */
-const KEYV = "/api/ticker?v=11"; /* bump v to drop every cached copy after a logic change */
+const KEYV = "/api/ticker?v=12"; /* bump v to drop every cached copy after a logic change */
 async function logSeen(env, data) {
   const kv = env && env.STATS; if (!kv || !data.items.length) return;
   try {

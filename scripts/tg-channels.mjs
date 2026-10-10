@@ -20,6 +20,10 @@ export const CHANNELS = [
   { id: "mayadeen",   ...T("almayadeen") },
   { id: "mamlaka",    ...T("almamlakatvbreaking") },
   { id: "quds",       ...T("QudsN") },
+  { id: "lebnow",     ...T("lebanonNewsNow") },
+  { id: "ksanews",    ...T("ksanewstoday") },
+  { id: "arabemerg",  ...T("alarabemergency") },
+  { id: "roseaalym",  ...T("roseaalym") },
   { id: "alalam",     ...T("alalamarabic"), fix: true },
   { id: "masirah",    ...T("almasirah2"), fix: true },
   { id: "fars",       ...T("arabic_farsnews"), fix: true }

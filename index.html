@@ -783,6 +783,12 @@ html[data-theme=dark] #brklog th{background:#1f3329}
 .ngrid .story.hasimg{grid-template-columns:84px minmax(0,1fr);column-gap:12px}
 @media (max-width:520px){.story.hasimg,.ngrid .story.hasimg{grid-template-columns:92px minmax(0,1fr);column-gap:10px}}
 html[data-theme=dark] .story.hasimg>.sthumb{background:#16221c;border-color:#2a3a32}
+/* hover on any news: a yellow fill sweeps behind the headline from its first word to its last (the text stays on top and readable) */
+.story h3 a,.hcard h3 a,.lead h1 a{background-image:linear-gradient(#FFD93B,#FFD93B);background-repeat:no-repeat;background-position:100% 100%;background-size:0% 100%;padding:.04em .22em;margin-inline:-.22em;transition:background-size .7s cubic-bezier(.25,.7,.2,1),color .25s ease}
+.story:hover h3 a,.story:focus-within h3 a,.hcard:hover h3 a,.hcard:focus-within h3 a,.lead:hover h1 a,.lead:focus-within h1 a{background-size:100% 100%;color:#17231d}
+.hcard:hover h3,.hcard:focus-within h3,.lead:hover h1,.lead:focus-within h1{text-shadow:none}
+html[data-theme=dark] .story:hover h3 a,html[data-theme=dark] #s-news .story:hover h3 a,html[data-theme=dark] .story:focus-within h3 a{color:#17231d}
+@media (prefers-reduced-motion:reduce){.story h3 a,.hcard h3 a,.lead h1 a{transition:color .2s}}
 /* ---------- weather box (under the art section) ---------- */
 .wx{--wi:#2F4A3E;--wm:#5a7567;--wl:rgba(47,74,62,.18);--wc:rgba(255,255,255,.55);--ws:#fff;--wsb:#9DB5A8;--wcl:#9DB0A6;--wcl2:#C9D6CF;--wfx:rgba(47,74,62,.35);
   position:relative;isolation:isolate;margin:6px 0 34px;border:1px solid var(--wl);border-radius:18px;background:linear-gradient(100deg,#EEF3F0,#DCE5E0 55%,#E9EEEC);color:var(--wi);overflow:hidden;box-shadow:0 6px 22px -14px rgba(47,74,62,.55)}

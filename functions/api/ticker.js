@@ -138,10 +138,15 @@ const OUTLET_NAMES = ["الميادين", "الجزيرة", "العربية", "�
 const OUTLET_TO = new RegExp("((?:مصدر|مصادر|مسؤول|مسؤولون|قيادي|متحدث|ناطق)(?:\\s+\\p{L}+){0,5}?)\\s+(?:" +
   OUTLET_NAMES.map(n => n.startsWith("ال") ? "ل" + n.slice(1) : "لـ?\\s*" + n).join("|") + ")(?![\\p{L}])", "u");
 const LABEL = (stem) => new RegExp("(^|[^\\p{L}])(و|ف|ب|وب)?(ال|لل|ل)?" + stem + "(?![\\p{L}])", "gu");
+const PRESS = ["رويترز", "فرانس برس", "وكالة فرانس برس", "أ ف ب", "ا ف ب", "أ\\.ف\\.ب", "أسوشيتد برس", "الأناضول", "وكالة الأناضول", "بلومبرغ", "بلومبيرغ", "سي إن إن", "CNN", "أكسيوس", "Axios", "رويترز عاجل", "وول ستريت جورنال", "نيويورك تايمز", "واشنطن بوست", "فايننشال تايمز", "سبوتنيك", "تاس", "نوفوستي", "شينخوا", "يونهاب", "كيودو", "الجزيرة", "العربية", "الحدث", "الميادين", "المنار", "العالم", "سكاي نيوز(?: عربية)?", "روسيا اليوم", "RT", "بي بي سي", "BBC", "الشرق", "المسيرة", "تسنيم", "فارس", "مهر", "إل بي سي", "LBCI", "الجديد", "ام تي في", "MTV", "الأخبار", "النهار"];
+const LEAD_OUTLET = new RegExp("^(?:" + PRESS.join("|") + ")\\s*(?:عاجل\\s*)?[:：|\\-–—]\\s*", "u");
+const TAIL_OUTLET = new RegExp("\\s*[\\-–—|(]?\\s*(?:(?:بحسب|وفق|حسب|نقلاً عن|نقلا عن|عن)\\s+)?(?:وكالة\\s+)?(?:" + PRESS.join("|") + ")\\s*\\)?\\s*$", "u");
 export function loadedWords(t) {
   const swap = (m, a, p, art) => a + (p || "") + (art === "ال" ? "القوات" : art === "لل" ? "للقوات" : art === "ل" ? "لقوات" : "قوات");
   t = t.replace(LABEL("مرتزق(?:ة|ون|ين|و)"), swap).replace(LABEL("غزاة"), swap);
   t = t.replace(OUTLET_TO, "$1");
+  /* «رويترز: …» / «… - رويترز» / «… (أ ف ب)»: non-official outlets are never named (official agencies keep their own prefix elsewhere) */
+  t = t.replace(LEAD_OUTLET, "").replace(TAIL_OUTLET, "");
   return t;
 }
 export function clean(t, link, sportSrc = false) {

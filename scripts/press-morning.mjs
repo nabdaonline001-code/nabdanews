@@ -1,9 +1,9 @@
 /* Every day at 08:00 Beirut: the Lebanese newspapers' headlines, as one message on the Telegram channel.
-   Source: the National News Agency, which publishes each paper's lead story every morning («النهار: …», «الأخبار: …»).
+   Source: each paper's own overnight stories via Google News (the National News Agency refuses automated readers).
    The lines pass through the site's wording rules (loadedWords / houseNames / tidy). TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { loadedWords, houseNames, tidy } from "../functions/api/ticker.js";
+import { loadedWords, houseNames, tidy, parseFeed } from "../functions/api/ticker.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "", DRY = !!process.env.TG_DRY;
 const STATE = path.join(".press-state", "sent.json");
@@ -20,23 +20,24 @@ if (st.day === day && !DRY) { note("already sent today"); process.exit(0); }
 const target = Date.parse(day + "T05:00:00Z");
 if (!DRY && Date.now() < target) await new Promise(r => setTimeout(r, Math.min(target - Date.now(), 25 * 60000)));
 
-let items = [];
-try {
-  const r = await fetch("https://nabdanews.org/api/press", { headers: { "User-Agent": "nabda-press-bot" }, signal: AbortSignal.timeout(60000) });
-  const j = await r.json(); items = j.items || []; if (j.err) note("NNA via site: " + j.err);
-} catch (e) { note("site unreachable: " + e.message); process.exit(0); }
-const cats = [];
-/* one headline per paper (its earliest one today = the morning press review), in a fixed order */
+/* each paper's own stories from the last night, via Google News (NNA refuses automated readers);
+   per paper: its first story published since 22:00 Beirut — the overnight edition's lead — written in Nabda's words */
+const SITES = { "النهار": "annahar.com", "الأخبار": "al-akhbar.com", "نداء الوطن": "nidaalwatan.com", "الجمهورية": "aljoumhouria.com", "اللواء": "aliwaa.com.lb", "البناء": "al-binaa.com", "الديار": "addiyar.com", "الشرق": "alsharqonline.com", "الأنباء": "anbaaonline.com" };
+const since = Date.parse(day + "T00:00:00Z") - 3 * 3600000 - 2 * 3600000;   /* 22:00 Beirut, the night before */
 const best = {};
-for (const it of items.sort((a, b) => a.ts - b.ts)) {
-  const m = it.title.match(RX); if (!m) continue;
-  const paper = m[1]; if (best[paper]) continue;
-  let line = houseNames(tidy(loadedWords(m[2].replace(/\s+/g, " ").trim())));
-  if (line.length > 160) line = line.slice(0, line.lastIndexOf(" ", 157)) + "…";
-  if (line.length >= 12) best[paper] = line;
-}
+await Promise.all(Object.entries(SITES).map(async ([paper, site]) => {
+  try {
+    const u = `https://news.google.com/rss/search?q=${encodeURIComponent("site:" + site + " when:1d")}&hl=ar&gl=LB&ceid=LB:ar`;
+    const xml = await (await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) })).text();
+    const its = parseFeed(xml).map(i => ({ title: i.title.replace(/\s+-\s+[^-]{2,40}$/, "").trim(), ts: i.ts })).filter(i => i.ts >= since && i.title.length >= 15 && !/^(?:رأي|مقال|كاريكاتير|افتتاحية)/.test(i.title)).sort((a, b) => a.ts - b.ts);
+    if (!its.length) return;
+    let line = houseNames(tidy(loadedWords(its[0].title)));
+    if (line.length > 160) line = line.slice(0, line.lastIndexOf(" ", 157)) + "…";
+    if (line.length >= 12) best[paper] = line;
+  } catch (e) {}
+}));
 const lines = PAPERS.filter(p => best[p]).map(p => `<b>${p}:</b> ${best[p].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}`);
-note(`items today ${items.length}, papers found ${lines.length}`);
+note(`papers found ${lines.length}: ${Object.keys(best).join("، ")}`);
 if (lines.length < 3) { note("too few newspaper headlines yet; nothing sent"); process.exit(0); }
 
 const dateAr = new Intl.DateTimeFormat("ar-LB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Beirut" }).format(new Date());

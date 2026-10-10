@@ -65,8 +65,8 @@ const EVENT = /غار[ةا]|غارات|قصف|استهداف|يستهدف|است
 const publishable = (t, src) => {
   if (TG_SPORT.test(t) || JUNK.test(t) || BAIT.test(t) || VAGUE.test(t)) return false;
   const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x));
-  if (w.length < 5 || t.replace(/[^\p{L}]/gu, "").length < 22 || t.length > 150) return false;
-  if (/[.!؟?]\s+\p{L}/u.test(t)) return false;                                   /* two sentences = a summary, not a breaking line */
+  if (w.length < 5 || t.replace(/[^\p{L}]/gu, "").length < 22 || t.length > 200) return false;
+  if ((t.match(/[.!؟?]\s+\p{L}/gu) || []).length >= 2) return false;           /* up to two sentences; three = a summary */
   return /^[^:：]{3,60}[:：]\s*\S/.test(t) || EVENT.test(t);                     /* a statement, or a concrete event */
 };
 let data = { items: [], used: {} };

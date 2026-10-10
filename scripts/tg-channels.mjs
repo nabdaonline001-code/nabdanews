@@ -2,20 +2,27 @@
    (the owner: «يبدو أنك تأخذ الأخبار وليس فقط العواجل» → switch to real breaking streams).
    Each outlet lists candidate public usernames (`trusted`: usernames the owner confirmed as the real channel); the first one whose public page (t.me/s/<name>) has posts is used,
    the others are ignored. Every post then goes through the site's own wording rules (clean() in ticker.js). */
-import { clean } from "../functions/api/ticker.js";
+import { clean, houthiFix } from "../functions/api/ticker.js";
 
+/* the owner's own list of breaking channels (2026-10-10). `trusted` = confirmed by the owner, so no blue tick is needed.
+   `fix`: outlets whose loaded vocabulary must not reach the channel (Houthi / Iranian / Al-Alam): same rule as the site («مرتزقة», «العدوان السعودي», «الكيان الصهيوني»…). */
+const T = n => ({ names: [n], trusted: [n] });
 export const CHANNELS = [
-  { id: "jazeera",  names: ["AJABreaking", "ajanews"] },
-  { id: "arabiya",  names: ["AlArabiya_Brk", "AlArabiya"] },
-  { id: "hadath",   names: ["AlHadath_Brk", "alhadath"] },
-  { id: "sky",      names: ["skynewsarabia_breaking", "skynewsarabia_b", "skynewsarabia"] },
-  { id: "mayadeen", names: ["almayadeennews", "almayadeen"] },
-  { id: "manar",    names: ["almanarnews", "almanar_news"] },
-  { id: "lbci",     names: ["LBCI_NEWS", "lbcinews", "LBCIV7"] },
-  { id: "jadeed",   names: ["aljadeednews", "aljadeedtv"] },
-  { id: "mtv",      names: ["mtvlebanonnews", "mtvlebanon"] },
-  { id: "rt",       names: ["RTarabic"] },
-  { id: "bbc",      names: ["bbcarabic"] }
+  { id: "lbci",       ...T("LBCI_NEWS") },
+  { id: "jadeed",     ...T("ALJADEED_NEWS") },
+  { id: "mtv",        ...T("MTVLebanonNews") },
+  { id: "akhbar",     ...T("alakhbar_news") },
+  { id: "bintjbeil",  ...T("bintjbeilnews") },
+  { id: "lebdebate",  ...T("lebanondebate") },
+  { id: "jazeera",    ...T("AjaNews") },
+  { id: "arabiya",    ...T("Alarabiya") },
+  { id: "araby",      ...T("AlarabyTelevision") },
+  { id: "mayadeen",   ...T("almayadeen") },
+  { id: "mamlaka",    ...T("almamlakatvbreaking") },
+  { id: "quds",       ...T("QudsN") },
+  { id: "alalam",     ...T("alalamarabic"), fix: true },
+  { id: "masirah",    ...T("almasirah2"), fix: true },
+  { id: "fars",       ...T("arabic_farsnews"), fix: true }
 ];
 
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
@@ -80,7 +87,7 @@ export async function channelItems(now = Date.now(), freshMin = 30) {
       used[ch.id] = name;
       for (const p of parseChannel(h)) {
         if (now - p.ts > freshMin * 60000 || p.ts - now > 5 * 60000) continue;
-        const t = clean(p.text, "", false);
+        const t = clean(ch.fix ? houthiFix(p.text) : p.text, "", false);
         if (t) items.push({ text: t, ts: p.ts, src: ch.id, leb: LEB.test(t) ? 1 : 0 });
       }
       break;

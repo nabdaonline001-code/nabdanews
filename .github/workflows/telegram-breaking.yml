@@ -16,7 +16,7 @@ concurrency:
 jobs:
   send:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 13
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +33,16 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TG_TEST: ${{ inputs.test && '1' || '' }}
-        run: node scripts/telegram-breaking.mjs
+        run: |
+          # GitHub's cron fires only every ~12-14 minutes, so each run keeps checking once a minute for ~10 minutes
+          # (runs queue one after another, so the bar is watched almost continuously). State lives in .tg-state between passes.
+          if [ -n "$TG_TEST" ]; then node scripts/telegram-breaking.mjs; exit $?; fi
+          end=$(( $(date +%s) + 600 ))
+          while true; do
+            node scripts/telegram-breaking.mjs || true
+            [ $(( $(date +%s) + 60 )) -ge $end ] && break
+            sleep 60
+          done
       - name: Save state
         if: always()
         uses: actions/cache/save@v4

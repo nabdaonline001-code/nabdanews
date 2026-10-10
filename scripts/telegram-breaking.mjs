@@ -45,7 +45,13 @@ try {
 } catch (e) { console.error("site.json:", e.message); }
 let data = { items: [] };
 try { data = await build(); } catch (e) { console.error("ticker build failed:", e.message); }
-for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && it.cat !== "sports") cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.pri ? 1 : 0, off: it.off ? 1 : 0 });
+/* the channel is public: automatic items pass a stricter gate than the site bar — a real headline (6+ words, 30+ letters),
+   never a site name / tagline / section title */
+const JUNK = /^(?:(?:أحدث|احدث|آخر|اخر|أهم|اهم|أبرز|ابرز|جديد|كل|متابعة|تغطية|موجز|نشرة|ملخص|عناوين|تحديثات|مباشر)(?!\p{L})|(?:ال)?أخبار(?!\p{L}))|أخبار\s+\S+\s+والعالم|لحظة بلحظة|على مدار الساعة|الموقع الرسمي|اشترك|تابعونا|حمّل التطبيق|حمل التطبيق|المزيد|اقرأ أيضا|اقرأ أيضاً/u;
+/* clickbait and celebrity/entertainment figures are never breaking news on the channel */
+const BAIT = /غامض|غامضة|مثير|مثيرة|صادم|صادمة|مفاجأة|مفاجئة|مفاجئ|لن تصدق|يكشف سر|تكشف سر|كواليس|رسالة من|رسالة جديدة|تغريدة|منشور|يعلق على|تعلق على|يرد على|ترد على|تركي آل الشيخ|آل الشيخ|هيئة الترفيه|موسم الرياض/u;
+const publishable = t => { const w = t.split(/\s+/).filter(x => /\p{L}{2,}/u.test(x)); return w.length >= 6 && t.replace(/[^\p{L}]/gu, "").length >= 30 && !JUNK.test(t) && !BAIT.test(t); };
+for (const it of data.items) if (now - it.ts <= FRESH_MIN * 60000 && it.cat !== "sports" && publishable(it.text)) cand.push({ text: it.text, ts: it.ts, man: 0, leb: it.pri ? 1 : 0, off: it.off ? 1 : 0 });
 cand.sort((a, b) => (b.man - a.man) || ((b.leb || 0) - (a.leb || 0)) || (b.ts - a.ts));   /* manual first, then Lebanon, then newest */
 
 let sent = 0;

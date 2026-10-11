@@ -25,7 +25,7 @@ const CH = ["lebanonNewsNow", "lebanondebate", "LBCI_NEWS", "ALJADEED_NEWS", "MT
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rlm: "", lrm: "" };
 const dec = x => x.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : +e.slice(1)) : (ENT[e.toLowerCase()] ?? " "));
 const LINE = new RegExp("^[\\p{Extended_Pictographic}\\uFE0F\\u200d\\s•▪◾●○*\\-–—·\\d.)]*(?:(?:مانشيت|عنوان|عناوين|عنونت|كتبت|صحيفة|جريدة)\\s+)?[«\"“*]*(" + PAPERS.join("|") + ")[»\"”*]*\\s*(?:[:：|\\-–—]|عنونت|كتبت)\\s*(.{10,})$", "u");
-const startOfDay = Date.parse(day + "T00:00:00Z") - 3 * 3600000 + 4 * 3600000;   /* 04:00 Beirut */
+const startOfDay = Date.parse(day + "T00:00:00Z") - 3 * 3600000 + (DRY ? -6 : 4) * 3600000;   /* 04:00 Beirut */
 let best = {}, from = "";
 for (const name of CH) {
   let h = "";
@@ -34,6 +34,7 @@ for (const name of CH) {
     const blk = m[0], tm = blk.match(/<time[^>]*datetime="([^"]+)"/), body = blk.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     if (!tm || !body || Date.parse(tm[1]) < startOfDay) continue;
     const txt = dec(dec(body[1].replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")));
+    if (DRY && /الصحف|مانشيت|عناوين/.test(txt)) note(`[${name} ${tm[1].slice(11,16)}] ` + txt.replace(/\s+/g, " ").slice(0, 160));
     const got = {};
     for (const raw of txt.split(/\n+/)) {
       const x = raw.replace(/https?:\/\/\S+|@\w+|#[\p{L}\p{N}_]+/gu, " ").replace(/\s+/g, " ").trim();

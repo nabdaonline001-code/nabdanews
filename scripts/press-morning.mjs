@@ -1,9 +1,7 @@
 /* Every day at 08:00 Beirut: the Lebanese newspapers' headlines, as one message on the Telegram channel.
-   Source: each paper's own overnight stories via Google News (the National News Agency refuses automated readers).
-   The lines pass through the site's wording rules (loadedWords / houseNames / tidy). TG_DRY=1 prints instead of sending. */
+   Source: the morning press review the Lebanese news channels post on Telegram (each paper's front-page headline, word for word). TG_DRY=1 prints instead of sending. */
 import fs from "node:fs";
 import path from "node:path";
-import { parseFeed } from "../functions/api/ticker.js";
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || "", CHAT = process.env.TELEGRAM_CHAT_ID || "", DRY = !!process.env.TG_DRY;
 const STATE = path.join(".press-state", "sent.json");
@@ -20,22 +18,33 @@ if (st.day === day && !DRY) { note("already sent today"); process.exit(0); }
 const target = Date.parse(day + "T05:00:00Z");
 if (!DRY && Date.now() < target) await new Promise(r => setTimeout(r, Math.min(target - Date.now(), 25 * 60000)));
 
-/* each paper's own stories from the last night, via Google News (NNA refuses automated readers);
-   per paper: its first story published since 22:00 Beirut — the overnight edition's lead — written in Nabda's words */
-const SITES = { "النهار": "annahar.com", "الأخبار": "al-akhbar.com", "نداء الوطن": "nidaalwatan.com", "الجمهورية": "aljoumhouria.com", "اللواء": "aliwaa.com.lb", "البناء": "al-binaa.com", "الديار": "addiyar.com", "الشرق": "alsharqonline.com", "الأنباء": "anbaaonline.com" };
-const since = Date.parse(day + "T00:00:00Z") - 3 * 3600000 - 2 * 3600000;   /* 22:00 Beirut, the night before */
-const best = {};
-await Promise.all(Object.entries(SITES).map(async ([paper, site]) => {
-  try {
-    const u = `https://news.google.com/rss/search?q=${encodeURIComponent("site:" + site + " when:1d")}&hl=ar&gl=LB&ceid=LB:ar`;
-    const xml = await (await fetch(u, { headers: UA, signal: AbortSignal.timeout(15000) })).text();
-    const its = parseFeed(xml).map(i => ({ title: i.title.replace(/\s+-\s+[^-]{2,40}$/, "").trim(), ts: i.ts })).filter(i => i.ts >= since && i.title.length >= 15 && !/^(?:رأي|مقال|كاريكاتير|افتتاحية)/.test(i.title)).sort((a, b) => a.ts - b.ts);
-    if (!its.length) return;
-    /* the paper's own headline, word for word (owner: «مثل ما هي معنونة مع ذكر الصحيفة») — only spacing and stray quotes are tidied */
-    const line = its[0].title.replace(/^[«"“]+|[»"”]+$/g, "").replace(/\s+/g, " ").trim();
-    if (line.length >= 12) best[paper] = line;
-  } catch (e) {}
-}));
+/* the real front-page headlines (المانشيت): Lebanese news channels post a morning press review every day, one line per paper
+   («النهار: …»، «• الأخبار | …»). Read the owner's channels, take today's post that names the most papers, keep each line
+   word for word. No guessing: a paper missing from the review is left out, and fewer than 3 papers means nothing is sent. */
+const CH = ["lebanonNewsNow", "lebanondebate", "LBCI_NEWS", "ALJADEED_NEWS", "MTVLebanonNews", "alakhbar_news", "bintjbeilnews", "almayadeen", "AjaNews", "Alarabiya", "AlarabyTelevision", "ksanewstoday", "alarabemergency", "roseaalym", "QudsN", "almamlakatvbreaking"];
+const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rlm: "", lrm: "" };
+const dec = x => x.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : +e.slice(1)) : (ENT[e.toLowerCase()] ?? " "));
+const LINE = new RegExp("^[\\p{Extended_Pictographic}\\uFE0F\\u200d\\s•▪◾●○*\\-–—·\\d.)]*(?:(?:مانشيت|عنوان|عناوين|عنونت|كتبت|صحيفة|جريدة)\\s+)?[«\"“*]*(" + PAPERS.join("|") + ")[»\"”*]*\\s*(?:[:：|\\-–—]|عنونت|كتبت)\\s*(.{10,})$", "u");
+const startOfDay = Date.parse(day + "T00:00:00Z") - 3 * 3600000 + 4 * 3600000;   /* 04:00 Beirut */
+let best = {}, from = "";
+for (const name of CH) {
+  let h = "";
+  try { const r = await fetch(`https://t.me/s/${name}`, { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "ar" }, signal: AbortSignal.timeout(15000) }); if (r.ok) h = await r.text(); } catch (e) {}
+  for (const m of h.matchAll(/<div class="tgme_widget_message_wrap[\s\S]*?(?=<div class="tgme_widget_message_wrap|$)/g)) {
+    const blk = m[0], tm = blk.match(/<time[^>]*datetime="([^"]+)"/), body = blk.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    if (!tm || !body || Date.parse(tm[1]) < startOfDay) continue;
+    const txt = dec(dec(body[1].replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")));
+    const got = {};
+    for (const raw of txt.split(/\n+/)) {
+      const x = raw.replace(/https?:\/\/\S+|@\w+|#[\p{L}\p{N}_]+/gu, " ").replace(/\s+/g, " ").trim();
+      const mm = x.match(LINE); if (!mm || got[mm[1]]) continue;
+      const head = mm[2].replace(/^[«"“\s]+|[»"”\s.]+$/g, "").replace(/[\p{Extended_Pictographic}️‍]+/gu, " ").replace(/\s+/g, " ").trim();
+      if (head.length >= 10) got[mm[1]] = head;
+    }
+    if (Object.keys(got).length > Object.keys(best).length) { best = got; from = name; }
+  }
+}
+note(`press review source: ${from || "none"}`);
 /* fixed layout, the same every morning, so readers know it at a glance:
      صحف لبنان | الأحد 11 تشرين الأول 2026
      ▪ النهار: «…»
